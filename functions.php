@@ -14,5 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function get_cf_image( $id, $args = array(), $sizes = array() ) {
 	$image = new \Yoast\Plugins\CF_Images\CF_Image( $id, $args, $sizes );
+	if ( ! $image ) {
+		return;
+	}
 	$image->render();
 }
