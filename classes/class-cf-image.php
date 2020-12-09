@@ -227,14 +227,15 @@ class CF_Image extends Component {
 	 */
 	private function init_srcset() : self {
 		$sources = $this->get_sources();
-		$srcset  = array();
-		$widths  = array();
+		unset( $sources['full'] );
+		$widths = array();
 		foreach ( $sources as $src ) {
 			if ( in_array( $src[1], $widths, true ) || in_array( $src[1] * 2, $widths, true ) ) {
 				continue;
 			}
 			$this->add_to_srcset( $src );
 			$widths[] = $src[1];
+			$widths[] = $src[1] * 2;
 		}
 		return $this;
 	}
@@ -280,15 +281,20 @@ class CF_Image extends Component {
 	}
 
 	/**
-	 * Convert an
+	 * Convert a source to a srcset member
 	 *
 	 * @param array  $src    An image source.
 	 * @param int    $dpr    The DPR.
 	 * @param string $format 'w' or '2x' (or 'nx').
 	 */
 	private function convert_source_to_srcset( $src, $dpr, $format ) {
-		$src = $this->convert_src_to_cf( $src[0], $src[1], $src[2], $dpr ) . ' ' . $src[1] * $dpr . $format;
-		return $src;
+		$original_src = $this->get_full_source();
+		$string       = $this->convert_src_to_cf( $original_src[0], $src[1], $src[2], $dpr ) . ' ';
+		if ( ! $this->is_fixed() ) {
+			$string .= $src[1] * $dpr;
+		}
+		$string .= $format;
+		return $string;
 	}
 
 	/**
@@ -408,7 +414,7 @@ class CF_Image extends Component {
 	 *
 	 * @return string The modified src attribute.
 	 */
-	private function convert_src_to_cf( string $src, ?int $h, ?int $w, int $dpr = 1 ) {
+	private function convert_src_to_cf( string $src, ?int $w, ?int $h, int $dpr = 1 ) {
 
 		$params = array(
 			'fit'     => 'cover',
@@ -777,6 +783,15 @@ class CF_Image extends Component {
 	}
 
 	/**
+	 * A shortcut to get_fixed()
+	 *
+	 * @return boolean
+	 */
+	protected function is_fixed() {
+		return $this->get_fixed();
+	}
+
+	/**
 	 * Get the src attribute
 	 *
 	 * @return false|string The src attribute
@@ -798,9 +813,9 @@ class CF_Image extends Component {
 			return false;
 		}
 		$src    = $this->get_src();
-		$h      = $this->get_height();
 		$w      = $this->get_width();
-		$cf_src = $this->convert_src_to_cf( $src, $h, $w, 1 );
+		$h      = $this->get_height();
+		$cf_src = $this->convert_src_to_cf( $src, $w, $h, 1 );
 		return $cf_src;
 	}
 
@@ -891,14 +906,12 @@ class CF_Image extends Component {
 	/**
 	 * Set the sizes values
 	 *
-	 * @param string $sizes The sizes values.
+	 * @param array $sizes The sizes values.
 	 *
 	 * @return self
 	 */
 	private function set_sizes( array $sizes ) : self {
 		$this->sizes = $sizes;
-		foreach ( $sizes as $size ) {
-		}
 		return $this;
 	}
 
@@ -946,7 +959,8 @@ class CF_Image extends Component {
 			}
 			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
 		}
-
+		unset( $image_sizes['1536x1536'] );
+		unset( $image_sizes['2048x2048'] );
 		return $image_sizes;
 	}
 
@@ -960,8 +974,9 @@ class CF_Image extends Component {
 		$id      = $this->get_id();
 		$sources = array();
 		foreach ( $sizes as $k => $size ) {
-			$sources[ $k ] = wp_get_attachment_image_src( $id, $size, false );
+			$sources[ $k ] = wp_get_attachment_image_src( $id, $k, false );
 		}
+		$sources['1200'] = wp_get_attachment_image_src( $id, array( 1200, 0 ), true );
 		$sources['full'] = wp_get_attachment_image_src( $id, 'full', false );
 		$this->set_sources( $sources );
 		return $this;
