@@ -1,0 +1,31 @@
+.cf_img {
+    display: block;
+}
+
+.cf_img img {
+    display: block;
+    max-width: 100%;
+}
+
+.cf_img[style*="--aspect-ratio"] > :first-child {
+  width: 100%;
+}
+.cf_img[style*="--aspect-ratio"] > img {
+  height: auto;
+}
+@supports (--custom:property) {
+  .cf_img[style*="--aspect-ratio"] {
+    position: relative;
+  }
+  .cf_img[style*="--aspect-ratio"]::before {
+    content: "";
+    display: block;
+    padding-bottom: calc(100% / (var(--aspect-ratio)));
+  }
+  .cf_img[style*="--aspect-ratio"] > :first-child {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+  }
+}
