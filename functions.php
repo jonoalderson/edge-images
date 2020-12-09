@@ -13,9 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param array $sizes Optional sizes args.
  */
 function get_cf_image( $id, $args = array(), $sizes = array() ) {
+	if ( ! wp_attachment_is_image( $id ) ) {
+		return false;
+	}
 	$image = new \Yoast\Plugins\CF_Images\CF_Image( $id, $args, $sizes );
 	if ( ! $image ) {
-		return;
+		return false;
 	}
 	$image->render();
 }

@@ -118,9 +118,6 @@ class CF_Image extends Component {
 	 * @param array $sizes Optional sizes.
 	 */
 	public function __construct( int $id, $args = array(), $sizes = array() ) {
-		if ( $id <= 0 ) {
-			return false;
-		}
 		$this->set_id( $id );
 		$this->init_defaults();
 		$this->init_args( $args );
@@ -132,7 +129,6 @@ class CF_Image extends Component {
 		}
 		$this->init_sizes( $sizes );
 	}
-
 	/**
 	 * Init the defaults
 	 *
@@ -210,10 +206,13 @@ class CF_Image extends Component {
 	/**
 	 * Convert sizes values to a string
 	 *
-	 * @return string The size values string
+	 * @return false|string The size values string
 	 */
 	private function convert_sizes_to_string() {
-		$sizes  = $this->get_sizes();
+		$sizes = $this->get_sizes();
+		if ( ! $sizes ) {
+			return false;
+		}
 		$values = array();
 		foreach ( $sizes as $size ) {
 			$values[] = implode( ' ', array_filter( $size ) );
