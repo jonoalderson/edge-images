@@ -63,6 +63,12 @@ class Cloudflare_Image_Handler {
 	 * @return array                 The modified sources array
 	 */
 	public function alter_srcset_generation( array $sources, array $size_array, string $image_src, array $image_meta, int $attachment_id ) : array {
+		print_r( $sources );
+		print_r( $size_array );
+		print_r( $image_src );
+		print_r( $image_meta );
+		print_r( $attachment_id );
+		die;
 		if ( ! $this->image_should_use_cloudflare( array( 'src' => $image_src ) ) ) {
 			return $sources;
 		}
