@@ -7,8 +7,6 @@
  * Text Domain: yoast-cf-image
  */
 
-namespace Yoast_CF_Images;
-
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -36,6 +34,19 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	// Load our autoloaders.
 	require_once 'autoload.php';
 
-	Cloudflare_Image_Handler::register();
+	Yoast_CF_Images\Cloudflare_Image_Handler::register();
 
 } )();
+
+/**
+ * Returns a Cloudflared image
+ *
+ * @param  int   $id                 The attachment ID.
+ * @param  array $atts               The atts to pass (see wp_get_attachment_image).
+ *
+ * @return string   The HTML <img> tag
+ */
+function get_cf_image( int $id, array $atts = array() ) : string {
+	$image = new Cloudflare_Image( $id, $atts );
+	return $image;
+}

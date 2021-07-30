@@ -2,6 +2,9 @@
 
 namespace Yoast_CF_Images;
 
+use Yoast_CF_Images\Cloudflare_Image_Helper as Helper;
+use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
+
 /**
  * Generates and managers a Cloudflared image.
  */
@@ -10,14 +13,12 @@ class Cloudflare_Image {
 	/**
 	 * Construct the image object
 	 *
-	 * @param int    $id    The attachment ID.
-	 * @param array  $atts  The attachment attributes.
-	 * @param string $size  The attachment size.
+	 * @param int   $id    The attachment ID.
+	 * @param array $atts  The attachment attributes.
 	 */
-	public function __construct( int $id, array $atts, string $size ) {
+	public function __construct( int $id, array $atts = array() ) {
 		$this->id   = $id;
 		$this->atts = $atts;
-		$this->size = $size;
 		$this->init();
 	}
 
@@ -27,10 +28,9 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init() : void {
-		$this->set_dimensions();
 		$this->use_full_size();
+		$this->set_dimensions();
 		$this->add_srcset();
-		$this->add_sizes();
 		$this->add_class();
 		$this->replace_src();
 	}
@@ -51,9 +51,9 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function set_dimensions() : void {
-		$image                = wp_get_attachment_image_src( $this->id, $this->size );
-		$this->atts['width']  = $image[1];
-		$this->atts['height'] = $image[2];
+		$dimensions           = Handler::get_context_vals( $this->atts['data-context'], 'dimensions' );
+		$this->atts['width']  = $dimensions['w'];
+		$this->atts['height'] = $dimensions['h'];
 	}
 
 	/**
@@ -62,7 +62,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function replace_src() : void {
-		$this->atts['src'] = Cloudflare_Image_Handler::alter_src( $this->atts['src'], $this->atts['width'] );
+		$this->atts['src'] = Helper::alter_src( $this->atts['src'], $this->atts['width'], $this->atts['height'] );
 	}
 
 	/**
@@ -71,11 +71,26 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function add_srcset() : void {
-		$srcset = wp_get_attachment_image_srcset( $this->id, $this->size );
-		if ( ! $srcset ) {
-			return;
+		$srcset               = array_merge(
+			$this->add_generic_srcset_sizes(),
+			Helper::get_key_srcset_sizes_from_context( $this->atts['src'], $this->atts['data-context'] )
+		);
+		$this->atts['srcset'] = implode( ',', $srcset );
+	}
+
+	/**
+	 * Adds generic srcset values
+	 *
+	 * TODO: Get ratio, calculate height, pass to creation method.
+	 *
+	 * @return array The srcset values
+	 */
+	private function add_generic_srcset_sizes() : array {
+		$srcset = array();
+		for ( $w = 100; $w <= 2400; $w += 100 ) {
+			$srcset[] = Helper::create_srcset_val( $this->atts['src'], $w );
 		}
-		$this->atts['srcset'] = $srcset;
+		return $srcset;
 	}
 
 	/**
