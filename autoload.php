@@ -38,7 +38,6 @@ function autoloader( $class_name ) {
 		include $path;
 		return true;
 	}
-	error_log( $class_name );
 	return false;
 }
 
