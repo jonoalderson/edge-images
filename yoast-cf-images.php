@@ -2,14 +2,12 @@
 /**
  * Plugin Name: Yoast Cloudflare images integration
  * Version: 1.0
- * Description: Provides support for get_cf_image()
+ * Description: Provides support for Cloudflared images
  * Author: Jono Alderson
  * Text Domain: yoast-cf-image
- *
- * @package doty-email
  */
 
-namespace Yoast\Plugins\CF_Images;
+namespace Yoast_CF_Images;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -29,15 +27,15 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	define( 'YOAST_CF_IMAGES_PLUGIN_FILE', __FILE__ );
 }
 
-// Load our autoloader.
-require_once 'autoloader.php'; // Include our autoloader.
-spl_autoload_register( __NAMESPACE__ . '\autoloader' );
-
 
 /**
- * Load functions
+ * Init the plugin
  */
 ( function() {
-	include_once 'functions.php';
-	Enqueues::register();
+
+	// Load our autoloaders.
+	require_once 'autoload.php';
+
+	Cloudflare_Image_Handler::register();
+
 } )();

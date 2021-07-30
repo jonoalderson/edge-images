@@ -1,6 +1,6 @@
 <?php
 
-namespace Yoast\Plugins\CF_Images;
+namespace Yoast_CF_Images;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return bool Whether or not the requested class was found.
  */
 function autoloader( $class_name ) {
-	if ( strpos( $class_name, 'Yoast\Plugins\CF_Images' ) !== 0 ) {
+	if ( strpos( $class_name, 'Yoast_CF_Images' ) !== 0 ) {
 		return false;
 	}
 
@@ -38,5 +38,9 @@ function autoloader( $class_name ) {
 		include $path;
 		return true;
 	}
+	error_log( $class_name );
 	return false;
 }
+
+
+spl_autoload_register( __NAMESPACE__ . '\autoloader' );
