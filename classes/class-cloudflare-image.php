@@ -2,6 +2,9 @@
 
 namespace Yoast_CF_Images;
 
+/**
+ * Generates and managers a Cloudflared image.
+ */
 class Cloudflare_Image {
 
 	/**

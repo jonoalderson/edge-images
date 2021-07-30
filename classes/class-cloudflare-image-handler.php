@@ -2,10 +2,15 @@
 
 namespace Yoast_CF_Images;
 
+/**
+ * Filters wp_get_attachment_image and related functions to use Cloudflare.
+ */
 class Cloudflare_Image_Handler {
 
 	/**
 	 * Register the integration
+	 *
+	 * @TODO: Add a wp_calculate_image_sizes filter.
 	 *
 	 * @return void
 	 */
@@ -13,7 +18,6 @@ class Cloudflare_Image_Handler {
 		$instance = new self();
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 10, 3 );
 		add_filter( 'wp_calculate_image_srcset', array( $instance, 'alter_srcset_generation' ), 10, 5 );
-		// add_filter( 'wp_calculate_image_sizes', array( $instance, 'alter_srcset_generation' ), 10, 5 );
 	}
 
 	/**
@@ -84,7 +88,7 @@ class Cloudflare_Image_Handler {
 		foreach ( $sources as &$source ) {
 
 			// Alter the SRC to use Cloudflare.
-			$source['url'] = self::alter_src( $source_width = $full_image[0], $max_width = $source['value'] );
+			$source['url'] = self::alter_src( $full_image[0], $source['value'] );
 
 			// Add x2 sizes for each registered variant (when it makes sense).
 			if ( $this->should_add_x2_size( $source['value'], $size_array[0] ) ) {
