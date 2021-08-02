@@ -46,7 +46,9 @@ class Cloudflare_Image_Handler {
 			return $block_content;
 		}
 
-		$image = get_cf_image( $block['attrs']['id'], 'large' );
+		$atts = array(); // Placeholder for future requirements.
+
+		$image = get_cf_image( $block['attrs']['id'], $atts, 'large' );
 
 		return $image;
 	}
