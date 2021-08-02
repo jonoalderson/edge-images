@@ -224,5 +224,4 @@ class Cloudflare_Image {
 		return $html;
 	}
 
-
 }

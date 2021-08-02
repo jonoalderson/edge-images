@@ -54,6 +54,9 @@ class Cloudflare_Image_Helper {
 			return $srcset; // Bail if there are no srcset options.
 		}
 
+		print_r( $sizes );
+		die;
+
 		// Create the srcset strings and x2 strings.
 		foreach ( $sizes as $v ) {
 			$h        = ( isset( $v['h'] ) ) ? $v['h'] : null;
