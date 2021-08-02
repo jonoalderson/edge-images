@@ -28,6 +28,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init() : void {
+		$this->init_properties();
 		$this->init_dimensions();
 		$this->init_ratio();
 		$this->init_classes();
@@ -37,11 +38,12 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Alter the SRC attr to use the full size image
+	 * Signpost that the image has been Cloudflared
 	 *
 	 * @return void
 	 */
-	private function set_full_size_src() : void {
+	private function init_properties() : void {
+		$this->atts['data-cloudflared'] = 'true';
 	}
 
 	/**
@@ -148,7 +150,7 @@ class Cloudflare_Image {
 	 */
 	private function init_classes() : void {
 		$classes = array(
-			'cloudflared', // Generic.
+			'cloudflared',
 			'size-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
 			'attachment-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
 		);
