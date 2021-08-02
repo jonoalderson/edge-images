@@ -149,7 +149,7 @@ class Cloudflare_Image_Handler {
 				break;
 		}
 
-		if ( $$return ) {
+		if ( isset( $$return ) && $return ) {
 			return $$return;
 		}
 
