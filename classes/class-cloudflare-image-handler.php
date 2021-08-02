@@ -24,16 +24,30 @@ class Cloudflare_Image_Handler {
 	}
 
 
-	function alter_image_block_rendering( $block_content, $block ) {
+	/**
+	 * Alter block editor image rendering
+	 *
+	 * TODO: Account for when images are linked (via $block['attrs']['linkDestination']).
+	 * TODO: Account for gallery blocks.
+	 *
+	 * @param  string $block_content  The block's HTML content.
+	 * @param  array  $block           The block's properties.
+	 *
+	 * @return string                 The block's modified content
+	 */
+	public function alter_image_block_rendering( $block_content, $block ) : string {
 
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
 		}
 
-		print_r( $block );
-		print_r( $block_content );
-		die;
+		if ( ! isset( $block['attrs']['id'] ) ) {
+			return $block_content;
+		}
 
+		$image = get_cf_image( $block['attrs']['id'], 'large' );
+
+		return $image;
 	}
 
 
