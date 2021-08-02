@@ -168,6 +168,34 @@ class Cloudflare_Image {
 		$this->atts['sizes'] = $sizes;
 	}
 
+	/**
+	 * Parse the attr properties to construct an <img>
+	 *
+	 * @param bool $wrap_in_picture If the el should be wrapped in a <picture>.
+	 *
+	 * @return string The <img> el
+	 */
+	public function construct_img_el( $wrap_in_picture = false ) : string {
+		$html = sprintf(
+			'<img %s>',
+			implode(
+				' ',
+				array_map(
+					function ( $v, $k ) {
+						return sprintf( "%s='%s'", $k, $v ); },
+					$this->atts,
+					array_keys( $this->atts )
+				)
+			)
+		);
+
+		if ( ! $wrap_in_picture ) {
+			return $html;
+		}
+
+		$html = Handler::wrap_in_picture( $html, $this->id, $this->size, false, $this->atts )
+		return $html;
+	}
 
 
 }
