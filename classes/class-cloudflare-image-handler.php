@@ -24,7 +24,7 @@ class Cloudflare_Image_Handler {
 	}
 
 
-	public function wrap_in_picture( string $html, int $attachment_id, string|array $size, bool $icon, array $attr ) : string {
+	public function wrap_in_picture( string $html, int $attachment_id, $size, bool $icon, array $attr ) : string {
 		print_r( $attr );
 		die;
 	}
