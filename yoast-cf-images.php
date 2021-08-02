@@ -44,12 +44,12 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
  * @param  array  $atts  The atts to pass (see wp_get_attachment_image).
  * @param  string $size  The image size.
  *
- * @return string       The HTML <img> tag
+ * @return void
  */
-function get_cf_image( int $id, array $atts = array(), string $size ) : ?string {
+function get_cf_image( int $id, array $atts = array(), string $size ) : void {
 	$image = new Yoast_CF_Images\Cloudflare_Image( $id, $atts, $size );
 	if ( ! $image ) {
-		return null;
+		return;
 	}
 	echo $image;
 }
