@@ -82,7 +82,9 @@ class Cloudflare_Image {
 		if ( isset( $this->atts['height'] ) ) {
 			$this->atts['height'] = $dimensions['h'];
 		} else {
-			$height               = $this->calculate_height_from_ratio();
+			$height = $this->calculate_height_from_ratio();
+			echo $height;
+			die;
 			$this->atts['height'] = ( $height ) ? $height : null;
 		}
 	}
