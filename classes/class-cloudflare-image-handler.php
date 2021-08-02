@@ -45,7 +45,7 @@ class Cloudflare_Image_Handler {
 	 * @return string       The modified tag
 	 */
 	public function remove_size_class( string $html ) : string {
-		$html = preg_replace( '/(size-\d*\s/', '', $html, 2 );
+		$html = preg_replace( '/size-\d*\s/', '', $html, 2 );
 		return $html;
 	}
 
