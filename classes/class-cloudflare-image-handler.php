@@ -189,9 +189,9 @@ class Cloudflare_Image_Handler {
 				$ratio      = '6/5';
 				break;
 			default:
+				global $content_width;
 				$dimensions = array(
-					'w' => 800,
-					'h' => 600,
+					'w' => ( $content_width ) ? $content_width : 800,
 				);
 				$sizes      = '(max-width: 800px) 100vw, 800px';
 				$ratio      = '4/3';
