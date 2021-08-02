@@ -51,6 +51,13 @@ function get_cf_image( int $id, array $atts = array(), string $size ) : void {
 	if ( ! $image ) {
 		return;
 	}
-	print_r( $image );
+
+	$html = sprintf(
+		'<img %s>',
+		implode( ' ', $image->atts )
+	);
+
+	$html = Cloudflare_Image_Handler::wrap_in_picture( $html, $image->id, $size, false, $atts );
+	echo $html;
 	die;
 }

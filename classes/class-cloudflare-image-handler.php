@@ -53,8 +53,6 @@ class Cloudflare_Image_Handler {
 		return $image;
 	}
 
-
-
 	/**
 	 * Wrap our image tags in a <picture> to use the aspect ratio approach
 	 *
@@ -66,7 +64,7 @@ class Cloudflare_Image_Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public function wrap_in_picture( string $html, int $attachment_id, $size, bool $icon, array $attr ) : string {
+	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, array $attr = array() ) : string {
 
 		if ( ! isset( $attr['data-ratio'] ) || ! isset( $attr['data-layout'] ) ) {
 			return $html; // Bail if there's no ratio or layout.
