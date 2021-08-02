@@ -16,10 +16,10 @@ class Cloudflare_Image_Handler {
 	 */
 	public static function register() : void {
 		$instance = new self();
-		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 10, 3 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 100 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 100 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 100 );
+		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 100, 3 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
 	}
 
