@@ -19,7 +19,7 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 10, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_class' ), 10 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 10 );
 	}
 
 	/**
@@ -44,8 +44,8 @@ class Cloudflare_Image_Handler {
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_size_class( string $html ) : string {
-		$html = preg_replace( '/size-[\w_-]*\s/', '', $html, 2 );
+	public function remove_size_classes( string $html ) : string {
+		$html = preg_replace( '/(size|attachment)-[\w_-]*\s/', '', $html, 2 );
 		return $html;
 	}
 
