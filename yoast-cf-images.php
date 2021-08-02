@@ -52,10 +52,8 @@ function get_cf_image( int $id, array $atts = array(), string $size ) : void {
 		return;
 	}
 
-	$html = $image->construct_img_el( $wrap_in_picture = true );
+	// Construct the <img> and wrap it in a <picture>.
+	$html = $image->construct_img_el( true );
 
-	$html = Yoast_CF_Images\Cloudflare_Image_Handler::wrap_in_picture( $html, $image->id, $size, false, $atts );
-
-	return $html;
-	die;
+	echo $html;
 }
