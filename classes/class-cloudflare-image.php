@@ -68,12 +68,20 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_dimensions() : void {
+
+		// Bail if dimensions aren't available.
 		$dimensions = Handler::get_context_vals( $this->size, 'dimensions' );
 		if ( ! $dimensions ) {
 			return;
 		}
-		$this->atts['width']  = $dimensions['w'];
-		$this->atts['height'] = $dimensions['h'];
+
+		// Set the width.
+		$this->atts['width'] = $dimensions['w'];
+
+		// Only set the height if it's known.
+		if ( isset( $this->atts['height'] ) ) {
+			$this->atts['height'] = $dimensions['h'];
+		}
 	}
 
 	/**
