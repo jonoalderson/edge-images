@@ -55,7 +55,7 @@ class Cloudflare_Image {
 	 */
 	private function init_layout() : void {
 		$layout = Handler::get_context_vals( $this->atts['data-context'], 'layout' );
-		if ( ! $dimensions ) {
+		if ( ! $layout ) {
 			$layout = 'responsive';
 		}
 		$this->atts['data-layout'] = $layout;
