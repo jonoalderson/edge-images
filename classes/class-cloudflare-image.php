@@ -82,9 +82,7 @@ class Cloudflare_Image {
 		if ( isset( $this->atts['height'] ) ) {
 			$this->atts['height'] = $dimensions['h'];
 		} else {
-			$height = $this->calculate_height_from_ratio();
-			echo $height;
-			die;
+			$height               = $this->calculate_height_from_ratio();
 			$this->atts['height'] = ( $height ) ? $height : null;
 		}
 	}
@@ -97,12 +95,12 @@ class Cloudflare_Image {
 	private function calculate_height_from_ratio() {
 
 		// We need the width and the ratio.
-		if ( ! isset( $this->atts['width'] ) || ! isset( $this->atts['ratio'] ) ) {
+		if ( ! isset( $this->atts['width'] ) || ! isset( $this->atts['data-ratio'] ) ) {
 			return false;
 		}
 
 		// Divide the width by the ratio to get the height.
-		return ceil( $this->atts['width'] / ( $this->atts['ratio'] ) );
+		return ceil( $this->atts['width'] / ( $this->atts['data-ratio'] ) );
 	}
 
 	/**
