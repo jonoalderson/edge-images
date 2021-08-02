@@ -51,5 +51,6 @@ function get_cf_image( int $id, array $atts = array(), string $size ) : void {
 	if ( ! $image ) {
 		return;
 	}
-	echo $image;
+	print_r( $image );
+	die;
 }
