@@ -89,7 +89,7 @@ class Cloudflare_Image_Handler {
 	 *
 	 * @return mixed            The requested values.
 	 */
-	public function get_context_vals( string $context, string $return ) {
+	public static function get_context_vals( string $context, string $return ) {
 
 		switch ( $context ) {
 
