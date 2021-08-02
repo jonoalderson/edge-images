@@ -193,7 +193,9 @@ class Cloudflare_Image {
 			return $html;
 		}
 
-		$html = Handler::wrap_in_picture( $html, $this->id, $this->size, false, $this->atts )
+		// Wrap the <img> in a <picture>.
+		$html = Handler::wrap_in_picture( $html, $this->id, $this->size, false, $this->atts );
+
 		return $html;
 	}
 
