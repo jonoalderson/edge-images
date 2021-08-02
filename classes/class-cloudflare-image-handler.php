@@ -17,16 +17,38 @@ class Cloudflare_Image_Handler {
 	public static function register() : void {
 		$instance = new self();
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 10, 3 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 10 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 20, 5 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 100 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 100 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 100 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
 	}
 
 
+	/**
+	 * Wrap our image tags in a <picture> to use the aspect ratio approach
+	 *
+	 * @param  string $html             The <img> HTML.
+	 * @param  int    $attachment_id    The attachment ID.
+	 * @param  mixed  $size             The image size.
+	 * @param  bool   $icon             Whether to use an icon.
+	 * @param  array  $attr             The image attributes.
+	 *
+	 * @return string                   The modified HTML.
+	 */
 	public function wrap_in_picture( string $html, int $attachment_id, $size, bool $icon, array $attr ) : string {
-		print_r( $attr );
-		die;
+
+		if ( ! isset( $attr['data-ratio'] ) || ! isset( $attr['data-layout'] ) ) {
+			return $html; // Bail if there's no ratio or layout.
+		}
+
+		$html = sprintf(
+			'<picture style="--aspect-ratio:%s" class="layout-%s">%s</picture>',
+			$attr['data-ratio'],
+			$attr['data-layout'],
+			$html
+		);
+
+		return $html;
 	}
 
 	/**
