@@ -31,8 +31,9 @@ class Cloudflare_Image {
 		$this->use_full_size();
 		$this->init_dimensions();
 		$this->init_srcset();
-		$this->add_classes();
 		$this->init_src();
+		$this->init_ratio();
+		$this->add_classes();
 	}
 
 	/**
@@ -51,7 +52,10 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_dimensions() : void {
-		$dimensions           = Handler::get_context_vals( $this->atts['data-context'], 'dimensions' );
+		$dimensions = Handler::get_context_vals( $this->atts['data-context'], 'dimensions' );
+		if ( ! $dimensions ) {
+			return;
+		}
 		$this->atts['width']  = $dimensions['w'];
 		$this->atts['height'] = $dimensions['h'];
 	}
@@ -62,7 +66,10 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_ratio() : void {
-		$ratio               = Handler::get_context_vals( $this->atts['data-context'], 'ratio' );
+		$ratio = Handler::get_context_vals( $this->atts['data-context'], 'ratio' );
+		if ( ! $ratio ) {
+			return;
+		}
 		$this->atts['ratio'] = $ratio;
 	}
 
@@ -72,7 +79,11 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_src() : void {
-		$this->atts['src'] = Helper::alter_src( $this->atts['src'], $this->atts['width'], $this->atts['height'] );
+		$src = Helper::alter_src( $this->atts['src'], $this->atts['width'], $this->atts['height'] );
+		if ( ! $src ) {
+			return;
+		}
+		$this->atts['src'] = $src;
 	}
 
 	/**
@@ -81,11 +92,18 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_srcset() : void {
-		$srcset               = array_merge(
+		$srcset = array_merge(
 			$this->add_generic_srcset_sizes(),
 			Helper::get_key_srcset_sizes_from_context( $this->atts['src'], $this->atts['data-context'] )
 		);
-		$this->atts['srcset'] = implode( ',', $srcset );
+		if ( empty( $srcset ) ) {
+			return;
+		}
+		$srcset = implode( ',', $srcset );
+		if ( ! $srcset ) {
+			return;
+		}
+		$this->atts['srcset'] = $srcset;
 	}
 
 	/**

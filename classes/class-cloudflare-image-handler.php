@@ -129,7 +129,11 @@ class Cloudflare_Image_Handler {
 
 		}
 
-		return $$return;
+		if ( $$return ) {
+			return $$return;
+		}
+
+		return false;
 	}
 
 
