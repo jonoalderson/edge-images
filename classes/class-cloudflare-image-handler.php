@@ -119,7 +119,7 @@ class Cloudflare_Image_Handler {
 			return $atts;
 		}
 
-		$image = new Cloudflare_Image( $attachment->ID, $atts );
+		$image = new Cloudflare_Image( $attachment->ID, $atts, $size );
 
 		return $image->atts;
 	}
@@ -127,12 +127,12 @@ class Cloudflare_Image_Handler {
 	/**
 	 * Get values from the image context
 	 *
-	 * @param  string $context  The image's context.
+	 * @param  string $size  The image's size.
 	 * @param  string $return   The val(s) to return.
 	 *
 	 * @return mixed            The requested values.
 	 */
-	public static function get_context_vals( string $context, string $return ) {
+	public static function get_context_vals( string $size, string $return ) {
 
 		switch ( $context ) {
 

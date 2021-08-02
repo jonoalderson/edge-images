@@ -13,12 +13,14 @@ class Cloudflare_Image {
 	/**
 	 * Construct the image object
 	 *
-	 * @param int   $id    The attachment ID.
-	 * @param array $atts  The attachment attributes.
+	 * @param int    $id    The attachment ID.
+	 * @param array  $atts  The attachment attributes.
+	 * @param string $size The size.
 	 */
-	public function __construct( int $id, array $atts = array() ) {
+	public function __construct( int $id, array $atts = array(), string $size ) {
 		$this->id   = $id;
 		$this->atts = $atts;
+		$this->size = $size;
 		$this->init();
 	}
 
@@ -54,7 +56,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_layout() : void {
-		$layout = Handler::get_context_vals( $this->atts['size'], 'layout' );
+		$layout = Handler::get_context_vals( $this->size, 'layout' );
 		if ( ! $layout ) {
 			$layout = 'responsive';
 		}
@@ -67,7 +69,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_dimensions() : void {
-		$dimensions = Handler::get_context_vals( $this->atts['size'], 'dimensions' );
+		$dimensions = Handler::get_context_vals( $this->size, 'dimensions' );
 		if ( ! $dimensions ) {
 			return;
 		}
@@ -81,7 +83,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_ratio() : void {
-		$ratio = Handler::get_context_vals( $this->atts['size'], 'ratio' );
+		$ratio = Handler::get_context_vals( $this->size, 'ratio' );
 		if ( ! $ratio ) {
 			return;
 		}
@@ -118,7 +120,7 @@ class Cloudflare_Image {
 	private function init_srcset() : void {
 		$srcset = array_merge(
 			$this->add_generic_srcset_sizes(),
-			Helper::get_srcset_sizes_from_context( $this->atts['src'], $this->atts['size'] )
+			Helper::get_srcset_sizes_from_context( $this->atts['src'], $this->size )
 		);
 		if ( empty( $srcset ) ) {
 			return;
@@ -151,7 +153,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_sizes() : void {
-		$sizes = Handler::get_context_vals( $this->atts['size'], 'sizes' );
+		$sizes = Handler::get_context_vals( $this->size, 'sizes' );
 		if ( ! $sizes ) {
 			return;
 		}
@@ -165,8 +167,8 @@ class Cloudflare_Image {
 	 */
 	private function init_classes() : void {
 		$classes = array(
-			'size-' . sanitize_title( $this->atts['size'] ), // Replaces native.
-			'attachment-' . sanitize_title( $this->atts['size'] ), // Replaces native.
+			'size-' . sanitize_title( $this->size ), // Replaces native.
+			'attachment-' . sanitize_title( $this->size ), // Replaces native.
 		);
 
 		$this->atts['class'] .= implode( ' ', $classes );
