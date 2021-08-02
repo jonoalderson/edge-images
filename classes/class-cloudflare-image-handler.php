@@ -17,7 +17,8 @@ class Cloudflare_Image_Handler {
 	public static function register() : void {
 		$instance = new self();
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 10, 3 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_width_attribute' ), 10 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 	}
 
 	/**
@@ -30,8 +31,20 @@ class Cloudflare_Image_Handler {
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_width_attribute( string $html ) : string {
+	public function remove_dimension_attributes( string $html ) : string {
 		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
+		return $html;
+	}
+
+	/**
+	 * Remove inline style attribute from <img> markup.
+	 *
+	 * @param  string $html The HTML <img> tag.
+	 *
+	 * @return string       The modified tag
+	 */
+	public function remove_style_attribute( string $html ) : string {
+		$html = preg_replace( '/(<[^>]+) style=".*?"/i', '$1', $html );
 		return $html;
 	}
 
