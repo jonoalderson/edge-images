@@ -99,8 +99,14 @@ class Cloudflare_Image {
 			return false;
 		}
 
+		// Get the ratio components.
+		$ratio = preg_split( '#/#', $ratio );
+		if ( ! isset( $ratio[0] ) || ! isset( $ratio[1] ) ) {
+			return false;
+		}
+
 		// Divide the width by the ratio to get the height.
-		return ceil( $this->atts['width'] / ( $this->atts['data-ratio'] ) );
+		return ceil( $this->atts['width'] / ( $ratio[0] / $ratio[1] ) );
 	}
 
 	/**
