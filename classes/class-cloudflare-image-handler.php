@@ -29,6 +29,7 @@ class Cloudflare_Image_Handler {
 	 *
 	 * TODO: Account for when images are linked (via $block['attrs']['linkDestination']).
 	 * TODO: Account for gallery blocks.
+	 * TODO: Account for figure/figcaption.
 	 *
 	 * @param  string $block_content  The block's HTML content.
 	 * @param  array  $block           The block's properties.

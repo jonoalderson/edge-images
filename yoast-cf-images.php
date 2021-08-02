@@ -40,13 +40,14 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 /**
  * Returns a Cloudflared image
  *
- * @param  int   $id    The attachment ID.
- * @param  array $atts  The atts to pass (see wp_get_attachment_image).
+ * @param  int    $id    The attachment ID.
+ * @param  array  $atts  The atts to pass (see wp_get_attachment_image).
+ * @param  string $size  The image size.
  *
  * @return string       The HTML <img> tag
  */
-function get_cf_image( int $id, array $atts = array() ) : ?string {
-	$image = new Cloudflare_Image( $id, $atts );
+function get_cf_image( int $id, array $atts = array(), string $size ) : ?string {
+	$image = new Cloudflare_Image( $id, $atts, $size );
 	if ( ! $image ) {
 		return null;
 	}
