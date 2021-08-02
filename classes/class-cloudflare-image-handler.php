@@ -127,10 +127,7 @@ class Cloudflare_Image_Handler {
 					),
 				);
 				$sizes      = '(max-width: 1500px) calc(90vw - 20px), calc(90vw - 20px)';
-				$ratio      = array(
-					'w' => 6,
-					'h' => 5,
-				);
+				$ratio      = '6/5';
 				break;
 
 		}

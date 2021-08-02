@@ -29,10 +29,10 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 		$this->use_full_size();
-		$this->set_dimensions();
-		$this->add_srcset();
-		$this->add_class();
-		$this->replace_src();
+		$this->init_dimensions();
+		$this->init_srcset();
+		$this->add_classes();
+		$this->init_src();
 	}
 
 	/**
@@ -46,14 +46,24 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Set the dimensions
+	 * Init the dimensions
 	 *
 	 * @return void
 	 */
-	private function set_dimensions() : void {
+	private function init_dimensions() : void {
 		$dimensions           = Handler::get_context_vals( $this->atts['data-context'], 'dimensions' );
 		$this->atts['width']  = $dimensions['w'];
 		$this->atts['height'] = $dimensions['h'];
+	}
+
+	/**
+	 * Init the ratio
+	 *
+	 * @return void
+	 */
+	private function init_ratio() : void {
+		$ratio               = Handler::get_context_vals( $this->atts['data-context'], 'ratio' );
+		$this->atts['ratio'] = $ratio;
 	}
 
 	/**
@@ -61,16 +71,16 @@ class Cloudflare_Image {
 	 *
 	 * @return void
 	 */
-	private function replace_src() : void {
+	private function init_src() : void {
 		$this->atts['src'] = Helper::alter_src( $this->atts['src'], $this->atts['width'], $this->atts['height'] );
 	}
 
 	/**
-	 * Adds the SRCSET attr
+	 * Init the SRCSET attr
 	 *
 	 * @return void
 	 */
-	private function add_srcset() : void {
+	private function init_srcset() : void {
 		$srcset               = array_merge(
 			$this->add_generic_srcset_sizes(),
 			Helper::get_key_srcset_sizes_from_context( $this->atts['src'], $this->atts['data-context'] )
@@ -111,7 +121,7 @@ class Cloudflare_Image {
 	 *
 	 * @return void
 	 */
-	private function add_class() : void {
+	private function add_classes() : void {
 		$this->atts['class'] .= ' cloudflared';
 	}
 
