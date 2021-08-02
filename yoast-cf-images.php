@@ -47,7 +47,7 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
  * @return string       The HTML <img> tag
  */
 function get_cf_image( int $id, array $atts = array(), string $size ) : ?string {
-	$image = new Cloudflare_Image( $id, $atts, $size );
+	$image = new Yoast_CF_Images\Cloudflare_Image( $id, $atts, $size );
 	if ( ! $image ) {
 		return null;
 	}
