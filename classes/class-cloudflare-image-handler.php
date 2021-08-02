@@ -20,7 +20,22 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
+		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 1000, 5 );
 	}
+
+
+	function alter_image_block_rendering( $block_content, $block ) {
+
+		if ( 'core/image' !== $block['blockName'] ) {
+			return $block_content;
+		}
+
+		print_r( $block );
+		print_r( $block_content );
+		die;
+
+	}
+
 
 
 	/**
