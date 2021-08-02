@@ -47,7 +47,7 @@ class Cloudflare_Image_Helper {
 	 *
 	 * @return array The srcset attr
 	 */
-	public static function get_key_srcset_sizes_from_context( string $src, string $context ) : array {
+	public static function get_srcset_sizes_from_context( string $src, string $context ) : array {
 		$sizes  = Handler::get_context_vals( $context, 'srcset' );
 		$srcset = array();
 		foreach ( $sizes as $size ) {

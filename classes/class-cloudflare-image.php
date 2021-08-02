@@ -101,7 +101,7 @@ class Cloudflare_Image {
 	private function init_srcset() : void {
 		$srcset = array_merge(
 			$this->add_generic_srcset_sizes(),
-			Helper::get_key_srcset_sizes_from_context( $this->atts['src'], $this->atts['data-context'] )
+			Helper::get_srcset_sizes_from_context( $this->atts['src'], $this->atts['data-context'] )
 		);
 		if ( empty( $srcset ) ) {
 			return;
@@ -134,7 +134,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_sizes() : void {
-		$sizes = wp_get_attachment_image_sizes( $this->id, $this->size );
+		$sizes = Handler::get_context_vals( $this->atts['data-context'], 'sizes' );
 		if ( ! $sizes ) {
 			return;
 		}
