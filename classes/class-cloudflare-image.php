@@ -32,6 +32,7 @@ class Cloudflare_Image {
 		$this->init_dimensions();
 		$this->init_ratio();
 		$this->init_classes();
+		$this->init_layout();
 		$this->init_src();
 		$this->init_srcset();
 		$this->init_sizes();
@@ -44,6 +45,20 @@ class Cloudflare_Image {
 	 */
 	private function init_properties() : void {
 		$this->atts['data-cloudflared'] = 'true';
+	}
+
+	/**
+	 * Init the layout
+	 * Default to 'responsive'
+	 *
+	 * @return void
+	 */
+	private function init_layout() : void {
+		$layout = Handler::get_context_vals( $this->atts['data-context'], 'layout' );
+		if ( ! $dimensions ) {
+			$layout = 'responsive';
+		}
+		$this->atts['data-layout'] = $layout;
 	}
 
 	/**
