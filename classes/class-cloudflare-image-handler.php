@@ -109,10 +109,7 @@ class Cloudflare_Image_Handler {
 					),
 				);
 				$sizes      = '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)';
-				$ratio      = array(
-					'w' => 4,
-					'h' => 3,
-				);
+				$ratio      = '4/3';
 				break;
 
 			case '3-columns':
