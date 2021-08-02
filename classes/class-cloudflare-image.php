@@ -31,8 +31,8 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 		$this->init_properties();
-		$this->init_dimensions();
 		$this->init_ratio();
+		$this->init_dimensions();
 		$this->init_layout();
 		$this->init_src();
 		$this->init_srcset();
@@ -78,10 +78,29 @@ class Cloudflare_Image {
 		// Set the width.
 		$this->atts['width'] = $dimensions['w'];
 
-		// Only set the height if it's known.
+		// Set the height, or calculate it if we know the ratio.
 		if ( isset( $this->atts['height'] ) ) {
 			$this->atts['height'] = $dimensions['h'];
+		} else {
+			$height               = $this->calculate_height_from_ratio();
+			$this->atts['height'] = ( $height ) ? $height : null;
 		}
+	}
+
+	/**
+	 * Calculatge the height from the ratio
+	 *
+	 * @return false|int    The height
+	 */
+	private function calculate_height_from_ratio() {
+
+		// We need the width and the ratio.
+		if ( ! isset( $this->atts['width'] ) || ! isset( $this->atts['ratio'] ) ) {
+			return false;
+		}
+
+		// Divide the width by the ratio to get the height.
+		return ceil( $this->atts['width'] / ( $this->atts['ratio'] ) );
 	}
 
 	/**
