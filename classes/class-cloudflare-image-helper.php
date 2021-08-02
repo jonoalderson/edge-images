@@ -40,21 +40,20 @@ class Cloudflare_Image_Helper {
 	}
 
 	/**
-	 * Adds key srcset sizes from the image's context
+	 * Adds key srcset sizes from the image's size
 	 *
 	 * @param string $src The image src.
-	 * @param string $context The image's context.
+	 * @param string $size The image's size.
 	 *
 	 * @return array The srcset attr
 	 */
-	public static function get_srcset_sizes_from_context( string $src, string $context ) : array {
-		$sizes  = Handler::get_context_vals( $context, 'srcset' );
+	public static function get_srcset_sizes_from_context( string $src, string $size ) : array {
+		$sizes  = Handler::get_context_vals( $size, 'srcset' );
 		$srcset = array();
-		foreach ( $sizes as $size ) {
-			$srcset[] = self::create_srcset_val( $src, $size['w'], $size['h'] );
-			$srcset[] = self::create_srcset_val( $src, $size['w'] * 2, $size['h'] * 2 );
+		foreach ( $sizes as $v ) {
+			$srcset[] = self::create_srcset_val( $src, $v['w'], $v['h'] );
+			$srcset[] = self::create_srcset_val( $src, $v['w'] * 2, $v['h'] * 2 );
 		}
-		$dimensions = Handler::get_context_vals( $context, 'dimensions' );
 		return $srcset;
 	}
 

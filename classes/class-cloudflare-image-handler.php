@@ -188,6 +188,13 @@ class Cloudflare_Image_Handler {
 				$sizes      = '(max-width: 1500px) calc(90vw - 20px), calc(90vw - 20px)';
 				$ratio      = '6/5';
 				break;
+			default:
+				$dimensions = array(
+					'w' => 800,
+					'h' => 600,
+				);
+				$sizes      = '(max-width: 800px) 100vw, 800px';
+				$ratio      = '4/3';
 		}
 
 		if ( isset( $$return ) && $return ) {
