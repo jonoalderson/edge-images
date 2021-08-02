@@ -134,7 +134,7 @@ class Cloudflare_Image_Handler {
 	 */
 	public static function get_context_vals( string $size, string $return ) {
 
-		switch ( $context ) {
+		switch ( $size ) {
 
 			case '4-columns':
 				$dimensions = array(
