@@ -148,7 +148,7 @@ class Cloudflare_Image {
 	 */
 	private function init_classes() : void {
 		$classes = array(
-			'image-cloudflared', // Generic.
+			'cloudflared', // Generic.
 			'size-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
 			'attachment-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
 		);
