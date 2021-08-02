@@ -54,7 +54,15 @@ function get_cf_image( int $id, array $atts = array(), string $size ) : void {
 
 	$html = sprintf(
 		'<img %s>',
-		implode( ' ', $image->atts )
+		implode(
+			' ',
+			array_map(
+				function ( $v, $k ) {
+					return sprintf( "%s='%s'", $k, $v ); },
+				$image->atts,
+				array_keys( $image->atts )
+			)
+		)
 	);
 
 	$html = Yoast_CF_Images\Cloudflare_Image_Handler::wrap_in_picture( $html, $image->id, $size, false, $atts );
