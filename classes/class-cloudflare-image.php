@@ -2,19 +2,23 @@
 
 namespace Yoast_CF_Images;
 
+use Yoast_CF_Images\Cloudflare_Image_Helper as Helper;
+use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
+
+/**
+ * Generates and managers a Cloudflared image.
+ */
 class Cloudflare_Image {
 
 	/**
 	 * Construct the image object
 	 *
-	 * @param int    $id    The attachment ID.
-	 * @param array  $atts  The attachment attributes.
-	 * @param string $size  The attachment size.
+	 * @param int   $id    The attachment ID.
+	 * @param array $atts  The attachment attributes.
 	 */
-	public function __construct( int $id, array $atts, string $size ) {
+	public function __construct( int $id, array $atts = array() ) {
 		$this->id   = $id;
 		$this->atts = $atts;
-		$this->size = $size;
 		$this->init();
 	}
 
@@ -24,33 +28,64 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init() : void {
-		$this->set_dimensions();
-		$this->use_full_size();
-		$this->add_srcset();
-		$this->add_sizes();
-		$this->add_class();
-		$this->replace_src();
+		$this->init_properties();
+		$this->init_dimensions();
+		$this->init_ratio();
+		$this->init_classes();
+		$this->init_layout();
+		$this->init_src();
+		$this->init_srcset();
+		$this->init_sizes();
 	}
 
 	/**
-	 * Alter the SRC attr to use the full size image
+	 * Signpost that the image has been Cloudflared
 	 *
 	 * @return void
 	 */
-	private function use_full_size() : void {
-		$full_image        = wp_get_attachment_image_src( $this->id, 'full' );
-		$this->atts['src'] = $full_image[0];
+	private function init_properties() : void {
+		$this->atts['data-cloudflared'] = 'true';
 	}
 
 	/**
-	 * Set the dimensions
+	 * Init the layout
+	 * Default to 'responsive'
 	 *
 	 * @return void
 	 */
-	private function set_dimensions() : void {
-		$image                = wp_get_attachment_image_src( $this->id, $this->size );
-		$this->atts['width']  = $image[1];
-		$this->atts['height'] = $image[2];
+	private function init_layout() : void {
+		$layout = Handler::get_context_vals( $this->atts['data-context'], 'layout' );
+		if ( ! $layout ) {
+			$layout = 'responsive';
+		}
+		$this->atts['data-layout'] = $layout;
+	}
+
+	/**
+	 * Init the dimensions
+	 *
+	 * @return void
+	 */
+	private function init_dimensions() : void {
+		$dimensions = Handler::get_context_vals( $this->atts['data-context'], 'dimensions' );
+		if ( ! $dimensions ) {
+			return;
+		}
+		$this->atts['width']  = $dimensions['w'];
+		$this->atts['height'] = $dimensions['h'];
+	}
+
+	/**
+	 * Init the ratio
+	 *
+	 * @return void
+	 */
+	private function init_ratio() : void {
+		$ratio = Handler::get_context_vals( $this->atts['data-context'], 'ratio' );
+		if ( ! $ratio ) {
+			return;
+		}
+		$this->atts['data-ratio'] = $ratio;
 	}
 
 	/**
@@ -58,17 +93,37 @@ class Cloudflare_Image {
 	 *
 	 * @return void
 	 */
-	private function replace_src() : void {
-		$this->atts['src'] = Cloudflare_Image_Handler::alter_src( $this->atts['src'], $this->atts['width'] );
+	private function init_src() : void {
+
+		// Get the full-sized image.
+		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
+		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
+			return;
+		}
+
+		// Convert the SRC to a CF string.
+		$src = Helper::cf_src( $full_image[0], $this->atts['width'], $this->atts['height'] );
+		if ( ! $src ) {
+			return;
+		}
+
+		$this->atts['src'] = $src;
 	}
 
 	/**
-	 * Adds the SRCSET attr
+	 * Init the SRCSET attr
 	 *
 	 * @return void
 	 */
-	private function add_srcset() : void {
-		$srcset = wp_get_attachment_image_srcset( $this->id, $this->size );
+	private function init_srcset() : void {
+		$srcset = array_merge(
+			$this->add_generic_srcset_sizes(),
+			Helper::get_srcset_sizes_from_context( $this->atts['src'], $this->atts['data-context'] )
+		);
+		if ( empty( $srcset ) ) {
+			return;
+		}
+		$srcset = implode( ',', $srcset );
 		if ( ! $srcset ) {
 			return;
 		}
@@ -76,12 +131,27 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Add the SIZES attr
+	 * Adds generic srcset values
+	 *
+	 * TODO: Get ratio, calculate height, pass to creation method.
+	 *
+	 * @return array The srcset values
+	 */
+	private function add_generic_srcset_sizes() : array {
+		$srcset = array();
+		for ( $w = 100; $w <= 2400; $w += 100 ) {
+			$srcset[] = Helper::create_srcset_val( $this->atts['src'], $w );
+		}
+		return $srcset;
+	}
+
+	/**
+	 * Init the sizes attr
 	 *
 	 * @return void
 	 */
-	private function add_sizes() : void {
-		$sizes = wp_get_attachment_image_sizes( $this->id, $this->size );
+	private function init_sizes() : void {
+		$sizes = Handler::get_context_vals( $this->atts['data-context'], 'sizes' );
 		if ( ! $sizes ) {
 			return;
 		}
@@ -89,12 +159,17 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Add a cloudflare CLASS
+	 * Inits any custom classes
 	 *
 	 * @return void
 	 */
-	private function add_class() : void {
-		$this->atts['class'] .= ' cloudflared';
+	private function init_classes() : void {
+		$classes = array(
+			'size-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
+			'attachment-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
+		);
+
+		$this->atts['class'] .= implode( ' ', $classes );
 	}
 
 

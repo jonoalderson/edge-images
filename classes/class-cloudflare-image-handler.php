@@ -2,18 +2,93 @@
 
 namespace Yoast_CF_Images;
 
+/**
+ * Filters wp_get_attachment_image and related functions to use Cloudflare.
+ */
 class Cloudflare_Image_Handler {
 
 	/**
 	 * Register the integration
+	 *
+	 * @TODO: Add a wp_calculate_image_sizes filter.
 	 *
 	 * @return void
 	 */
 	public static function register() : void {
 		$instance = new self();
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 10, 3 );
-		add_filter( 'wp_calculate_image_srcset', array( $instance, 'alter_srcset_generation' ), 10, 5 );
-		// add_filter( 'wp_calculate_image_sizes', array( $instance, 'alter_srcset_generation' ), 10, 5 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 100 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 100 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 100 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
+	}
+
+
+	/**
+	 * Wrap our image tags in a <picture> to use the aspect ratio approach
+	 *
+	 * @param  string $html             The <img> HTML.
+	 * @param  int    $attachment_id    The attachment ID.
+	 * @param  mixed  $size             The image size.
+	 * @param  bool   $icon             Whether to use an icon.
+	 * @param  array  $attr             The image attributes.
+	 *
+	 * @return string                   The modified HTML.
+	 */
+	public function wrap_in_picture( string $html, int $attachment_id, $size, bool $icon, array $attr ) : string {
+
+		if ( ! isset( $attr['data-ratio'] ) || ! isset( $attr['data-layout'] ) ) {
+			return $html; // Bail if there's no ratio or layout.
+		}
+
+		$html = sprintf(
+			'<picture style="--aspect-ratio:%s" class="layout-%s">%s</picture>',
+			$attr['data-ratio'],
+			$attr['data-layout'],
+			$html
+		);
+
+		return $html;
+	}
+
+	/**
+	 * Remove the (first two) height and width attrs from <img> markup.
+	 *
+	 * NOTE: Widthout this, we create duplicate properties
+	 *       with wp_get_attachment_image_attributes!
+	 *
+	 * @param  string $html The HTML <img> tag.
+	 *
+	 * @return string       The modified tag
+	 */
+	public function remove_dimension_attributes( string $html ) : string {
+		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
+		return $html;
+	}
+
+
+	/**
+	 * Remove the 'size-x' class, as we chance that elsewhere
+	 *
+	 * @param  string $html The HTML <img> tag.
+	 *
+	 * @return string       The modified tag
+	 */
+	public function remove_size_classes( string $html ) : string {
+		$html = preg_replace( '/(size|attachment)-[\w_-]*\s/', '', $html, 2 );
+		return $html;
+	}
+
+	/**
+	 * Remove any inline style attribute from <img> markup.
+	 *
+	 * @param  string $html The HTML <img> tag.
+	 *
+	 * @return string       The modified tag
+	 */
+	public function remove_style_attribute( string $html ) : string {
+		$html = preg_replace( '/(<[^>]+) style=".*?"/i', '$1', $html );
+		return $html;
 	}
 
 	/**
@@ -43,121 +118,64 @@ class Cloudflare_Image_Handler {
 		if ( ! $this->image_should_use_cloudflare( $atts ) ) {
 			return $atts;
 		}
-		$image = new Cloudflare_Image( $attachment->ID, $atts, $size );
+
+		$image = new Cloudflare_Image( $attachment->ID, $atts );
+
 		return $image->atts;
 	}
 
 	/**
-	 * Alter the SRCSET attribut generation
+	 * Get values from the image context
 	 *
-	 * @param array  $sources        The image sources.
-	 * @param array  $size_array     The sizes array.
-	 * @param string $image_src      The image src attr.
-	 * @param array  $image_meta     The image metadata.
-	 * @param int    $attachment_id  The attachment ID.
+	 * @param  string $context  The image's context.
+	 * @param  string $return   The val(s) to return.
 	 *
-	 * @return array                 The modified sources array
+	 * @return mixed            The requested values.
 	 */
-	public function alter_srcset_generation( array $sources, array $size_array, string $image_src, array $image_meta, int $attachment_id ) : array {
-		if ( ! $this->image_should_use_cloudflare( array( 'src' => $image_src ) ) ) {
-			return $sources;
-		}
-		$sources = $this->replace_sources( $sources, $attachment_id, $size_array );
-		return $sources;
-	}
+	public static function get_context_vals( string $context, string $return ) {
 
-	/**
-	 * Generate srcset sources from the original source and width
-	 *
-	 * @param array $sources        The image sources.
-	 * @param int   $attachment_id  The attachment ID.
-	 * @param array $size_array     The sizes array.
-	 *
-	 * @return array                The modified sources array
-	 */
-	private function replace_sources( $sources, $attachment_id, $size_array ) : array {
+		switch ( $context ) {
 
-		$full_image = wp_get_attachment_image_src( $attachment_id, 'full' );
-
-		$this->add_key_sizes( $sources );
-
-		foreach ( $sources as &$source ) {
-
-			// Alter the SRC to use Cloudflare.
-			$source['url'] = self::alter_src( $source_width = $full_image[0], $max_width = $source['value'] );
-
-			// Add x2 sizes for each registered variant (when it makes sense).
-			if ( $this->should_add_x2_size( $source['value'], $size_array[0] ) ) {
-				$x2             = $source['value'] * 2;
-				$sources[ $x2 ] = array(
-					'url'        => self::alter_src( $full_image[0], $x2 ),
-					'descriptor' => 'w',
-					'value'      => $x2,
+			case '4-columns':
+				$dimensions = array(
+					'w' => 800,
+					'h' => 600,
 				);
-			}
+				$srcset     = array(
+					array(
+						'h' => 123,
+						'w' => 456,
+					),
+					array(
+						'h' => 234,
+						'w' => 567,
+					),
+				);
+				$sizes      = '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)';
+				$ratio      = '4/3';
+				break;
+
+			case '3-columns':
+				$dimensions = array(
+					'w' => 600,
+					'h' => 400,
+				);
+				$srcset     = array(
+					array(
+						'h' => 123,
+						'w' => 456,
+					),
+				);
+				$sizes      = '(max-width: 1500px) calc(90vw - 20px), calc(90vw - 20px)';
+				$ratio      = '6/5';
+				break;
 		}
 
-		ksort( $sources );
-		return $sources;
-
-	}
-
-	/**
-	 * Add key sources
-	 *
-	 * @param array $sources        The image sources.
-	 *
-	 * @return array                The modified sources
-	 */
-	private function add_key_sizes( $sources ) : array {
-		$sources[ $size_array[0] ] = array(
-			'url'        => $full_image[0],
-			'descriptor' => 'w',
-			'value'      => $size_array[0],
-		);
-		return $sources;
-	}
-
-	/**
-	 * Determines if a x2 size should be added
-	 *
-	 * @param  int $source_width The SRC width.
-	 * @param  int $max_width    The full size image SRC width.
-	 *
-	 * @return bool
-	 */
-	private function should_add_x2_size( int $source_width, int $max_width ) : bool {
-		$x2 = $source_width * 2;
-		if ( $x2 <= ( $max_width * 2 ) ) {
-			return true;
+		if ( isset( $$return ) && $return ) {
+			return $$return;
 		}
+
 		return false;
-	}
-
-	/**
-	 * Replace a SRC string with a Cloudflared version
-	 *
-	 * @param  string $src               The SRC attr.
-	 * @param  int    $w                 The width in pixels.
-	 *
-	 * @return string      The modified SRC attr.
-	 */
-	public static function alter_src( string $src, int $w ) : string {
-		$cf_properties = array(
-			'width'   => $w,
-			'fit'     => 'crop',
-			'f'       => 'auto',
-			'gravity' => 'auto',
-			'onerror' => 'redirect',
-		);
-
-		$cf_prefix = get_site_url() . '/cdn-cgi/image/';
-		$cf_string = $cf_prefix . http_build_query(
-			$cf_properties,
-			'',
-			'%2C'
-		);
-		return str_replace( get_site_url(), $cf_string, $src );
 	}
 
 

@@ -1,13 +1,11 @@
 <?php
 /**
  * Plugin Name: Yoast Cloudflare images integration
- * Version: 1.0
+ * Version: 1.0.1
  * Description: Provides support for Cloudflared images
  * Author: Jono Alderson
  * Text Domain: yoast-cf-image
  */
-
-namespace Yoast_CF_Images;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'YOAST_CF_IMAGES_VERSION' ) ) {
-	define( 'YOAST_CF_IMAGES_VERSION', '1.0.0' );
+	define( 'YOAST_CF_IMAGES_VERSION', '1.0.1' );
 }
 
 if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_DIR' ) ) {
@@ -27,7 +25,6 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	define( 'YOAST_CF_IMAGES_PLUGIN_FILE', __FILE__ );
 }
 
-
 /**
  * Init the plugin
  */
@@ -36,6 +33,22 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	// Load our autoloaders.
 	require_once 'autoload.php';
 
-	Cloudflare_Image_Handler::register();
+	Yoast_CF_Images\Cloudflare_Image_Handler::register();
 
 } )();
+
+/**
+ * Returns a Cloudflared image
+ *
+ * @param  int   $id    The attachment ID.
+ * @param  array $atts  The atts to pass (see wp_get_attachment_image).
+ *
+ * @return string       The HTML <img> tag
+ */
+function get_cf_image( int $id, array $atts = array() ) : ?string {
+	$image = new Cloudflare_Image( $id, $atts );
+	if ( ! $image ) {
+		return null;
+	}
+	return $image;
+}
