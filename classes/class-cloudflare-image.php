@@ -28,12 +28,12 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init() : void {
-		$this->use_full_size();
-		$this->init_dimensions();
-		$this->init_srcset();
 		$this->init_src();
 		$this->init_ratio();
-		$this->add_classes();
+		$this->init_sizes();
+		$this->init_dimensions();
+		$this->init_srcset();
+		$this->init_classes();
 	}
 
 	/**
@@ -41,9 +41,7 @@ class Cloudflare_Image {
 	 *
 	 * @return void
 	 */
-	private function use_full_size() : void {
-		$full_image        = wp_get_attachment_image_src( $this->id, 'full' );
-		$this->atts['src'] = $full_image[0];
+	private function set_full_size_src() : void {
 	}
 
 	/**
@@ -70,7 +68,7 @@ class Cloudflare_Image {
 		if ( ! $ratio ) {
 			return;
 		}
-		$this->atts['ratio'] = $ratio;
+		$this->atts['data-ratio'] = $ratio;
 	}
 
 	/**
@@ -79,10 +77,19 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_src() : void {
-		$src = Helper::alter_src( $this->atts['src'], $this->atts['width'], $this->atts['height'] );
+
+		// Get the full-sized image.
+		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
+		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
+			return;
+		}
+
+		// Convert the SRC to a CF string.
+		$src = Helper::cf_src( $full_image[0], $this->atts['width'], $this->atts['height'] );
 		if ( ! $src ) {
 			return;
 		}
+
 		$this->atts['src'] = $src;
 	}
 
@@ -122,11 +129,11 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Add the SIZES attr
+	 * Init the sizes attr
 	 *
 	 * @return void
 	 */
-	private function add_sizes() : void {
+	private function init_sizes() : void {
 		$sizes = wp_get_attachment_image_sizes( $this->id, $this->size );
 		if ( ! $sizes ) {
 			return;
@@ -135,11 +142,11 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Add a cloudflare CLASS
+	 * Inits any custom classes
 	 *
 	 * @return void
 	 */
-	private function add_classes() : void {
+	private function init_classes() : void {
 		$this->atts['class'] .= ' cloudflared';
 	}
 

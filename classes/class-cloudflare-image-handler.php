@@ -37,7 +37,7 @@ class Cloudflare_Image_Handler {
 	}
 
 	/**
-	 * Remove inline style attribute from <img> markup.
+	 * Remove any inline style attribute from <img> markup.
 	 *
 	 * @param  string $html The HTML <img> tag.
 	 *

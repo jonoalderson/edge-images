@@ -18,7 +18,7 @@ class Cloudflare_Image_Helper {
 	 *
 	 * @return string      The modified SRC attr.
 	 */
-	public static function alter_src( string $src, int $w, int $h = null ) : string {
+	public static function cf_src( string $src, int $w, int $h = null ) : string {
 		$cf_properties = array(
 			'width'   => $w,
 			'fit'     => 'crop',
@@ -70,7 +70,7 @@ class Cloudflare_Image_Helper {
 	public static function create_srcset_val( string $src, int $w, int $h = null ) : string {
 		return sprintf(
 			'%s %dw',
-			self::alter_src( $src, $w, $h ),
+			self::cf_src( $src, $w, $h ),
 			$w
 		);
 	}
