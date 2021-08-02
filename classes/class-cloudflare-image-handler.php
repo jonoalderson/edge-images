@@ -16,10 +16,9 @@ class Cloudflare_Image_Handler {
 	 */
 	public static function register() : void {
 		$instance = new self();
-		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 10, 3 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 100 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 100 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 100 );
+		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 100, 3 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
 	}
 
@@ -42,9 +41,10 @@ class Cloudflare_Image_Handler {
 		}
 
 		$html = sprintf(
-			'<picture style="--aspect-ratio:%s" class="layout-%s">%s</picture>',
+			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
 			$attr['data-ratio'],
 			$attr['data-layout'],
+			$size,
 			$html
 		);
 
@@ -63,19 +63,6 @@ class Cloudflare_Image_Handler {
 	 */
 	public function remove_dimension_attributes( string $html ) : string {
 		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
-		return $html;
-	}
-
-
-	/**
-	 * Remove the 'size-x' class, as we chance that elsewhere
-	 *
-	 * @param  string $html The HTML <img> tag.
-	 *
-	 * @return string       The modified tag
-	 */
-	public function remove_size_classes( string $html ) : string {
-		$html = preg_replace( '/(size|attachment)-[\w_-]*\s/', '', $html, 2 );
 		return $html;
 	}
 
@@ -119,7 +106,7 @@ class Cloudflare_Image_Handler {
 			return $atts;
 		}
 
-		$image = new Cloudflare_Image( $attachment->ID, $atts );
+		$image = new Cloudflare_Image( $attachment->ID, $atts, $size );
 
 		return $image->atts;
 	}
@@ -127,14 +114,14 @@ class Cloudflare_Image_Handler {
 	/**
 	 * Get values from the image context
 	 *
-	 * @param  string $context  The image's context.
+	 * @param  string $size  The image's size.
 	 * @param  string $return   The val(s) to return.
 	 *
 	 * @return mixed            The requested values.
 	 */
-	public static function get_context_vals( string $context, string $return ) {
+	public static function get_context_vals( string $size, string $return ) {
 
-		switch ( $context ) {
+		switch ( $size ) {
 
 			case '4-columns':
 				$dimensions = array(
