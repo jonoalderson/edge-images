@@ -28,12 +28,12 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init() : void {
-		$this->init_src();
-		$this->init_ratio();
-		$this->init_sizes();
 		$this->init_dimensions();
-		$this->init_srcset();
+		$this->init_ratio();
 		$this->init_classes();
+		$this->init_src();
+		$this->init_srcset();
+		$this->init_sizes();
 	}
 
 	/**
