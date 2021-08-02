@@ -48,7 +48,7 @@ class Cloudflare_Image_Handler {
 
 		$atts = array(); // Placeholder for future requirements.
 
-		$image = get_cf_image( $block['attrs']['id'], $atts, 'large' );
+		$image = get_cf_image( $block['attrs']['id'], $atts, 'large', false );
 
 		return $image;
 	}

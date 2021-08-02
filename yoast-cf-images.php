@@ -43,10 +43,11 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
  * @param  int    $id    The attachment ID.
  * @param  array  $atts  The atts to pass (see wp_get_attachment_image).
  * @param  string $size  The image size.
+ * @param  bool   $echo   If the image should be echo'd.
  *
- * @return void
+ * @return false|string  The HTML
  */
-function get_cf_image( int $id, array $atts = array(), string $size ) : void {
+function get_cf_image( int $id, array $atts = array(), string $size, $echo = true ) {
 	$image = new Yoast_CF_Images\Cloudflare_Image( $id, $atts, $size );
 	if ( ! $image ) {
 		return;
@@ -55,5 +56,10 @@ function get_cf_image( int $id, array $atts = array(), string $size ) : void {
 	// Construct the <img> and wrap it in a <picture>.
 	$html = $image->construct_img_el( true );
 
-	echo $html;
+	if ( $echo ) {
+		echo $html;
+		return;
+	}
+
+	return $html;
 }
