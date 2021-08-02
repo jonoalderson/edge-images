@@ -42,9 +42,10 @@ class Cloudflare_Image_Handler {
 		}
 
 		$html = sprintf(
-			'<picture style="--aspect-ratio:%s" class="layout-%s">%s</picture>',
+			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
 			$attr['data-ratio'],
 			$attr['data-layout'],
+			$size,
 			$html
 		);
 
