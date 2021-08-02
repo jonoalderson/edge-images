@@ -111,7 +111,8 @@ class Cloudflare_Image {
 		}
 
 		// Convert the SRC to a CF string.
-		$src = Helper::cf_src( $full_image[0], $this->atts['width'], $this->atts['height'] );
+		$height = ( $this->atts['height'] ) ? $this->atts['height'] : null;
+		$src    = Helper::cf_src( $full_image[0], $this->atts['width'], $height );
 		if ( ! $src ) {
 			return;
 		}
