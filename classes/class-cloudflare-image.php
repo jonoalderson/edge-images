@@ -100,7 +100,7 @@ class Cloudflare_Image {
 		}
 
 		// Get the ratio components.
-		$ratio = preg_split( '#/#', $ratio );
+		$ratio = preg_split( '#/#', $this->atts['data-ratio'] );
 		if ( ! isset( $ratio[0] ) || ! isset( $ratio[1] ) ) {
 			return false;
 		}
