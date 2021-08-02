@@ -21,6 +21,10 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_DIR' ) ) {
 	define( 'YOAST_CF_IMAGES_PLUGIN_DIR', __DIR__ );
 }
 
+if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL' ) ) {
+	define( 'YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL', trailingslashit( plugins_url() ) . trailingslashit( plugin_basename( __DIR__ ) ) );
+}
+
 if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	define( 'YOAST_CF_IMAGES_PLUGIN_FILE', __FILE__ );
 }
