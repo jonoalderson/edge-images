@@ -19,7 +19,6 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
 	}
 
@@ -64,19 +63,6 @@ class Cloudflare_Image_Handler {
 	 */
 	public function remove_dimension_attributes( string $html ) : string {
 		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
-		return $html;
-	}
-
-
-	/**
-	 * Remove the 'size-x' class, as we chance that elsewhere
-	 *
-	 * @param  string $html The HTML <img> tag.
-	 *
-	 * @return string       The modified tag
-	 */
-	public function remove_size_classes( string $html ) : string {
-		$html = preg_replace( '/(size|attachment)-[\w_-]*\s/', '', $html, 2 );
 		return $html;
 	}
 

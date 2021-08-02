@@ -33,7 +33,6 @@ class Cloudflare_Image {
 		$this->init_properties();
 		$this->init_dimensions();
 		$this->init_ratio();
-		$this->init_classes();
 		$this->init_layout();
 		$this->init_src();
 		$this->init_srcset();
@@ -158,20 +157,6 @@ class Cloudflare_Image {
 			return;
 		}
 		$this->atts['sizes'] = $sizes;
-	}
-
-	/**
-	 * Inits any custom classes
-	 *
-	 * @return void
-	 */
-	private function init_classes() : void {
-		$classes = array(
-			'size-' . sanitize_title( $this->size ), // Replaces native.
-			'attachment-' . sanitize_title( $this->size ), // Replaces native.
-		);
-
-		$this->atts['class'] .= implode( ' ', $classes );
 	}
 
 
