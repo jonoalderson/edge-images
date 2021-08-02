@@ -37,6 +37,7 @@ class Cloudflare_Image {
 		$this->init_src();
 		$this->init_srcset();
 		$this->init_sizes();
+		print_r( $this );
 	}
 
 	/**
