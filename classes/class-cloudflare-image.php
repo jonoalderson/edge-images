@@ -147,11 +147,12 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_classes() : void {
-		$clases               = array(
-			'image-cloudflared',
-			'size-' . sanitize_title( $this->atts['data-context'] ),
-			'attachment-' . sanitize_title( $this->atts['data-context'] ),
+		$classes = array(
+			'image-cloudflared', // Generic.
+			'size-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
+			'attachment-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
 		);
+
 		$this->atts['class'] .= implode( ' ', $classes );
 	}
 
