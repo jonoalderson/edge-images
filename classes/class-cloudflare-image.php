@@ -54,7 +54,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_layout() : void {
-		$layout = Handler::get_context_vals( $this->atts['data-context'], 'layout' );
+		$layout = Handler::get_context_vals( $this->atts['size'], 'layout' );
 		if ( ! $layout ) {
 			$layout = 'responsive';
 		}
@@ -67,7 +67,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_dimensions() : void {
-		$dimensions = Handler::get_context_vals( $this->atts['data-context'], 'dimensions' );
+		$dimensions = Handler::get_context_vals( $this->atts['size'], 'dimensions' );
 		if ( ! $dimensions ) {
 			return;
 		}
@@ -81,7 +81,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_ratio() : void {
-		$ratio = Handler::get_context_vals( $this->atts['data-context'], 'ratio' );
+		$ratio = Handler::get_context_vals( $this->atts['size'], 'ratio' );
 		if ( ! $ratio ) {
 			return;
 		}
@@ -118,7 +118,7 @@ class Cloudflare_Image {
 	private function init_srcset() : void {
 		$srcset = array_merge(
 			$this->add_generic_srcset_sizes(),
-			Helper::get_srcset_sizes_from_context( $this->atts['src'], $this->atts['data-context'] )
+			Helper::get_srcset_sizes_from_context( $this->atts['src'], $this->atts['size'] )
 		);
 		if ( empty( $srcset ) ) {
 			return;
@@ -151,7 +151,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_sizes() : void {
-		$sizes = Handler::get_context_vals( $this->atts['data-context'], 'sizes' );
+		$sizes = Handler::get_context_vals( $this->atts['size'], 'sizes' );
 		if ( ! $sizes ) {
 			return;
 		}
@@ -165,8 +165,8 @@ class Cloudflare_Image {
 	 */
 	private function init_classes() : void {
 		$classes = array(
-			'size-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
-			'attachment-' . sanitize_title( $this->atts['data-context'] ), // Replaces native.
+			'size-' . sanitize_title( $this->atts['size'] ), // Replaces native.
+			'attachment-' . sanitize_title( $this->atts['size'] ), // Replaces native.
 		);
 
 		$this->atts['class'] .= implode( ' ', $classes );
