@@ -20,6 +20,13 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_size_classes' ), 10 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 20, 5 );
+	}
+
+
+	public function wrap_in_picture( string $html, int $attachment_id, string|array $size, bool $icon, array $attr ) : string {
+		print_r( $attr );
+		die;
 	}
 
 	/**
@@ -36,6 +43,7 @@ class Cloudflare_Image_Handler {
 		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
 		return $html;
 	}
+
 
 	/**
 	 * Remove the 'size-x' class, as we chance that elsewhere
