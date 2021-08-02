@@ -51,8 +51,9 @@ class Cloudflare_Image_Helper {
 		$sizes  = Handler::get_context_vals( $size, 'srcset' );
 		$srcset = array();
 		foreach ( $sizes as $v ) {
-			$srcset[] = self::create_srcset_val( $src, $v['w'], $v['h'] );
-			$srcset[] = self::create_srcset_val( $src, $v['w'] * 2, $v['h'] * 2 );
+			$h        = ( isset( $v['h'] ) ) ? $v['h'] : null;
+			$srcset[] = self::create_srcset_val( $src, $v['w'], $h );
+			$srcset[] = self::create_srcset_val( $src, $v['w'] * 2, $h * 2 );
 		}
 		return $srcset;
 	}
