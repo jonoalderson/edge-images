@@ -169,9 +169,12 @@ class Cloudflare_Image {
 	 */
 	private function add_generic_srcset_sizes() : array {
 		$srcset = array();
-		for ( $w = 100; $w <= 2400; $w += 100 ) {
+		for ( $w = 300; $w <= 2400; $w += 100 ) {
 			$h        = $this->calculate_height_from_ratio( $w );
 			$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w, $h );
+			if ( $w >= 1200 ) {
+				$w += 100; // Increase the increments on larger sizes.
+			}
 		}
 		return $srcset;
 	}
