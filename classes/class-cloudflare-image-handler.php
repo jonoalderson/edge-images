@@ -2,7 +2,7 @@
 
 namespace Yoast_CF_Images;
 
-use Yoast_CF_Images\Cloudflare_Image_Helper as Helper;
+use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
 
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.
@@ -23,6 +23,7 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
+		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 1000, 5 );
 	}
 
 	/**
@@ -31,7 +32,36 @@ class Cloudflare_Image_Handler {
 	 * @return void
 	 */
 	public function enqueue_css() : void {
-		wp_enqueue_style( 'yoast-cf-images-image', Helper::STYLES_URL . '/images.css', array(), YOAST_CF_IMAGES_VERSION );
+		wp_enqueue_style( 'yoast-cf-images-image', Helpers::STYLES_URL . '/images.css', array(), YOAST_CF_IMAGES_VERSION );
+	}
+
+	/**
+	 * Alter block editor image rendering
+	 *
+	 * TODO: Account for when images are linked (via $block['attrs']['linkDestination']).
+	 * TODO: Account for gallery blocks.
+	 * TODO: Account for figure/figcaption.
+	 *
+	 * @param  string $block_content  The block's HTML content.
+	 * @param  array  $block           The block's properties.
+	 *
+	 * @return string                 The block's modified content
+	 */
+	public function alter_image_block_rendering( $block_content, $block ) : string {
+
+		if ( 'core/image' !== $block['blockName'] ) {
+			return $block_content;
+		}
+
+		if ( ! isset( $block['attrs']['id'] ) ) {
+			return $block_content;
+		}
+
+		$atts = array(); // Placeholder for future requirements.
+
+		$image = get_cf_image( $block['attrs']['id'], $atts, 'large', false );
+
+		return $image;
 	}
 
 	/**
@@ -45,7 +75,7 @@ class Cloudflare_Image_Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public function wrap_in_picture( string $html, int $attachment_id, $size, bool $icon, array $attr ) : string {
+	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, array $attr = array() ) : string {
 
 		if ( ! isset( $attr['data-ratio'] ) || ! isset( $attr['data-layout'] ) ) {
 			return $html; // Bail if there's no ratio or layout.
@@ -167,6 +197,13 @@ class Cloudflare_Image_Handler {
 				$sizes      = '(max-width: 1500px) calc(90vw - 20px), calc(90vw - 20px)';
 				$ratio      = '6/5';
 				break;
+			default:
+				global $content_width;
+				$dimensions = array(
+					'w' => ( $content_width ) ? $content_width : 800,
+				);
+				$sizes      = '(max-width: 800px) 100vw, 800px';
+				$ratio      = '4/3';
 		}
 
 		if ( isset( $$return ) && $return ) {

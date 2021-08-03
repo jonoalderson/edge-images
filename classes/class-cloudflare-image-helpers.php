@@ -7,7 +7,9 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
 /**
  * Provides helper methods.
  */
-class Cloudflare_Image_Helper {
+class Cloudflare_Image_Helpers {
+
+	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
 
 	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
 
@@ -42,21 +44,27 @@ class Cloudflare_Image_Helper {
 	}
 
 	/**
-	 * Adds key srcset sizes from the image's context
+	 * Adds key srcset sizes from the image's size
 	 *
 	 * @param string $src The image src.
-	 * @param string $context The image's context.
+	 * @param string $size The image's size.
 	 *
 	 * @return array The srcset attr
 	 */
-	public static function get_srcset_sizes_from_context( string $src, string $context ) : array {
-		$sizes  = Handler::get_context_vals( $context, 'srcset' );
+	public static function get_srcset_sizes_from_context( string $src, string $size ) : array {
+		$sizes  = Handler::get_context_vals( $size, 'srcset' );
 		$srcset = array();
-		foreach ( $sizes as $size ) {
-			$srcset[] = self::create_srcset_val( $src, $size['w'], $size['h'] );
-			$srcset[] = self::create_srcset_val( $src, $size['w'] * 2, $size['h'] * 2 );
+		if ( ! $sizes ) {
+			return $srcset; // Bail if there are no srcset options.
 		}
-		$dimensions = Handler::get_context_vals( $context, 'dimensions' );
+
+		// Create the srcset strings and x2 strings.
+		foreach ( $sizes as $v ) {
+			$h        = ( isset( $v['h'] ) ) ? $v['h'] : null;
+			$srcset[] = self::create_srcset_val( $src, $v['w'], $h );
+			$srcset[] = self::create_srcset_val( $src, $v['w'] * 2, $h * 2 );
+		}
+
 		return $srcset;
 	}
 
