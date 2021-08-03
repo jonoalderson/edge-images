@@ -31,9 +31,9 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 		$this->init_dimensions();
+		$this->init_src();
 		$this->init_ratio();
 		$this->init_layout();
-		$this->init_src();
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
@@ -129,6 +129,7 @@ class Cloudflare_Image {
 
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
+
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
 			return;
 		}
@@ -202,6 +203,7 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function add_x2_srcset_size() : array {
+
 		$w        = $this->atts['width'];
 		$h        = $this->calculate_height_from_ratio( $w );
 		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w, $h );
@@ -219,7 +221,8 @@ class Cloudflare_Image {
 	private function init_sizes() : void {
 		$sizes = Handler::get_context_vals( $this->size, 'sizes' );
 		if ( ! $sizes ) {
-			return;
+			$sizes = wp_get_attachment_image_sizes( $this->id, $this->size );
+
 		}
 		$this->atts['sizes'] = $sizes;
 	}

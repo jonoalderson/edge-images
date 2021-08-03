@@ -209,12 +209,6 @@ class Cloudflare_Image_Handler {
 					$vals = self::get_wp_size_vals( 'large' );
 				}
 
-				// Thumbnails should always have a fixed layout.
-				if ( $size === 'thumbnail' ) {
-					$vals['layout'] = 'fixed';
-					$vals['sizes']  = "(max-width: {$vals['dimensions']['w']}px) 100vw, {$vals['dimensions']['w']}px";
-				}
-
 				foreach ( self::get_image_vals_keys() as $key ) {
 					if ( ! isset( $vals[ $key ] ) ) {
 						continue;
@@ -222,6 +216,11 @@ class Cloudflare_Image_Handler {
 					$$key = $vals[ $key ];
 				}
 				break;
+		}
+
+		// Thumbnails should always be 'fixed'.
+		if ( $size === 'thumbnail' ) {
+			$layout = 'fixed';
 		}
 
 		if ( isset( $$return ) && $return ) {
