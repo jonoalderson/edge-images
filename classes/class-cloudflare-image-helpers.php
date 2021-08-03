@@ -7,7 +7,7 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
 /**
  * Provides helper methods.
  */
-class Cloudflare_Image_Helper {
+class Cloudflare_Image_Helpers {
 
 	/**
 	 * Replace a SRC string with a Cloudflared version
@@ -53,9 +53,6 @@ class Cloudflare_Image_Helper {
 		if ( ! $sizes ) {
 			return $srcset; // Bail if there are no srcset options.
 		}
-
-		print_r( $sizes );
-		die;
 
 		// Create the srcset strings and x2 strings.
 		foreach ( $sizes as $v ) {

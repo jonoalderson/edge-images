@@ -53,11 +53,8 @@ function get_cf_image( int $id, array $atts = array(), string $size, $echo = tru
 		return;
 	}
 
-	// Construct the <img> and wrap it in a <picture>.
+	// Construct the <img>, and wrap it in a <picture>.
 	$html = $image->construct_img_el( true );
-
-	print_r( $html );
-	die;
 
 	if ( $echo ) {
 		echo $html;
