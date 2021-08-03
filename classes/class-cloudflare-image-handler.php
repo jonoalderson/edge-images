@@ -2,6 +2,8 @@
 
 namespace Yoast_CF_Images;
 
+use Yoast_CF_Images\Cloudflare_Image_Helper as Helper;
+
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.
  */
@@ -20,9 +22,18 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
+		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 1000, 5 );
 	}
 
+	/**
+	 * Enqueue our CSS
+	 *
+	 * @return void
+	 */
+	public function enqueue_css() : void {
+		wp_enqueue_style( 'yoast-cf-images-image', Helper::STYLES_URL . '/images.css', array(), YOAST_CF_IMAGES_VERSION );
+	}
 
 	/**
 	 * Alter block editor image rendering

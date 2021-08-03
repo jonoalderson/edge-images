@@ -1,0 +1,26 @@
+picture {
+	display: block;
+}
+picture[style*="--aspect-ratio"] > :first-child {
+  display: block;
+  width: 100%;
+}
+picture[style*="--aspect-ratio"] > img {
+  height: auto;
+}
+@supports (--custom:property) {
+  picture[style*="--aspect-ratio"] {
+    position: relative;
+  }
+  picture[style*="--aspect-ratio"]::before {
+    content: "";
+    display: block;
+    padding-bottom: calc(100% / (var(--aspect-ratio)));
+  }
+  picture[style*="--aspect-ratio"] > :first-child {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+  }
+}
