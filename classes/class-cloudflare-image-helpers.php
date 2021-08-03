@@ -11,8 +11,6 @@ class Cloudflare_Image_Helpers {
 
 	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
 
-	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
-
 	/**
 	 * Replace a SRC string with a Cloudflared version
 	 *
