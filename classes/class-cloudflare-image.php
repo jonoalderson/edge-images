@@ -30,8 +30,8 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init() : void {
-		$this->init_ratio();
 		$this->init_dimensions();
+		$this->init_ratio();
 		$this->init_layout();
 		$this->init_src();
 		$this->init_srcset();
@@ -62,6 +62,7 @@ class Cloudflare_Image {
 
 		// Bail if dimensions aren't available.
 		$dimensions = Handler::get_context_vals( $this->size, 'dimensions' );
+
 		if ( ! $dimensions ) {
 			return;
 		}
@@ -70,7 +71,7 @@ class Cloudflare_Image {
 		$this->atts['width'] = $dimensions['w'];
 
 		// Set the height, or calculate it if we know the ratio.
-		if ( isset( $this->atts['height'] ) ) {
+		if ( isset( $dimensions['h'] ) ) {
 			$this->atts['height'] = $dimensions['h'];
 		} else {
 			$height               = $this->calculate_height_from_ratio( $dimensions['w'] );
@@ -110,7 +111,11 @@ class Cloudflare_Image {
 	private function init_ratio() : void {
 		$ratio = Handler::get_context_vals( $this->size, 'ratio' );
 		if ( ! $ratio ) {
-			return;
+			if ( isset( $this->atts['width'] ) && isset( $this->atts['height'] ) ) {
+				$ratio = $this->atts['width'] . '/' . $this->atts['height'];
+			} else {
+				return;
+			}
 		}
 		$this->atts['data-ratio'] = $ratio;
 	}
@@ -146,10 +151,24 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_srcset() : void {
-		$srcset = array_merge(
-			$this->add_generic_srcset_sizes(),
-			Helpers::get_srcset_sizes_from_context( $this->atts['data-full-src'], $this->size )
-		);
+
+		switch ( $this->atts['data-layout'] ) {
+			case 'responsive':
+				$srcset = array_merge(
+					$this->add_generic_srcset_sizes(),
+					Helpers::get_srcset_sizes_from_context( $this->atts['data-full-src'], $this->size )
+				);
+				break;
+			case 'fixed':
+				$srcset = array_merge(
+					$this->add_x2_srcset_size(),
+					Helpers::get_srcset_sizes_from_context( $this->atts['data-full-src'], $this->size )
+				);
+				break;
+			default:
+				return;
+		}
+
 		if ( empty( $srcset ) ) {
 			return;
 		}
@@ -163,8 +182,6 @@ class Cloudflare_Image {
 	/**
 	 * Adds generic srcset values
 	 *
-	 * TODO: Get ratio, calculate height, pass to creation method.
-	 *
 	 * @return array The srcset values
 	 */
 	private function add_generic_srcset_sizes() : array {
@@ -176,6 +193,21 @@ class Cloudflare_Image {
 				$w += 100; // Increase the increments on larger sizes.
 			}
 		}
+		return $srcset;
+	}
+
+	/**
+	 * Adds x2 srcset values
+	 *
+	 * @return array The srcset values
+	 */
+	private function add_x2_srcset_size() : array {
+		$w        = $this->atts['width'];
+		$h        = $this->calculate_height_from_ratio( $w );
+		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w, $h );
+
+		$h        = $this->calculate_height_from_ratio( $w * 2 );
+		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w * 2, $h );
 		return $srcset;
 	}
 

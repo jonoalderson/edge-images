@@ -77,10 +77,6 @@ class Cloudflare_Image_Handler {
 	 */
 	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, array $attr = array() ) : string {
 
-		if ( ! isset( $attr['data-ratio'] ) || ! isset( $attr['data-layout'] ) ) {
-			return $html; // Bail if there's no ratio or layout.
-		}
-
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
 			$attr['data-ratio'],
@@ -164,46 +160,61 @@ class Cloudflare_Image_Handler {
 
 		switch ( $size ) {
 
-			case '4-columns':
+			case '4-columns': // An example layout.
 				$dimensions = array(
 					'w' => 800,
 					'h' => 600,
 				);
 				$srcset     = array(
 					array(
-						'h' => 123,
 						'w' => 456,
+						'h' => 123,
 					),
 					array(
-						'h' => 234,
 						'w' => 567,
+						'h' => 234,
 					),
 				);
 				$sizes      = '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)';
 				$ratio      = '4/3';
 				break;
 
-			case '3-columns':
+			case '3-columns': // An example layout.
 				$dimensions = array(
 					'w' => 600,
 					'h' => 400,
 				);
 				$srcset     = array(
 					array(
-						'h' => 123,
 						'w' => 456,
+						'h' => 123,
 					),
 				);
 				$sizes      = '(max-width: 1500px) calc(90vw - 20px), calc(90vw - 20px)';
 				$ratio      = '6/5';
 				break;
-			default:
-				global $content_width;
+
+			case 'avatar': // An example custom fixed layout.
 				$dimensions = array(
-					'w' => ( $content_width ) ? $content_width : 800,
+					'w' => 128,
+					'h' => 128,
 				);
-				$sizes      = '(max-width: 800px) 100vw, 800px';
-				$ratio      = '4/3';
+				$layout     = 'fixed';
+				$sizes      = '(max-width: 128px) 100vw, 128px';
+				break;
+
+			default: // Set some sensible fallback behavior.
+				$vals = self::get_wp_size_vals( $size );
+				if ( ! $vals ) {
+					$vals = self::get_wp_size_vals( 'large' );
+				}
+				foreach ( self::get_image_vals_keys() as $key ) {
+					if ( ! isset( $vals[ $key ] ) ) {
+						continue;
+					}
+					$$key = $vals[ $key ];
+				}
+				break;
 		}
 
 		if ( isset( $$return ) && $return ) {
@@ -211,6 +222,54 @@ class Cloudflare_Image_Handler {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get the vals for a WP image size
+	 *
+	 * @param  string $size The size.
+	 *
+	 * @return false|array  The values
+	 */
+	private static function get_wp_size_vals( string $size ) {
+		$image_sizes         = array();
+		$default_image_sizes = get_intermediate_image_sizes();
+
+		if ( ! in_array( $size, $default_image_sizes, true ) ) {
+			return false;
+		}
+
+		$key = array_search( $size, $default_image_sizes, true );
+
+		$vals = array(
+			'dimensions' => array(
+				'w' => intval( get_option( "{$default_image_sizes[$key]}_size_w" ) ),
+				'h' => intval( get_option( "{$default_image_sizes[$key]}_size_h" ) ),
+			),
+		);
+
+		// Thumbnails should always have a fixed layout.
+		if ( $size === 'thumbnail' ) {
+			$vals['layout'] = 'fixed';
+		}
+
+		return $vals;
+
+	}
+
+	/**
+	 * Get all of the customizable vals for image sizes
+	 *
+	 * @return array The keys.
+	 */
+	private static function get_image_vals_keys() : array {
+		return array(
+			'dimensions',
+			'srcset',
+			'sizes',
+			'ratio',
+			'layout',
+		);
 	}
 
 
