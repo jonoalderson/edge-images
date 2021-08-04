@@ -32,13 +32,18 @@ class Cloudflare_Image_Helpers {
 			$cf_properties['height'] = $h;
 		}
 
-		$cf_prefix = get_site_url() . '/cdn-cgi/image/';
+		$cf_prefix = '/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
 			'',
 			'%2C'
 		);
-		return str_replace( get_site_url(), $cf_string, $src );
+
+		$url = parse_url($src);
+		$path = $url['path'];
+		$src = '/https://yoast.com' . $path;
+
+		return 'https://yoast.com' . $cf_string . $src;
 	}
 
 	/**

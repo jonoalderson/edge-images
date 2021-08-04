@@ -1,15 +1,11 @@
 <?php
-
 namespace Yoast_CF_Images;
-
 use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
 use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
-
 /**
  * Generates and managers a Cloudflared image.
  */
 class Cloudflare_Image {
-
 	/**
 	 * Construct the image object
 	 *
@@ -69,18 +65,14 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_width() : void {
-
 		if ( isset( $this->atts['width'] ) && $this->atts['width'] ) {
 			return; // Bail if already set.
 		}
-
 		// Bail if dimensions aren't available.
 		$dimensions = Handler::get_context_vals( $this->size, 'dimensions' );
-
 		if ( ! $dimensions ) {
 			return;
 		}
-
 		// Set the width.
 		$this->atts['width'] = $dimensions['w'];
 	}
@@ -91,18 +83,14 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_height() : void {
-
 		if ( isset( $this->atts['height'] ) && $this->atts['height'] ) {
 			return; // Bail if already set.
 		}
-
 		// Bail if dimensions aren't available.
 		$dimensions = Handler::get_context_vals( $this->size, 'dimensions' );
-
 		if ( ! $dimensions ) {
 			return;
 		}
-
 		// Set the height, or calculate it if we know the ratio.
 		if ( isset( $dimensions['h'] ) ) {
 			$this->atts['height'] = $dimensions['h'];
@@ -120,18 +108,15 @@ class Cloudflare_Image {
 	 * @return false|int    The height
 	 */
 	private function calculate_height_from_ratio( int $width ) {
-
 		// We need the width and the ratio.
 		if ( ! isset( $this->atts['data-ratio'] ) ) {
 			return false;
 		}
-
 		// Get the ratio components.
 		$ratio = preg_split( '#/#', $this->atts['data-ratio'] );
 		if ( ! isset( $ratio[0] ) || ! isset( $ratio[1] ) ) {
 			return false;
 		}
-
 		// Divide the width by the ratio to get the height.
 		return ceil( $width / ( $ratio[0] / $ratio[1] ) );
 	}
@@ -159,22 +144,17 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_src() : void {
-
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
-
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
 			return;
 		}
-
 		// Convert the SRC to a CF string.
 		$height = ( isset( $this->atts['height'] ) ) ? $this->atts['height'] : null;
 		$cf_src = Helpers::cf_src( $full_image[0], $this->atts['width'], $height );
-
 		if ( ! $cf_src ) {
 			return;
 		}
-
 		$this->atts['src']           = $cf_src;
 		$this->atts['data-full-src'] = $full_image[0];
 	}
@@ -185,7 +165,6 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_srcset() : void {
-
 		switch ( $this->atts['data-layout'] ) {
 			case 'responsive':
 				$srcset = array_merge(
@@ -202,7 +181,6 @@ class Cloudflare_Image {
 			default:
 				return;
 		}
-
 		if ( empty( $srcset ) ) {
 			return;
 		}
@@ -236,11 +214,9 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function add_x2_srcset_size() : array {
-
 		$w        = $this->atts['width'];
 		$h        = $this->calculate_height_from_ratio( $w );
 		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w, $h );
-
 		$h        = $this->calculate_height_from_ratio( $w * 2 );
 		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w * 2, $h );
 		return $srcset;
@@ -254,8 +230,11 @@ class Cloudflare_Image {
 	private function init_sizes() : void {
 		$sizes = Handler::get_context_vals( $this->size, 'sizes' );
 		if ( ! $sizes ) {
-			$sizes = wp_get_attachment_image_sizes( $this->id, $this->size );
+			$width = $this->atts['width'];
 
+			$sizes = "(max-width: ".$width."px) 100vw, ".$width."px";
+
+			//$sizes = wp_get_attachment_image_sizes( $this->id, $this->size );
 		}
 		$this->atts['sizes'] = $sizes;
 	}
@@ -280,14 +259,11 @@ class Cloudflare_Image {
 				)
 			)
 		);
-
 		if ( ! $wrap_in_picture ) {
 			return $html;
 		}
-
 		// Wrap the <img> in a <picture>.
 		$html = Handler::wrap_in_picture( $html, $this->id, $this->size, false, $this->atts );
-
 		return $html;
 	}
 
@@ -306,5 +282,4 @@ class Cloudflare_Image {
 			)
 		);
 	}
-
 }
