@@ -67,7 +67,7 @@ class Cloudflare_Image_Handler {
 		$atts['height'] = $image_sizes[1];
 		$atts['width']  = $image_sizes[0];
 
-		if( $atts['width'] > $content_width ) {
+		if ( $atts['width'] > $content_width ) {
 			$ratio = $content_width / $image_sizes[0];
 
 			$atts['width']  = $content_width;

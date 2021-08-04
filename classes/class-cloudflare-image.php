@@ -1,5 +1,6 @@
 <?php
 namespace Yoast_CF_Images;
+
 use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
 use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
 /**
@@ -231,10 +232,7 @@ class Cloudflare_Image {
 		$sizes = Handler::get_context_vals( $this->size, 'sizes' );
 		if ( ! $sizes ) {
 			$width = $this->atts['width'];
-
-			$sizes = "(max-width: ".$width."px) 100vw, ".$width."px";
-
-			//$sizes = wp_get_attachment_image_sizes( $this->id, $this->size );
+			$sizes = '(max-width: ' . $width . 'px) 100vw, ' . $width . 'px';
 		}
 		$this->atts['sizes'] = $sizes;
 	}
