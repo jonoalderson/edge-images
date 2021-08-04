@@ -59,7 +59,22 @@ class Cloudflare_Image_Handler {
 
 		$atts = array(); // Placeholder for future requirements.
 
-		$image = get_cf_image( $block['attrs']['id'], $atts, 'large', false );
+		$image_url   = wp_get_attachment_image_src( $block['attrs']['id'], 'full' );
+		$image_sizes = getimagesize( $image_url[0] );
+
+		global $content_width;
+
+		$atts['height'] = $image_sizes[1];
+		$atts['width']  = $image_sizes[0];
+
+		if( $atts['width'] > $content_width ) {
+			$ratio = $content_width / $image_sizes[0];
+
+			$atts['width']  = $content_width;
+			$atts['height'] = ceil( $image_sizes[1] * $ratio );
+		}
+
+		$image = get_cf_image( $block['attrs']['id'], $atts, 'content', false );
 
 		return $image;
 	}
