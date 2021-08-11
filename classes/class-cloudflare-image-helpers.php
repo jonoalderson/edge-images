@@ -10,6 +10,7 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
 class Cloudflare_Image_Helpers {
 
 	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
+	const CF_HOST    = 'https://yoast.com';
 
 	/**
 	 * Replace a SRC string with a Cloudflared version
@@ -32,18 +33,18 @@ class Cloudflare_Image_Helpers {
 			$cf_properties['height'] = $h;
 		}
 
-		$cf_prefix = '/cdn-cgi/image/';
+		$cf_prefix = self::CF_HOST . '/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
 			'',
 			'%2C'
 		);
 
-		$url = parse_url($src);
+		$url  = wp_parse_url( $src );
 		$path = $url['path'];
-		$src = '/https://yoast.com' . $path;
+		$src  = '/' . self::CF_HOST . $path;
 
-		return 'https://yoast.com' . $cf_string . $src;
+		return $cf_string . $src;
 	}
 
 	/**
@@ -86,6 +87,21 @@ class Cloudflare_Image_Helpers {
 			self::cf_src( $src, $w, $h ),
 			$w
 		);
+	}
+
+	/**
+	 * Get the content width value
+	 *
+	 * @param  integer $fallback A fallback width, in pixels.
+	 *
+	 * @return int               The content width value
+	 */
+	public static function get_content_width( int $fallback = 800 ) : int {
+		global $content_width;
+		if ( ! $content_width ) {
+			$content_width = $fallback;
+		}
+		return $content_width;
 	}
 
 }

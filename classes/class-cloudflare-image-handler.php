@@ -48,7 +48,6 @@ class Cloudflare_Image_Handler {
 	 * @return string                 The block's modified content
 	 */
 	public function alter_image_block_rendering( $block_content, $block ) : string {
-
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
 		}
@@ -57,26 +56,37 @@ class Cloudflare_Image_Handler {
 			return $block_content;
 		}
 
-		$atts = array(); // Placeholder for future requirements.
-
-		$image_url   = wp_get_attachment_image_src( $block['attrs']['id'], 'full' );
-		$image_sizes = getimagesize( $image_url[0] );
-
-		global $content_width;
-
-		$atts['height'] = $image_sizes[1];
-		$atts['width']  = $image_sizes[0];
-
-		if ( $atts['width'] > $content_width ) {
-			$ratio = $content_width / $image_sizes[0];
-
-			$atts['width']  = $content_width;
-			$atts['height'] = ceil( $image_sizes[1] * $ratio );
+		$image = wp_get_attachment_image_src( $block['attrs']['id'], 'full' );
+		if ( ! $image ) {
+			return $block_content;
 		}
 
+		$atts  = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
 		$image = get_cf_image( $block['attrs']['id'], $atts, 'content', false );
 
 		return $image;
+	}
+
+	/**
+	 * Constrain the width of the image to the max content width
+	 *
+	 * @param  int $w The width.
+	 * @param  int $h The height.
+	 *
+	 * @return array The atts values
+	 */
+	private function constrain_dimensions_to_content_width( int $w, int $h ) : array {
+		$w             = $sizes[0];
+		$h             = $sizes[1];
+		$content_width = Helpers::get_content_width();
+
+		if ( $w > $content_width ) {
+			$ratio          = $content_width / $h;
+			$atts['width']  = $content_width;
+			$atts['height'] = ceil( $w * $ratio );
+		}
+
+		return $atts;
 	}
 
 	/**
