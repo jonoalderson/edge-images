@@ -7,6 +7,29 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
  * Generates and managers a Cloudflared image.
  */
 class Cloudflare_Image {
+
+
+	/**
+	 * The attachment ID
+	 *
+	 * @var int
+	 */
+	private $id;
+
+	/**
+	 * The attachment attributes
+	 *
+	 * @var array
+	 */
+	protected $atts = array();
+
+	/**
+	 * The attachment size
+	 *
+	 * @var string|array
+	 */
+	protected $size;
+
 	/**
 	 * Construct the image object
 	 *
@@ -14,10 +37,10 @@ class Cloudflare_Image {
 	 * @param array  $atts  The attachment attributes.
 	 * @param string $size The size.
 	 */
-	public function __construct( int $id, array $atts = array(), string $size ) {
+	public function __construct( int $id, array $atts = array(), $size ) {
 		$this->id   = $id;
 		$this->atts = $atts;
-		$this->size = $size;
+		$this->size = $this - $size;
 		$this->init();
 	}
 
@@ -109,15 +132,18 @@ class Cloudflare_Image {
 	 * @return false|int    The height
 	 */
 	private function calculate_height_from_ratio( int $width ) {
+
 		// We need the width and the ratio.
 		if ( ! isset( $this->atts['data-ratio'] ) ) {
 			return false;
 		}
+
 		// Get the ratio components.
 		$ratio = preg_split( '#/#', $this->atts['data-ratio'] );
 		if ( ! isset( $ratio[0] ) || ! isset( $ratio[1] ) ) {
 			return false;
 		}
+
 		// Divide the width by the ratio to get the height.
 		return ceil( $width / ( $ratio[0] / $ratio[1] ) );
 	}
@@ -145,17 +171,20 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_src() : void {
+
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
 			return;
 		}
+
 		// Convert the SRC to a CF string.
 		$height = ( isset( $this->atts['height'] ) ) ? $this->atts['height'] : null;
 		$cf_src = Helpers::cf_src( $full_image[0], $this->atts['width'], $height );
 		if ( ! $cf_src ) {
 			return;
 		}
+
 		$this->atts['src']           = $cf_src;
 		$this->atts['data-full-src'] = $full_image[0];
 	}
@@ -218,8 +247,7 @@ class Cloudflare_Image {
 		$w        = $this->atts['width'];
 		$h        = $this->calculate_height_from_ratio( $w );
 		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w, $h );
-		$h        = $this->calculate_height_from_ratio( $w * 2 );
-		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w * 2, $h );
+		$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w * 2, $h * 2 );
 		return $srcset;
 	}
 
@@ -235,6 +263,32 @@ class Cloudflare_Image {
 			$sizes = '(max-width: ' . $width . 'px) 100vw, ' . $width . 'px';
 		}
 		$this->atts['sizes'] = $sizes;
+	}
+
+	/**
+	 * Set a size attribute
+	 *
+	 * @param string|array $size The size value.
+	 */
+	private function set_size( $size ) : string {
+		$size       = $this->sanitize_size( $size );
+		$this->size = $size;
+		return $size;
+	}
+
+	/**
+	 * Sanitize a size attribute
+	 *
+	 * @param string|array $size The size value.
+	 *
+	 * @return string            The sanitized value.
+	 */
+	private function sanitize_size( $size ) : string {
+		if ( is_array( $size ) ) {
+			// Convert [640, 480] into '640x480'.
+			$size = implode( 'x', $size );
+		}
+		return $size;
 	}
 
 	/**

@@ -76,14 +76,14 @@ class Cloudflare_Image_Handler {
 	 * @return array The atts values
 	 */
 	private function constrain_dimensions_to_content_width( int $w, int $h ) : array {
-		$w             = $sizes[0];
-		$h             = $sizes[1];
-		$content_width = Helpers::get_content_width();
+		$atts['width']  = $w;
+		$atts['height'] = $h;
+		$content_width  = Helpers::get_content_width();
 
 		if ( $w > $content_width ) {
-			$ratio          = $content_width / $h;
+			$ratio          = $content_width / $w;
 			$atts['width']  = $content_width;
-			$atts['height'] = ceil( $w * $ratio );
+			$atts['height'] = ceil( $h * $ratio );
 		}
 
 		return $atts;

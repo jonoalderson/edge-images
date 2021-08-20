@@ -32,8 +32,9 @@ class Cloudflare_Image_Helpers {
 		if ( $h ) {
 			$cf_properties['height'] = $h;
 		}
+		ksort( $cf_properties );
 
-		$cf_prefix = self::CF_HOST . '/cdn-cgi/image/';
+		$cf_prefix = 'https://yoast.com/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
 			'',
@@ -42,7 +43,7 @@ class Cloudflare_Image_Helpers {
 
 		$url  = wp_parse_url( $src );
 		$path = $url['path'];
-		$src  = '/' . self::CF_HOST . $path;
+		$src  = '/' . 'https://yoast.com' . $path;
 
 		return $cf_string . $src;
 	}
