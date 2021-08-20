@@ -1,6 +1,7 @@
 <?php
 namespace Yoast_CF_Images\Sizes;
 
+use Yoast_CF_Images\Cloudflare_Image;
 use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
 use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
 
@@ -9,5 +10,41 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
  */
 class Banner extends Cloudflare_Image {
 
+	/**
+	 * Get an attribute for the image
+	 *
+	 * @param  string $attr The attribute to get.
+	 *
+	 * @return mixed        The requested values.
+	 */
+	public function get_attr( string $attr ) {
+
+		$dimensions = array(
+			'w' => 123,
+			'h' => 456,
+		);
+
+		$srcset = array(
+			array(
+				'w' => 456,
+				'h' => 123,
+			),
+			array(
+				'w' => 567,
+				'h' => 234,
+			),
+		);
+
+		$sizes = '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)';
+
+		$ratio = '4/3';
+
+		if ( ! isset( $$attr ) ) {
+			return;
+		}
+
+		return $$attr;
+
+	}
 
 }

@@ -53,16 +53,7 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
  */
 function get_cf_image( int $id, array $atts = array(), string $size, $echo = true ) {
 
-	$image_base_class = 'Yoast_CF_Images\Cloudflare_Image';
-
-	// Bail if we can't find our image class.
-	if ( ! class_exists( $image_base_class ) ) {
-		return false;
-	}
-
-	// See if there's a specific size class for this image.
-	$image_size_class = $image_base_class . '\\' . $size;
-	$image_class      = ( class_exists( $image_size_class ) ) ? $image_size_class : $image_base_class;
+	$image_class = Yoast_CF_Images\Cloudflare_Image_Helpers::get_image_class( $size );
 
 	// Get the image.
 	$image = new $image_class( $id, $atts, $size );

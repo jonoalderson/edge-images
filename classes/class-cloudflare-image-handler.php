@@ -168,91 +168,10 @@ class Cloudflare_Image_Handler {
 			return $atts;
 		}
 
-		$image = new Cloudflare_Image( $attachment->ID, $atts, $size );
+		$image_class = Helpers::get_image_class( $size );
+		$image       = new $image_class( $attachment->ID, $atts, $size );
 
 		return $image->atts;
-	}
-
-	/**
-	 * Get values from the image context
-	 *
-	 * @param  string $size  The image's size.
-	 * @param  string $return   The val(s) to return.
-	 *
-	 * @return mixed            The requested values.
-	 */
-	public static function get_context_vals( string $size, string $return ) {
-
-		switch ( $size ) {
-
-			case '4-columns': // An example layout.
-				$dimensions = array(
-					'w' => 800,
-					'h' => 600,
-				);
-				$srcset     = array(
-					array(
-						'w' => 456,
-						'h' => 123,
-					),
-					array(
-						'w' => 567,
-						'h' => 234,
-					),
-				);
-				$sizes      = '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)';
-				$ratio      = '4/3';
-				break;
-
-			case '3-columns': // An example layout.
-				$dimensions = array(
-					'w' => 600,
-					'h' => 400,
-				);
-				$srcset     = array(
-					array(
-						'w' => 456,
-						'h' => 123,
-					),
-				);
-				$sizes      = '(max-width: 1500px) calc(90vw - 20px), calc(90vw - 20px)';
-				$ratio      = '6/5';
-				break;
-
-			case 'avatar': // An example custom fixed layout.
-				$dimensions = array(
-					'w' => 128,
-					'h' => 128,
-				);
-				$layout     = 'fixed';
-				$sizes      = '(max-width: 128px) 100vw, 128px';
-				break;
-
-			default: // Set some sensible fallback behavior.
-				$vals = self::get_wp_size_vals( $size );
-				if ( ! $vals ) {
-					$vals = self::get_wp_size_vals( 'large' );
-				}
-
-				foreach ( self::get_image_vals_keys() as $key ) {
-					if ( ! isset( $vals[ $key ] ) ) {
-						continue;
-					}
-					$$key = $vals[ $key ];
-				}
-				break;
-		}
-
-		// Thumbnails should always be 'fixed'.
-		if ( $size === 'thumbnail' ) {
-			$layout = 'fixed';
-		}
-
-		if ( isset( $$return ) && $return ) {
-			return $$return;
-		}
-
-		return false;
 	}
 
 }

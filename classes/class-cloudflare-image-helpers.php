@@ -38,6 +38,24 @@ class Cloudflare_Image_Helpers {
 	const CONTENT_WIDTH = 600;
 
 	/**
+	 * Get the appropriate class for the image size
+	 *
+	 * @param  string $size The image size.
+	 *
+	 * @return string       The class name
+	 */
+	public static function get_image_class( $size ) : string {
+		$image_base_class = 'Yoast_CF_Images';
+
+		// See if there's a specific size class for this image.
+		$image_size_class = $image_base_class . '\\sizes\\' . $size;
+
+		$class = ( class_exists( $image_size_class ) ) ? $image_size_class : $image_base_class . '\\Cloudflare_Image';
+
+		return $class;
+	}
+
+	/**
 	 * Replace a SRC string with a Cloudflared version
 	 *
 	 * @param  string $src               The SRC attr.
@@ -68,34 +86,8 @@ class Cloudflare_Image_Helpers {
 
 		$url  = wp_parse_url( $src );
 		$path = $url['path'];
-		$src  = '/' . 'https://yoast.com' . $path;
 
-		return $cf_string . $src;
-	}
-
-	/**
-	 * Adds key srcset sizes from the image's size
-	 *
-	 * @param string $src The image src.
-	 * @param string $size The image's size.
-	 *
-	 * @return array The srcset attr
-	 */
-	public static function get_srcset_sizes_from_context( string $src, string $size ) : array {
-		$sizes  = Handler::get_context_vals( $size, 'srcset' );
-		$srcset = array();
-		if ( ! $sizes ) {
-			return $srcset; // Bail if there are no srcset options.
-		}
-
-		// Create the srcset strings and x2 strings.
-		foreach ( $sizes as $v ) {
-			$h        = ( isset( $v['h'] ) ) ? $v['h'] : null;
-			$srcset[] = self::create_srcset_val( $src, $v['w'], $h );
-			$srcset[] = self::create_srcset_val( $src, $v['w'] * 2, $h * 2 );
-		}
-
-		return $srcset;
+		return $cf_string . $path;
 	}
 
 	/**
@@ -122,7 +114,7 @@ class Cloudflare_Image_Helpers {
 	 */
 	public static function get_content_width() : int {
 		global $content_width;
-		if ( ! $content_width ) {
+		if ( ! $content_width || $content_width > self::CONTENT_WIDTH ) {
 			$content_width = self::CONTENT_WIDTH;
 		}
 		return $content_width;

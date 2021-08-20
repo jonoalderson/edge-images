@@ -65,7 +65,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_layout() : void {
-		$layout = $this->get_context_vals( 'layout' );
+		$layout = $this->get_attr( 'layout' );
 		if ( ! $layout ) {
 			$layout = 'responsive';
 		}
@@ -92,7 +92,7 @@ class Cloudflare_Image {
 			return; // Bail if already set.
 		}
 		// Bail if dimensions aren't available.
-		$dimensions = $this->get_context_vals( 'dimensions' );
+		$dimensions = $this->get_attr( 'dimensions' );
 		if ( ! $dimensions ) {
 			return;
 		}
@@ -111,7 +111,7 @@ class Cloudflare_Image {
 		}
 
 		// Bail if dimensions aren't available.
-		$dimensions = $this->get_context_vals( 'dimensions' );
+		$dimensions = $this->get_attr( 'dimensions' );
 		if ( ! $dimensions ) {
 			return;
 		}
@@ -154,7 +154,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_ratio() : void {
-		$ratio = $this->get_context_vals( 'ratio' );
+		$ratio = $this->get_attr( 'ratio' );
 		if ( ! $ratio ) {
 			if ( isset( $this->atts['width'] ) && isset( $this->atts['height'] ) ) {
 				$ratio = $this->atts['width'] . '/' . $this->atts['height'];
@@ -199,13 +199,13 @@ class Cloudflare_Image {
 			case 'responsive':
 				$srcset = array_merge(
 					$this->add_generic_srcset_sizes(),
-					Helpers::get_srcset_sizes_from_context( $this->atts['data-full-src'], $this->size )
+					$this->get_srcset_sizes_from_context( $this->atts['data-full-src'] )
 				);
 				break;
 			case 'fixed':
 				$srcset = array_merge(
 					$this->add_x2_srcset_size(),
-					Helpers::get_srcset_sizes_from_context( $this->atts['data-full-src'], $this->size )
+					$this->get_srcset_sizes_from_context( $this->atts['data-full-src'] )
 				);
 				break;
 			default:
@@ -214,6 +214,8 @@ class Cloudflare_Image {
 		if ( empty( $srcset ) ) {
 			return;
 		}
+
+		$srcset = array_unique( $srcset );
 		$srcset = implode( ',', $srcset );
 		if ( ! $srcset ) {
 			return;
@@ -228,10 +230,10 @@ class Cloudflare_Image {
 	 */
 	private function add_generic_srcset_sizes() : array {
 		$srcset = array();
-		for ( $w = 300; $w <= 2400; $w += 100 ) {
+		for ( $w = 300; $w <= ( 2 * $this->atts['width'] ); $w += 100 ) {
 			$h        = $this->calculate_height_from_ratio( $w );
 			$srcset[] = Helpers::create_srcset_val( $this->atts['data-full-src'], $w, $h );
-			if ( $w >= 1200 ) {
+			if ( $w >= 1000 ) {
 				$w += 100; // Increase the increments on larger sizes.
 			}
 		}
@@ -257,7 +259,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_sizes() : void {
-		$sizes = $this->get_context_vals( 'sizes' );
+		$sizes = $this->get_attr( 'sizes' );
 		if ( ! $sizes ) {
 			$width = $this->atts['width'];
 			$sizes = '(max-width: ' . $width . 'px) 100vw, ' . $width . 'px';
@@ -368,7 +370,7 @@ class Cloudflare_Image {
 	 *
 	 * @return false|string The value
 	 */
-	public function get_context_vals( string $val ) {
+	public function get_attr( string $val ) {
 
 		// Bail if there's no size set.
 		if ( ! $this->has_size() ) {
@@ -398,6 +400,43 @@ class Cloudflare_Image {
 		}
 
 		return $vals[ $val ];
+	}
 
+	/**
+	 * Adds key srcset sizes from the image's size
+	 *
+	 * @param string $src The image src.
+	 *
+	 * @return array The srcset attr
+	 */
+	public function get_srcset_sizes_from_context( string $src ) : array {
+
+		$sizes = array(
+			array(
+				'w' => $this->atts['width'],
+				'h' => $this->atts['height'],
+			),
+		);
+
+		// Start with any custom srcset values.
+		$custom_srcset_vals = $this->get_attr( 'srcset' );
+		if ( $custom_srcset_vals ) {
+			$sizes = array_merge( $sizes, $custom_srcset_vals );
+		}
+
+		// Add with values based on the normalized w/h of the image.
+
+		$srcset = array();
+
+		// Create the srcset strings and x2 strings.
+		foreach ( $sizes as $v ) {
+			$h        = ( isset( $v['h'] ) ) ? $v['h'] : null;
+			$srcset[] = Helpers::create_srcset_val( $src, $v['w'], $h );
+			$srcset[] = Helpers::create_srcset_val( $src, $v['w'] * 2, $h * 2 );
+		}
+
+		$srcset = array_unique( $srcset );
+
+		return $srcset;
 	}
 }
