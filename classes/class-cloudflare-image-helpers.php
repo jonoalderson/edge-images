@@ -9,8 +9,33 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
  */
 class Cloudflare_Image_Helpers {
 
+	/**
+	 * The plugin styles URL
+	 *
+	 * @var string
+	 */
 	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
-	const CF_HOST    = 'https://yoast.com';
+
+	/**
+	 * The Cloudflare host domain
+	 *
+	 * @var string
+	 */
+	const CF_HOST = 'https://yoast.com';
+
+	/**
+	 * The container width in pixels
+	 *
+	 * @var integer
+	 */
+	const CONTAINER_WIDTH = 1012;
+
+	/**
+	 * The content width in pixels
+	 *
+	 * @var integer
+	 */
+	const CONTENT_WIDTH = 600;
 
 	/**
 	 * Replace a SRC string with a Cloudflared version
@@ -93,16 +118,40 @@ class Cloudflare_Image_Helpers {
 	/**
 	 * Get the content width value
 	 *
-	 * @param  integer $fallback A fallback width, in pixels.
-	 *
-	 * @return int               The content width value
+	 * @return int The content width value
 	 */
-	public static function get_content_width( int $fallback = 800 ) : int {
+	public static function get_content_width() : int {
 		global $content_width;
 		if ( ! $content_width ) {
-			$content_width = $fallback;
+			$content_width = self::CONTENT_WIDTH;
 		}
 		return $content_width;
+	}
+
+	/**
+	 * Get the vals for a WP image size
+	 *
+	 * @param  string $size The size.
+	 *
+	 * @return false|array  The values
+	 */
+	public static function get_wp_size_vals( string $size ) {
+		$default_image_sizes = get_intermediate_image_sizes();
+
+		if ( ! in_array( $size, $default_image_sizes, true ) ) {
+			return false;
+		}
+
+		$key = array_search( $size, $default_image_sizes, true );
+
+		$vals = array(
+			'dimensions' => array(
+				'w' => intval( get_option( "{$default_image_sizes[$key]}_size_w" ) ),
+				'h' => intval( get_option( "{$default_image_sizes[$key]}_size_h" ) ),
+			),
+		);
+
+		return $vals;
 	}
 
 }

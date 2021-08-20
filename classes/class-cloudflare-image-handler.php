@@ -255,48 +255,4 @@ class Cloudflare_Image_Handler {
 		return false;
 	}
 
-	/**
-	 * Get the vals for a WP image size
-	 *
-	 * @param  string $size The size.
-	 *
-	 * @return false|array  The values
-	 */
-	private static function get_wp_size_vals( string $size ) {
-		$image_sizes         = array();
-		$default_image_sizes = get_intermediate_image_sizes();
-
-		if ( ! in_array( $size, $default_image_sizes, true ) ) {
-			return false;
-		}
-
-		$key = array_search( $size, $default_image_sizes, true );
-
-		$vals = array(
-			'dimensions' => array(
-				'w' => intval( get_option( "{$default_image_sizes[$key]}_size_w" ) ),
-				'h' => intval( get_option( "{$default_image_sizes[$key]}_size_h" ) ),
-			),
-		);
-
-		return $vals;
-
-	}
-
-	/**
-	 * Get all of the customizable vals for image sizes
-	 *
-	 * @return array The keys.
-	 */
-	private static function get_image_vals_keys() : array {
-		return array(
-			'dimensions',
-			'srcset',
-			'sizes',
-			'ratio',
-			'layout',
-		);
-	}
-
-
 }

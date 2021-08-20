@@ -8,7 +8,6 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
  */
 class Cloudflare_Image {
 
-
 	/**
 	 * The attachment ID
 	 *
@@ -21,14 +20,14 @@ class Cloudflare_Image {
 	 *
 	 * @var array
 	 */
-	protected $atts = array();
+	public $atts = array();
 
 	/**
 	 * The attachment size
 	 *
 	 * @var string|array
 	 */
-	protected $size;
+	public $size;
 
 	/**
 	 * Construct the image object
@@ -40,7 +39,7 @@ class Cloudflare_Image {
 	public function __construct( int $id, array $atts = array(), $size ) {
 		$this->id   = $id;
 		$this->atts = $atts;
-		$this->size = $this - $size;
+		$this->set_size( $size );
 		$this->init();
 	}
 
@@ -66,7 +65,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_layout() : void {
-		$layout = Handler::get_context_vals( $this->size, 'layout' );
+		$layout = $this->get_context_vals( 'layout' );
 		if ( ! $layout ) {
 			$layout = 'responsive';
 		}
@@ -93,7 +92,7 @@ class Cloudflare_Image {
 			return; // Bail if already set.
 		}
 		// Bail if dimensions aren't available.
-		$dimensions = Handler::get_context_vals( $this->size, 'dimensions' );
+		$dimensions = $this->get_context_vals( 'dimensions' );
 		if ( ! $dimensions ) {
 			return;
 		}
@@ -110,8 +109,9 @@ class Cloudflare_Image {
 		if ( isset( $this->atts['height'] ) && $this->atts['height'] ) {
 			return; // Bail if already set.
 		}
+
 		// Bail if dimensions aren't available.
-		$dimensions = Handler::get_context_vals( $this->size, 'dimensions' );
+		$dimensions = $this->get_context_vals( 'dimensions' );
 		if ( ! $dimensions ) {
 			return;
 		}
@@ -154,7 +154,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_ratio() : void {
-		$ratio = Handler::get_context_vals( $this->size, 'ratio' );
+		$ratio = $this->get_context_vals( 'ratio' );
 		if ( ! $ratio ) {
 			if ( isset( $this->atts['width'] ) && isset( $this->atts['height'] ) ) {
 				$ratio = $this->atts['width'] . '/' . $this->atts['height'];
@@ -257,7 +257,7 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_sizes() : void {
-		$sizes = Handler::get_context_vals( $this->size, 'sizes' );
+		$sizes = $this->get_context_vals( 'sizes' );
 		if ( ! $sizes ) {
 			$width = $this->atts['width'];
 			$sizes = '(max-width: ' . $width . 'px) 100vw, ' . $width . 'px';
@@ -269,11 +269,37 @@ class Cloudflare_Image {
 	 * Set a size attribute
 	 *
 	 * @param string|array $size The size value.
+	 *
+	 * @return self
 	 */
-	private function set_size( $size ) : string {
+	private function set_size( $size ) : self {
 		$size       = $this->sanitize_size( $size );
 		$this->size = $size;
-		return $size;
+		return $this;
+	}
+
+	/**
+	 * Get the size
+	 *
+	 * @return false|string The size
+	 */
+	public function get_size() {
+		if ( ! $this->has_size() ) {
+			return false;
+		}
+		return $this->size;
+	}
+
+	/**
+	 * Checks if a size is set
+	 *
+	 * @return bool
+	 */
+	protected function has_size() : bool {
+		if ( ! isset( $this->size ) || $this->size === '' ) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -333,5 +359,45 @@ class Cloudflare_Image {
 				'cloudflared',
 			)
 		);
+	}
+
+	/**
+	 * Get context values for the image
+	 *
+	 * @param  string $val  The value to retrieve.
+	 *
+	 * @return false|string The value
+	 */
+	public function get_context_vals( string $val ) {
+
+		// Bail if there's no size set.
+		if ( ! $this->has_size() ) {
+			return false;
+		}
+
+		// Get the h/w attrs based on the image size.
+		$vals = Helpers::get_wp_size_vals( $this->get_size() );
+		if ( ! $vals ) {
+			// Fall back to the 'large' attrs.
+			$vals = Helpers::get_wp_size_vals( 'large' );
+		}
+
+		$vals = wp_parse_args(
+			$vals,
+			array(
+				'dimensions' => null,
+				'srcset'     => null,
+				'sizes'      => null,
+				'ratio'      => null,
+				'layout'     => null,
+			)
+		);
+
+		if ( ! isset( $vals[ $val ] ) ) {
+			return false;
+		}
+
+		return $vals[ $val ];
+
 	}
 }
