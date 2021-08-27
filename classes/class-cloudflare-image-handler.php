@@ -22,6 +22,7 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_picture_attributes' ), 999999 );
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 1000, 5 );
 	}
@@ -100,13 +101,12 @@ class Cloudflare_Image_Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, array $attr = array() ) : string {
-
+	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
 			$attr['data-ratio'],
 			$attr['data-layout'],
-			$size,
+			$attr['picture_class'],
 			$html
 		);
 
@@ -125,6 +125,21 @@ class Cloudflare_Image_Handler {
 	 */
 	public function remove_dimension_attributes( string $html ) : string {
 		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
+		return $html;
+	}
+
+	/**
+	 * Remove the (first two) height and width attrs from <img> markup.
+	 *
+	 * NOTE: Widthout this, we create duplicate properties
+	 *       with wp_get_attachment_image_attributes!
+	 *
+	 * @param  string $html The HTML <img> tag.
+	 *
+	 * @return string       The modified tag
+	 */
+	public function remove_picture_attributes( string $html ) : string {
+		$html = preg_replace( '/(<[^>]+) picture_(.*)=".*?"/i', '$1', $html );
 		return $html;
 	}
 
@@ -170,6 +185,9 @@ class Cloudflare_Image_Handler {
 
 		$image_class = Helpers::get_image_class( $size );
 		$image       = new $image_class( $attachment->ID, $atts, $size );
+
+		$image->atts['class'] = implode( ' ', $image->atts['class'] );
+		$image->atts['picture_class'] = implode( ' ', $image->atts['picture_class'] );
 
 		return $image->atts;
 	}

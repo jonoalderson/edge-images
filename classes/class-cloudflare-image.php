@@ -333,7 +333,15 @@ class Cloudflare_Image {
 				' ',
 				array_map(
 					function ( $v, $k ) {
-						return sprintf( "%s='%s'", $k, $v ); },
+						if( strpos($k, 'picture') !== false ){
+							return '';
+						}
+						if ( is_array( $v ) ){
+							$v = implode(' ', $v);
+						}
+
+						return sprintf( "%s='%s'", $k, $v );
+					},
 					$this->atts,
 					array_keys( $this->atts )
 				)
@@ -353,14 +361,15 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_classes() : void {
-		$this->atts['class'] = implode(
-			' ',
+		$this->atts['class'] = array_merge(
+			$this->get_attr( 'class' ),
 			array(
 				'attachment-' . $this->size,
 				'size-' . $this->size,
 				'cloudflared',
 			)
 		);
+		$this->atts['picture_class'] = array( 'mb-24' );
 	}
 
 	/**
@@ -395,7 +404,7 @@ class Cloudflare_Image {
 			)
 		);
 
-		if ( ! isset( $vals[ $val ] ) ) {
+		if ( ! isset( $vals[ $val ] ) || empty( $vals[ $val ] ) ) {
 			return false;
 		}
 

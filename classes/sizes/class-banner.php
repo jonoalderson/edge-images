@@ -2,8 +2,6 @@
 namespace Yoast_CF_Images\Sizes;
 
 use Yoast_CF_Images\Cloudflare_Image;
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
-use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
 
 /**
  * Generates and managers a Cloudflared image.
@@ -34,6 +32,10 @@ class Banner extends Cloudflare_Image {
 				'h' => 234,
 			),
 		);
+
+		$class = ['test', 'test123'];
+
+		$picture_class = ['banner_test_class'];
 
 		$sizes = '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)';
 
