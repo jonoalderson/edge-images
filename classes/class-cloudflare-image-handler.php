@@ -81,6 +81,7 @@ class Cloudflare_Image_Handler {
 		$atts['height'] = $h;
 		$content_width  = Helpers::get_content_width();
 
+		// Calculate the ratio and constrain the width.
 		if ( $w > $content_width ) {
 			$ratio          = $content_width / $w;
 			$atts['width']  = $content_width;
@@ -102,11 +103,20 @@ class Cloudflare_Image_Handler {
 	 * @return string                   The modified HTML.
 	 */
 	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+
+		// Wrangle the picture class(es).
+		$picture_classes = (
+			isset( $attr['picture_class'] ) &&
+			! empty( $attr['picture_class'] ) &&
+			Helpers::classes_array_to_string( $attr['picture_class'] )
+		);
+
+		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
-			$attr['data-ratio'],
-			$attr['data-layout'],
-			$attr['picture_class'],
+			$attr['data-ratio'] ? $attr['data-ratio'] : '1:1',
+			$attr['data-layout'] ? $attr['data-layout'] : 'unknown',
+			$attr['picture_class'] ? $picture_classes : null,
 			$html
 		);
 
@@ -186,8 +196,15 @@ class Cloudflare_Image_Handler {
 		$image_class = Helpers::get_image_class( $size );
 		$image       = new $image_class( $attachment->ID, $atts, $size );
 
-		$image->atts['class'] = implode( ' ', $image->atts['class'] );
-		$image->atts['picture_class'] = implode( ' ', $image->atts['picture_class'] );
+		$image->atts['class'] = (
+			isset( $image->atts['class'] ) &&
+			! empty( $image->atts['class'] )
+		) ? Helpers::classes_array_to_string( $image->atts['class'] ) : array();
+
+		$image->atts['picture_class'] = (
+			isset( $image->atts['picture_class'] ) &&
+			! empty( $image->atts['picture_class'] )
+		) ? Helpers::classes_array_to_string( $image->atts['picture_class'] ) : array();
 
 		return $image->atts;
 	}

@@ -85,7 +85,7 @@ class Cloudflare_Image_Helpers {
 		);
 
 		$url  = wp_parse_url( $src );
-		$path = $url['path'];
+		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
 		return $cf_string . $path;
 	}
@@ -128,13 +128,20 @@ class Cloudflare_Image_Helpers {
 	 * @return false|array  The values
 	 */
 	public static function get_wp_size_vals( string $size ) {
+
+		// Get our default image sizes.
 		$default_image_sizes = get_intermediate_image_sizes();
 
+		// Check the size is valid.
 		if ( ! in_array( $size, $default_image_sizes, true ) ) {
 			return false;
 		}
 
+		// Check if we have vlues for this size.
 		$key = array_search( $size, $default_image_sizes, true );
+		if ( $key === false ) {
+			return false;
+		}
 
 		$vals = array(
 			'dimensions' => array(
@@ -144,6 +151,25 @@ class Cloudflare_Image_Helpers {
 		);
 
 		return $vals;
+	}
+
+	/**
+	 * Flatten an array of classes into a string
+	 *
+	 * @param  mixed $classes The classes.
+	 *
+	 * @return ?string The flattened classes
+	 */
+	public static function classes_array_to_string( $classes ) : ?string {
+		if ( is_string( $classes ) ) {
+			return $classes;
+		}
+
+		if ( is_array( $classes ) ) {
+			$classes = implode( ' ', $classes );
+		}
+
+		return null;
 	}
 
 }

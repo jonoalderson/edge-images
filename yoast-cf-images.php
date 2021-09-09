@@ -38,6 +38,7 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 
 	Yoast_CF_Images\Cloudflare_Image_Handler::register();
+	Yoast_CF_Images\Social_Images::register();
 
 } )();
 
@@ -66,7 +67,7 @@ function get_cf_image( int $id, array $atts = array(), string $size, $echo = tru
 
 	// Maybe echo the image.
 	if ( $echo ) {
-		echo $html;
+		echo wp_kses( $html, array( 'picture', 'img' ) );
 		return;
 	}
 
