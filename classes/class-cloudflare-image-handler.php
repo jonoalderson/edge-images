@@ -62,8 +62,8 @@ class Cloudflare_Image_Handler {
 			return $block_content;
 		}
 
-		$atts  = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
-		$image = get_cf_image( $block['attrs']['id'], $atts, 'content', false );
+		$attrs = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
+		$image = get_cf_image( $block['attrs']['id'], $attrs, 'content', false );
 
 		return $image;
 	}
@@ -74,21 +74,21 @@ class Cloudflare_Image_Handler {
 	 * @param  int $w The width.
 	 * @param  int $h The height.
 	 *
-	 * @return array The atts values
+	 * @return array The attrs values
 	 */
 	private function constrain_dimensions_to_content_width( int $w, int $h ) : array {
-		$atts['width']  = $w;
-		$atts['height'] = $h;
-		$content_width  = Helpers::get_content_width();
+		$attrs['width']  = $w;
+		$attrs['height'] = $h;
+		$content_width   = Helpers::get_content_width();
 
 		// Calculate the ratio and constrain the width.
 		if ( $w > $content_width ) {
-			$ratio          = $content_width / $w;
-			$atts['width']  = $content_width;
-			$atts['height'] = ceil( $h * $ratio );
+			$ratio           = $content_width / $w;
+			$attrs['width']  = $content_width;
+			$attrs['height'] = ceil( $h * $ratio );
 		}
 
-		return $atts;
+		return $attrs;
 	}
 
 	/**
@@ -107,16 +107,15 @@ class Cloudflare_Image_Handler {
 		// Wrangle the picture class(es).
 		$picture_classes = (
 			isset( $attr['picture_class'] ) &&
-			! empty( $attr['picture_class'] ) &&
-			Helpers::classes_array_to_string( $attr['picture_class'] )
-		);
+			! empty( $attr['picture_class'] )
+		) ? Helpers::classes_array_to_string( $attr['picture_class'] ) : false;
 
 		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
-			$attr['data-ratio'] ? $attr['data-ratio'] : '1:1',
-			$attr['data-layout'] ? $attr['data-layout'] : 'unknown',
-			$attr['picture_class'] ? $picture_classes : null,
+			isset( $attr['data-ratio'] ) ? $attr['data-ratio'] : '1:1',
+			isset( $attr['data-layout'] ) ? $attr['data-layout'] : 'unknown',
+			isset( $attr['picture_class'] ) ? $picture_classes : null,
 			$html
 		);
 
@@ -168,12 +167,12 @@ class Cloudflare_Image_Handler {
 	/**
 	 * Check whether an image should use Cloudflare
 	 *
-	 * @param  array $atts The attachment attributes.
+	 * @param  array $attrs The attachment attributes.
 	 *
 	 * @return bool
 	 */
-	public function image_should_use_cloudflare( array $atts ) : bool {
-		if ( strpos( $atts['src'], '.svg' ) !== false ) {
+	public function image_should_use_cloudflare( array $attrs ) : bool {
+		if ( strpos( $attrs['src'], '.svg' ) !== false ) {
 			return false;
 		}
 		return true;
@@ -182,31 +181,31 @@ class Cloudflare_Image_Handler {
 	/**
 	 * Alter an image to use Cloudflare
 	 *
-	 * @param array  $atts          The attachment attributes.
+	 * @param array  $attrs          The attachment attributes.
 	 * @param object $attachment    The attachment.
 	 * @param string $size          The attachment size.
 	 *
 	 * @return array                The modified image attributes
 	 */
-	public function route_images_through_cloudflare( array $atts, object $attachment, string $size ) : array {
-		if ( ! $this->image_should_use_cloudflare( $atts ) ) {
-			return $atts;
+	public function route_images_through_cloudflare( array $attrs, object $attachment, string $size ) : array {
+		if ( ! $this->image_should_use_cloudflare( $attrs ) ) {
+			return $attrs;
 		}
 
 		$image_class = Helpers::get_image_class( $size );
-		$image       = new $image_class( $attachment->ID, $atts, $size );
+		$image       = new $image_class( $attachment->ID, $attrs, $size );
 
-		$image->atts['class'] = (
-			isset( $image->atts['class'] ) &&
-			! empty( $image->atts['class'] )
-		) ? Helpers::classes_array_to_string( $image->atts['class'] ) : array();
+		$image->attrs['class'] = (
+			isset( $image->attrs['class'] ) &&
+			! empty( $image->attrs['class'] )
+		) ? Helpers::classes_array_to_string( $image->attrs['class'] ) : array();
 
-		$image->atts['picture_class'] = (
-			isset( $image->atts['picture_class'] ) &&
-			! empty( $image->atts['picture_class'] )
-		) ? Helpers::classes_array_to_string( $image->atts['picture_class'] ) : array();
+		$image->attrs['picture_class'] = (
+			isset( $image->attrs['picture_class'] ) &&
+			! empty( $image->attrs['picture_class'] )
+		) ? Helpers::classes_array_to_string( $image->attrs['picture_class'] ) : array();
 
-		return $image->atts;
+		return $image->attrs;
 	}
 
 }

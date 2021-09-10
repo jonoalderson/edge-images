@@ -158,18 +158,18 @@ class Cloudflare_Image_Helpers {
 	 *
 	 * @param  mixed $classes The classes.
 	 *
-	 * @return ?string The flattened classes
+	 * @return false|string The flattened classes
 	 */
-	public static function classes_array_to_string( $classes ) : ?string {
+	public static function classes_array_to_string( $classes ) {
 		if ( is_string( $classes ) ) {
 			return $classes;
 		}
 
 		if ( is_array( $classes ) ) {
-			$classes = implode( ' ', $classes );
+			return implode( ' ', $classes );
 		}
 
-		return null;
+		return false;
 	}
 
 }

@@ -34,7 +34,6 @@ class Social_Images {
 		add_filter( 'wpseo_opengraph_image', array( $instance, 'route_image_through_cf' ), 10, 2 );
 		add_filter( 'wpseo_twitter_image', array( $instance, 'route_image_through_cf' ), 10, 2 );
 		add_filter( 'wpseo_frontend_presentation', array( $instance, 'set_image_dimensions' ), 30, 1 );
-
 	}
 
 	/**
@@ -45,9 +44,19 @@ class Social_Images {
 	 * @return array The modified presentation
 	 */
 	public function set_image_dimensions( $presentation ) {
+
+		if ( ! $presentation->open_graph_images ) {
+			return $presentation; // Bail if there's nothing here.
+		}
+
 		$key = array_key_first( $presentation->open_graph_images );
+		if ( ! isset( $presentation->open_graph_images[ $key ] ) ) {
+			return $presentation; // Bail if there's no key.
+		}
+
 		$presentation->open_graph_images[ $key ]['width']  = self::OG_WIDTH;
 		$presentation->open_graph_images[ $key ]['height'] = self::OG_HEIGHT;
+
 		return $presentation;
 	}
 
