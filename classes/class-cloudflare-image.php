@@ -380,7 +380,6 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_classes() : void {
-
 		$this->attrs['class']         = array_merge(
 			$this->get_attr( 'class' ) ? $this->get_attr( 'class' ) : array(),
 			array(
