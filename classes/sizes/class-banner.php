@@ -19,12 +19,12 @@ class Banner extends Cloudflare_Image {
 			'height'        => 456,
 			'srcset'        => array(
 				array(
-					'w' => 456,
-					'h' => 123,
+					'width'  => 456,
+					'height' => 123,
 				),
 				array(
-					'w' => 567,
-					'h' => 234,
+					'width'  => 567,
+					'height' => 234,
 				),
 			),
 			'sizes'         => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',

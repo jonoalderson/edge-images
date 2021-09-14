@@ -51,6 +51,7 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 
+		// Init attributes from a child class if one exists.
 		if ( method_exists( get_called_class(), 'init_attrs' ) ) {
 			$this->init_attrs();
 		}
@@ -84,6 +85,17 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_dimensions() : void {
+
+		// Init defaults based on the size.
+		$size = $this->get_size();
+		if ( $size ) {
+			$vals = Helpers::get_wp_size_vals( $size );
+			if ( $vals && ! empty( $vals ) ) {
+				$this->attrs['width']  = $vals['width'];
+				$this->attrs['height'] = $vals['height'];
+			}
+		}
+
 		$this->init_width();
 		$this->init_height();
 	}
@@ -211,7 +223,7 @@ class Cloudflare_Image {
 		if ( ! isset( $this->attrs['data-layout'] ) || ! $this->attrs['data-layout'] ) {
 			return; // Bail if there's no layout set.
 		}
-
+		print_r( $this );
 		switch ( $this->attrs['data-layout'] ) {
 			case 'responsive':
 				$srcset = array_merge(
@@ -234,7 +246,6 @@ class Cloudflare_Image {
 		}
 
 		$srcset = array_unique( $srcset );
-		$srcset = implode( ',', $srcset );
 		if ( ! $srcset ) {
 			return; // Bail if there's no src attribute.
 		}
@@ -413,23 +424,23 @@ class Cloudflare_Image {
 
 		$sizes = array(
 			array(
-				'w' => $this->attrs['width'],
-				'h' => $this->attrs['height'],
+				'width'  => $this->attrs['width'],
+				'height' => $this->attrs['height'],
 			),
 		);
 
 		// Start with any custom srcset values.
 		$custom_srcset_vals = $this->get_attr( 'srcset' );
-		if ( $custom_srcset_vals ) {
+		if ( ! empty( $custom_srcset_vals ) ) {
 			$sizes = array_merge( $sizes, $custom_srcset_vals );
 		}
 
 		// Create the srcset strings and x2 strings.
 		$srcset = array();
 		foreach ( $sizes as $v ) {
-			$h        = ( isset( $v['h'] ) ) ? $v['h'] : null;
-			$srcset[] = Helpers::create_srcset_val( $src, $v['w'], $h );
-			$srcset[] = Helpers::create_srcset_val( $src, $v['w'] * 2, $h * 2 );
+			$h        = ( isset( $v['width'] ) ) ? $v['height'] : null;
+			$srcset[] = Helpers::create_srcset_val( $src, $v['width'], $h );
+			$srcset[] = Helpers::create_srcset_val( $src, $v['width'] * 2, $h * 2 );
 		}
 
 		$srcset = array_unique( $srcset );

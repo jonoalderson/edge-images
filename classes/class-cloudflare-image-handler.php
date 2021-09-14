@@ -205,6 +205,11 @@ class Cloudflare_Image_Handler {
 			! empty( $image->attrs['picture_class'] )
 		) ? Helpers::classes_array_to_string( $image->attrs['picture_class'] ) : array();
 
+		$image->attrs['srcset'] = (
+			isset( $image->attrs['srcset'] ) &&
+			! empty( $image->attrs['srcset'] )
+		) ? implode( ',', $image->attrs['srcset'] ) : array();
+
 		return $image->attrs;
 	}
 

@@ -134,7 +134,7 @@ class Cloudflare_Image_Helpers {
 
 		// Check the size is valid.
 		if ( ! in_array( $size, $default_image_sizes, true ) ) {
-			return false;
+			$size = 'large';
 		}
 
 		// Check if we have vlues for this size.
@@ -144,10 +144,8 @@ class Cloudflare_Image_Helpers {
 		}
 
 		$vals = array(
-			'dimensions' => array(
-				'w' => intval( get_option( "{$default_image_sizes[$key]}_size_w" ) ),
-				'h' => intval( get_option( "{$default_image_sizes[$key]}_size_h" ) ),
-			),
+			'width'  => intval( get_option( "{$default_image_sizes[$key]}_size_w" ) ),
+			'height' => intval( get_option( "{$default_image_sizes[$key]}_size_h" ) ),
 		);
 
 		return $vals;
