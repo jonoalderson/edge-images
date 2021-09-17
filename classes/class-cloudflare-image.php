@@ -300,8 +300,8 @@ class Cloudflare_Image {
 	 */
 	private function get_generic_srcset_sizes() : array {
 		$srcset = array();
-		$max    = 2 * $this->attrs['width'];
-		for ( $w = 400; $w <= $max; $w += 100 ) {
+		$max    = min( 2 * $this->attrs['width'], Helpers::WIDTH_MAX );
+		for ( $w = Helpers::WIDTH_MIN; $w <= $max; $w += Helpers::WIDTH_STEP ) {
 			$h        = $this->calculate_height_from_ratio( $w );
 			$srcset[] = Helpers::create_srcset_val( $this->attrs['data-full-src'], $w, $h );
 			if ( $w >= 1000 ) {
@@ -510,13 +510,19 @@ class Cloudflare_Image {
 			}
 		}
 
-		// Create the srcset strings and x2 strings.
+		// Create the srcset strings.
 		$srcset = array();
 		foreach ( $sizes as $v ) {
 			$h        = ( isset( $v['width'] ) ) ? $v['height'] : null;
 			$srcset[] = Helpers::create_srcset_val( $src, $v['width'], $h );
-			$srcset[] = Helpers::create_srcset_val( $src, $v['width'] * 2, $h * 2 );
-			if ( ceil( $v['width'] / 2 ) > 400 ) {
+
+			// Generate a 2x size if it's smaller than our max.
+			if ( ( $v['width'] * 2 ) <= Helpers::WIDTH_MAX ) {
+				$srcset[] = Helpers::create_srcset_val( $src, $v['width'] * 2, $h * 2 );
+			}
+
+			// Generate a smaller size if it's larger than our min.
+			if ( ceil( $v['width'] / 2 ) > Helpers::WIDTH_MIN ) {
 				$srcset[] = Helpers::create_srcset_val( $src, ceil( $v['width'] / 2 ), ceil( $h / 2 ) );
 			}
 		}

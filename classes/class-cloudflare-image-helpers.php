@@ -31,6 +31,34 @@ class Cloudflare_Image_Helpers {
 	const CONTENT_WIDTH = 600;
 
 	/**
+	 * The min width a default srcset val should be generated at, in pixels.
+	 *
+	 * @var integer
+	 */
+	const MIN_WIDTH = 400;
+
+	/**
+	 * The max width a default srcset val should ever be generated at, in pixels.
+	 *
+	 * @var integer
+	 */
+	const WIDTH_MAX = 2400;
+
+	/**
+	 * The min width a default srcset val should be generated at, in pixels.
+	 *
+	 * @var integer
+	 */
+	const WIDTH_MIN = 400;
+
+	/**
+	 * The width to increment default srcset vals.
+	 *
+	 * @var integer
+	 */
+	const WIDTH_STEP = 100;
+
+	/**
 	 * Get the appropriate class for the image size
 	 *
 	 * @param  string $size The image size.
