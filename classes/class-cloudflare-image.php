@@ -386,15 +386,13 @@ class Cloudflare_Image {
 		// srcset attributes need special treatment to comma-separate values.
 		$this->attrs['srcset'] = implode( ', ', $this->attrs['srcset'] );
 
+		// Build our HTML tag by running through all of our attrs.
 		$html = sprintf(
 			'<img %s>',
 			implode(
 				' ',
 				array_map(
 					function ( $v, $k ) {
-						if ( strpos( $k, 'picture' ) !== false ) {
-							return '';
-						}
 						if ( is_array( $v ) ) {
 							$v = implode( ' ', $v );
 						}
