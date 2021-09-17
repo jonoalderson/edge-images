@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Yoast Cloudflare images integration
- * Version: 1.0.1
+ * Version: 1.1
  * Description: Provides support for Cloudflared images
  * Author: Jono Alderson
  * Text Domain: yoast-cf-image
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'YOAST_CF_IMAGES_VERSION' ) ) {
-	define( 'YOAST_CF_IMAGES_VERSION', '1.0.1' );
+	define( 'YOAST_CF_IMAGES_VERSION', '1.1' );
 }
 
 if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_DIR' ) ) {
@@ -37,9 +37,11 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	// Load our autoloaders.
 	require_once 'autoload.php';
 
+	// Load our integrations.
 	Yoast_CF_Images\Cloudflare_Image_Handler::register();
 	Yoast_CF_Images\Social_Images::register();
 	Yoast_CF_Images\Schema_Images::register();
+	Yoast_CF_Images\Preloads::register();
 
 } )();
 

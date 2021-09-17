@@ -5,11 +5,9 @@ namespace Yoast_CF_Images;
 use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
 
 /**
- * Configures our schema output to use the CF rewriter.
+ * Configures hero image preload headers (using the CF rewriter).
  */
-class Schema_Images {
-
-
+class Preloads {
 
 	/**
 	 * Register the Integration
