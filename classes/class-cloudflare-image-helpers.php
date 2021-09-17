@@ -24,13 +24,6 @@ class Cloudflare_Image_Helpers {
 	const CF_HOST = 'https://yoast.com';
 
 	/**
-	 * The container width in pixels
-	 *
-	 * @var integer
-	 */
-	const CONTAINER_WIDTH = 1012;
-
-	/**
 	 * The content width in pixels
 	 *
 	 * @var integer
@@ -128,6 +121,8 @@ class Cloudflare_Image_Helpers {
 	 * @return false|array  The values
 	 */
 	public static function get_wp_size_vals( string $size ) {
+
+		$vals = array();
 
 		// Get our default image sizes.
 		$default_image_sizes = get_intermediate_image_sizes();

@@ -63,7 +63,9 @@ class Cloudflare_Image_Handler {
 		}
 
 		$attrs = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
+
 		$image = get_cf_image( $block['attrs']['id'], $attrs, 'content', false );
+		$image = $this->remove_picture_attributes( $image );
 
 		return $image;
 	}
@@ -104,18 +106,12 @@ class Cloudflare_Image_Handler {
 	 */
 	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
-		// Wrangle the picture class(es).
-		$picture_classes = (
-			isset( $attr['picture_class'] ) &&
-			! empty( $attr['picture_class'] )
-		) ? Helpers::classes_array_to_string( $attr['picture_class'] ) : false;
-
 		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
 			isset( $attr['data-ratio'] ) ? $attr['data-ratio'] : '1:1',
 			isset( $attr['data-layout'] ) ? $attr['data-layout'] : 'unknown',
-			isset( $attr['picture_class'] ) ? $picture_classes : null,
+			isset( $attr['data-picture-class'] ) ? Helpers::classes_array_to_string( $attr['data-picture-class'] ) : null,
 			$html
 		);
 
@@ -148,7 +144,8 @@ class Cloudflare_Image_Handler {
 	 * @return string       The modified tag
 	 */
 	public function remove_picture_attributes( string $html ) : string {
-		$html = preg_replace( '/(<[^>]+) picture_(.*)=".*?"/i', '$1', $html );
+		$html = preg_replace( '/data-([^"]+)="[^"]+"/i', '', $html );
+		$html = preg_replace( '/data-([^\']+)=\'[^\']+\'/i', '', $html );
 		return $html;
 	}
 
@@ -200,15 +197,15 @@ class Cloudflare_Image_Handler {
 			! empty( $image->attrs['class'] )
 		) ? Helpers::classes_array_to_string( $image->attrs['class'] ) : array();
 
-		$image->attrs['picture_class'] = (
-			isset( $image->attrs['picture_class'] ) &&
-			! empty( $image->attrs['picture_class'] )
-		) ? Helpers::classes_array_to_string( $image->attrs['picture_class'] ) : array();
+		$image->attrs['data-picture-class'] = (
+			isset( $image->attrs['data-picture-class'] ) &&
+			! empty( $image->attrs['data-picture-class'] )
+		) ? Helpers::classes_array_to_string( $image->attrs['data-picture-class'] ) : array();
 
 		$image->attrs['srcset'] = (
 			isset( $image->attrs['srcset'] ) &&
 			! empty( $image->attrs['srcset'] )
-		) ? implode( ',', $image->attrs['srcset'] ) : array();
+		) ? implode( ', ', $image->attrs['srcset'] ) : array();
 
 		return $image->attrs;
 	}

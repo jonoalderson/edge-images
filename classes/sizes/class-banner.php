@@ -15,9 +15,9 @@ class Banner extends Cloudflare_Image {
 	 */
 	protected function init_attrs() : void {
 		$this->attrs = array(
-			'width'         => 123,
-			'height'        => 456,
-			'srcset'        => array(
+			'width'              => 123,
+			'height'             => 456,
+			'srcset'             => array(
 				array(
 					'width'  => 456,
 					'height' => 123,
@@ -27,11 +27,12 @@ class Banner extends Cloudflare_Image {
 					'height' => 234,
 				),
 			),
-			'sizes'         => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',
-			'ratio'         => '4/3',
-			'class'         => array( 'test123', 'test456' ),
-			'picture_class' => array( 'banner_test_class' ),
+			'sizes'              => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',
+			'data-ratio'         => '4/3',
+			'class'              => array( 'test123', 'test456' ),
+			'data-picture-class' => array( 'banner_test_class' ),
 		);
+		ksort( $this->attrs );
 	}
 
 }

@@ -58,6 +58,7 @@ function get_cf_image( int $id, array $atts = array(), string $size, $echo = tru
 
 	// Get the image.
 	$image = new $image_class( $id, $atts, $size );
+
 	if ( ! $image ) {
 		return false;
 	}
