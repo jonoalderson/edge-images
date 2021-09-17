@@ -2,7 +2,7 @@
 namespace Yoast_CF_Images;
 
 use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
-use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
+use Yoast_CF_Images\Integrations\Cloudflare_Image_Handler as Handler;
 
 /**
  * Generates and managers a Cloudflared image.
@@ -108,9 +108,10 @@ class Cloudflare_Image {
 			return;
 		}
 
-		// We need a size.
+		// If we don't have a size, try and work out some values.
 		if ( ! $this->has_size() ) {
-			return;
+			$this->init_width();
+			$this->init_height();
 		}
 
 		$size = $this->get_size();
@@ -128,8 +129,6 @@ class Cloudflare_Image {
 			$this->attrs['height'] = $size[1];
 		}
 
-		// $this->init_width();
-		// $this->init_height();
 	}
 
 	/**

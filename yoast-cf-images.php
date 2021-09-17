@@ -38,10 +38,10 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 
 	// Load our integrations.
-	Yoast_CF_Images\Cloudflare_Image_Handler::register();
-	Yoast_CF_Images\Social_Images::register();
-	Yoast_CF_Images\Schema_Images::register();
-	Yoast_CF_Images\Preloads::register();
+	Yoast_CF_Images\Integrations\Cloudflare_Image_Handler::register();
+	Yoast_CF_Images\Integrations\Social_Images::register();
+	Yoast_CF_Images\Integrations\Schema_Images::register();
+	Yoast_CF_Images\Integrations\Preloads::register();
 
 } )();
 

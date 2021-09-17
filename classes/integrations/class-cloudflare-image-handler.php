@@ -1,6 +1,6 @@
 <?php
 
-namespace Yoast_CF_Images;
+namespace Yoast_CF_Images\Integrations;
 
 use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
 
