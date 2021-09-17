@@ -22,7 +22,7 @@ class Cloudflare_Image_Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_picture_attributes' ), 999999 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_data_attributes' ), PHP_INT_MAX - 100 );
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 1000, 5 );
 	}
@@ -65,7 +65,7 @@ class Cloudflare_Image_Handler {
 		$attrs = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
 
 		$image = get_cf_image( $block['attrs']['id'], $attrs, 'content', false );
-		$image = $this->remove_picture_attributes( $image );
+		$image = $this->remove_data_attributes( $image );
 
 		return $image;
 	}
@@ -134,18 +134,16 @@ class Cloudflare_Image_Handler {
 	}
 
 	/**
-	 * Remove the (first two) height and width attrs from <img> markup.
-	 *
-	 * NOTE: Widthout this, we create duplicate properties
-	 *       with wp_get_attachment_image_attributes!
+	 * Remove data- attributes
 	 *
 	 * @param  string $html The HTML <img> tag.
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_picture_attributes( string $html ) : string {
+	public function remove_data_attributes( string $html ) : string {
 		$html = preg_replace( '/data-([^"]+)="[^"]+"/i', '', $html );
 		$html = preg_replace( '/data-([^\']+)=\'[^\']+\'/i', '', $html );
+		$html = preg_replace( '/\s+/', ' ', $html );
 		return $html;
 	}
 
@@ -178,13 +176,13 @@ class Cloudflare_Image_Handler {
 	/**
 	 * Alter an image to use Cloudflare
 	 *
-	 * @param array  $attrs          The attachment attributes.
-	 * @param object $attachment    The attachment.
-	 * @param string $size          The attachment size.
+	 * @param array        $attrs      The attachment attributes.
+	 * @param object       $attachment The attachment.
+	 * @param string|array $size The attachment size.
 	 *
-	 * @return array                The modified image attributes
+	 * @return array             The modified image attributes
 	 */
-	public function route_images_through_cloudflare( array $attrs, object $attachment, string $size ) : array {
+	public function route_images_through_cloudflare( array $attrs, object $attachment, $size ) : array {
 		if ( ! $this->image_should_use_cloudflare( $attrs ) ) {
 			return $attrs;
 		}
@@ -192,16 +190,19 @@ class Cloudflare_Image_Handler {
 		$image_class = Helpers::get_image_class( $size );
 		$image       = new $image_class( $attachment->ID, $attrs, $size );
 
+		// Convert the class(es) to a string.
 		$image->attrs['class'] = (
 			isset( $image->attrs['class'] ) &&
 			! empty( $image->attrs['class'] )
 		) ? Helpers::classes_array_to_string( $image->attrs['class'] ) : array();
 
+		// Convert the picture class(es) to a string.
 		$image->attrs['data-picture-class'] = (
 			isset( $image->attrs['data-picture-class'] ) &&
 			! empty( $image->attrs['data-picture-class'] )
 		) ? Helpers::classes_array_to_string( $image->attrs['data-picture-class'] ) : array();
 
+		// Convert the srcset to a string.
 		$image->attrs['srcset'] = (
 			isset( $image->attrs['srcset'] ) &&
 			! empty( $image->attrs['srcset'] )

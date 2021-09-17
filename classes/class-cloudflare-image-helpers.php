@@ -39,11 +39,17 @@ class Cloudflare_Image_Helpers {
 	 */
 	public static function get_image_class( $size ) : string {
 		$image_base_class = 'Yoast_CF_Images';
+		$default_class    = $image_base_class . '\\Cloudflare_Image';
+
+		// Bail if this is a custom size.
+		if ( is_array( $size ) ) {
+			return $default_class;
+		}
 
 		// See if there's a specific size class for this image.
 		$image_size_class = $image_base_class . '\\sizes\\' . $size;
 
-		$class = ( class_exists( $image_size_class ) ) ? $image_size_class : $image_base_class . '\\Cloudflare_Image';
+		$class = ( class_exists( $image_size_class ) ) ? $image_size_class : $default_class;
 
 		return $class;
 	}

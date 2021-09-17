@@ -39,6 +39,7 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 
 	Yoast_CF_Images\Cloudflare_Image_Handler::register();
 	Yoast_CF_Images\Social_Images::register();
+	Yoast_CF_Images\Schema_Images::register();
 
 } )();
 

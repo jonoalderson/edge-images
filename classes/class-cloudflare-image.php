@@ -108,9 +108,14 @@ class Cloudflare_Image {
 			return;
 		}
 
-		// Init defaults based on the size.
+		// We need a size.
+		if ( ! $this->has_size() ) {
+			return;
+		}
+
 		$size = $this->get_size();
-		if ( $size ) {
+
+		if ( is_string( $size ) ) {
 			$vals = Helpers::get_wp_size_vals( $size );
 			if ( $vals && ! empty( $vals ) ) {
 				$this->attrs['width']  = $vals['width'];
@@ -118,8 +123,13 @@ class Cloudflare_Image {
 			}
 		}
 
-		$this->init_width();
-		$this->init_height();
+		if ( is_array( $size ) ) {
+			$this->attrs['width']  = $size[0];
+			$this->attrs['height'] = $size[1];
+		}
+
+		// $this->init_width();
+		// $this->init_height();
 	}
 
 	/**
@@ -336,7 +346,6 @@ class Cloudflare_Image {
 	 * @return self
 	 */
 	private function set_size( $size ) : self {
-		$size       = $this->sanitize_size( $size );
 		$this->size = $size;
 		return $this;
 	}
@@ -366,21 +375,6 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Sanitize a size attribute
-	 *
-	 * @param string|array $size The size value.
-	 *
-	 * @return string            The sanitized value.
-	 */
-	private function sanitize_size( $size ) : string {
-		if ( is_array( $size ) ) {
-			// Convert [640, 480] into '640x480'.
-			$size = implode( 'x', $size );
-		}
-		return $size;
-	}
-
-	/**
 	 * Parse the attr properties to construct an <img>
 	 *
 	 * @param bool $wrap_in_picture If the el should be wrapped in a <picture>.
@@ -388,6 +382,10 @@ class Cloudflare_Image {
 	 * @return string The <img> el
 	 */
 	public function construct_img_el( $wrap_in_picture = false ) : string {
+
+		// srcset attributes need special treatment to comma-separate values.
+		$this->attrs['srcset'] = implode( ', ', $this->attrs['srcset'] );
+
 		$html = sprintf(
 			'<img %s>',
 			implode(
@@ -437,6 +435,9 @@ class Cloudflare_Image {
 			$picture_classes = $this->get_attr( 'data-picture-class' );
 		}
 
+		if ( is_array( $this->size ) ) {
+			$this->size = $this->size[0] . 'x' . $this->size[1];
+		}
 		$this->attrs['class'] = array_merge(
 			$classes,
 			array(
@@ -515,6 +516,9 @@ class Cloudflare_Image {
 			$h        = ( isset( $v['width'] ) ) ? $v['height'] : null;
 			$srcset[] = Helpers::create_srcset_val( $src, $v['width'], $h );
 			$srcset[] = Helpers::create_srcset_val( $src, $v['width'] * 2, $h * 2 );
+			if ( ceil( $v['width'] / 2 ) > 400 ) {
+				$srcset[] = Helpers::create_srcset_val( $src, ceil( $v['width'] / 2 ), ceil( $h / 2 ) );
+			}
 		}
 
 		$srcset = array_unique( $srcset );
