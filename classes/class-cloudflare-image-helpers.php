@@ -9,8 +9,78 @@ use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
  */
 class Cloudflare_Image_Helpers {
 
+	/**
+	 * The plugin styles URL
+	 *
+	 * @var string
+	 */
 	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
-	const CF_HOST    = 'https://yoast.com';
+
+	/**
+	 * The Cloudflare host domain
+	 *
+	 * @var string
+	 */
+	const CF_HOST = 'https://yoast.com';
+
+	/**
+	 * The content width in pixels
+	 *
+	 * @var integer
+	 */
+	const CONTENT_WIDTH = 600;
+
+	/**
+	 * The min width a default srcset val should be generated at, in pixels.
+	 *
+	 * @var integer
+	 */
+	const MIN_WIDTH = 400;
+
+	/**
+	 * The max width a default srcset val should ever be generated at, in pixels.
+	 *
+	 * @var integer
+	 */
+	const WIDTH_MAX = 2400;
+
+	/**
+	 * The min width a default srcset val should be generated at, in pixels.
+	 *
+	 * @var integer
+	 */
+	const WIDTH_MIN = 400;
+
+	/**
+	 * The width to increment default srcset vals.
+	 *
+	 * @var integer
+	 */
+	const WIDTH_STEP = 100;
+
+	/**
+	 * Get the appropriate class for the image size
+	 *
+	 * @param  string $size The image size.
+	 *
+	 * @return string       The class name
+	 */
+	public static function get_image_class( $size ) : string {
+		$image_base_class = 'Yoast_CF_Images';
+		$default_class    = $image_base_class . '\\Cloudflare_Image';
+
+		// Bail if this is a custom size.
+		if ( is_array( $size ) ) {
+			return $default_class;
+		}
+
+		// See if there's a specific size class for this image.
+		$image_size_class = $image_base_class . '\\sizes\\' . $size;
+
+		$class = ( class_exists( $image_size_class ) ) ? $image_size_class : $default_class;
+
+		return $class;
+	}
 
 	/**
 	 * Replace a SRC string with a Cloudflared version
@@ -42,35 +112,9 @@ class Cloudflare_Image_Helpers {
 		);
 
 		$url  = wp_parse_url( $src );
-		$path = $url['path'];
-		$src  = '/' . 'https://yoast.com' . $path;
+		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
-		return $cf_string . $src;
-	}
-
-	/**
-	 * Adds key srcset sizes from the image's size
-	 *
-	 * @param string $src The image src.
-	 * @param string $size The image's size.
-	 *
-	 * @return array The srcset attr
-	 */
-	public static function get_srcset_sizes_from_context( string $src, string $size ) : array {
-		$sizes  = Handler::get_context_vals( $size, 'srcset' );
-		$srcset = array();
-		if ( ! $sizes ) {
-			return $srcset; // Bail if there are no srcset options.
-		}
-
-		// Create the srcset strings and x2 strings.
-		foreach ( $sizes as $v ) {
-			$h        = ( isset( $v['h'] ) ) ? $v['h'] : null;
-			$srcset[] = self::create_srcset_val( $src, $v['w'], $h );
-			$srcset[] = self::create_srcset_val( $src, $v['w'] * 2, $h * 2 );
-		}
-
-		return $srcset;
+		return $cf_string . $path;
 	}
 
 	/**
@@ -93,16 +137,66 @@ class Cloudflare_Image_Helpers {
 	/**
 	 * Get the content width value
 	 *
-	 * @param  integer $fallback A fallback width, in pixels.
-	 *
-	 * @return int               The content width value
+	 * @return int The content width value
 	 */
-	public static function get_content_width( int $fallback = 800 ) : int {
+	public static function get_content_width() : int {
 		global $content_width;
-		if ( ! $content_width ) {
-			$content_width = $fallback;
+		if ( ! $content_width || $content_width > self::CONTENT_WIDTH ) {
+			$content_width = self::CONTENT_WIDTH;
 		}
 		return $content_width;
+	}
+
+	/**
+	 * Get the vals for a WP image size
+	 *
+	 * @param  string $size The size.
+	 *
+	 * @return false|array  The values
+	 */
+	public static function get_wp_size_vals( string $size ) {
+
+		$vals = array();
+
+		// Get our default image sizes.
+		$default_image_sizes = get_intermediate_image_sizes();
+
+		// Check the size is valid.
+		if ( ! in_array( $size, $default_image_sizes, true ) ) {
+			$size = 'large';
+		}
+
+		// Check if we have vlues for this size.
+		$key = array_search( $size, $default_image_sizes, true );
+		if ( $key === false ) {
+			return false;
+		}
+
+		$vals = array(
+			'width'  => intval( get_option( "{$default_image_sizes[$key]}_size_w" ) ),
+			'height' => intval( get_option( "{$default_image_sizes[$key]}_size_h" ) ),
+		);
+
+		return $vals;
+	}
+
+	/**
+	 * Flatten an array of classes into a string
+	 *
+	 * @param  mixed $classes The classes.
+	 *
+	 * @return false|string The flattened classes
+	 */
+	public static function classes_array_to_string( $classes ) {
+		if ( is_string( $classes ) ) {
+			return $classes;
+		}
+
+		if ( is_array( $classes ) ) {
+			return implode( ' ', $classes );
+		}
+
+		return false;
 	}
 
 }

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return bool Whether or not the requested class was found.
  */
 function autoloader( $class_name ) {
-	if ( strpos( $class_name, 'Yoast_CF_Images' ) !== 0 ) {
+	if ( strpos( $class_name, __NAMESPACE__ ) !== 0 ) {
 		return false;
 	}
 
@@ -41,6 +41,5 @@ function autoloader( $class_name ) {
 
 	return false;
 }
-
 
 spl_autoload_register( __NAMESPACE__ . '\autoloader' );
