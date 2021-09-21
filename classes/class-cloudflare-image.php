@@ -56,6 +56,8 @@ class Cloudflare_Image {
 			$this->init_attrs();
 		}
 
+		return;
+
 		$this->init_dimensions();
 		$this->init_src();
 		$this->init_ratio();
@@ -112,6 +114,7 @@ class Cloudflare_Image {
 		if ( ! $this->has_size() ) {
 			$this->init_width();
 			$this->init_height();
+			return; // Early exit.
 		}
 
 		$size = $this->get_size();
@@ -122,11 +125,13 @@ class Cloudflare_Image {
 				$this->attrs['width']  = $vals['width'];
 				$this->attrs['height'] = $vals['height'];
 			}
+			return; // Early exit.
 		}
 
 		if ( is_array( $size ) ) {
 			$this->attrs['width']  = $size[0];
 			$this->attrs['height'] = $size[1];
+			return;
 		}
 
 	}
