@@ -56,8 +56,6 @@ class Cloudflare_Image {
 			$this->init_attrs();
 		}
 
-		return;
-
 		$this->init_dimensions();
 		$this->init_src();
 		$this->init_ratio();
@@ -260,6 +258,7 @@ class Cloudflare_Image {
 		// Convert the SRC to a CF string.
 		$height = ( isset( $this->attrs['height'] ) ) ? $this->attrs['height'] : null;
 		$cf_src = Helpers::cf_src( $full_image[0], $this->attrs['width'], $height );
+
 		if ( ! $cf_src ) {
 			return;
 		}
@@ -423,36 +422,29 @@ class Cloudflare_Image {
 	 */
 	private function init_classes() : void {
 
-		$classes         = array();
-		$picture_classes = array();
+		// Get (and normalize) the class(es).
+		$classes = Helpers::normalize_attr_array( $this->get_attr( 'class' ) );
 
-		if ( $this->has_attr( 'class' ) ) {
-			$classes = $this->get_attr( 'class' );
-			if ( is_string( $classes ) ) {
-				$classes = array( $classes );
-			}
-		}
+		// Get (and normalize) the picture class(es).
+		$picture_classes = Helpers::normalize_attr_array( $this->get_attr( 'data-picture-class' ) );
 
-		if ( $this->has_attr( 'data-picture-class' ) ) {
-			$picture_classes = $this->get_attr( 'data-picture-class' );
-		}
+		// Get the size class(es).
+		$size_class = ( is_array( $this->size ) ) ? $this->size[0] . 'x' . $this->size[1] : $this->size;
 
-		if ( is_array( $this->size ) ) {
-			$this->size = $this->size[0] . 'x' . $this->size[1];
-		}
 		$this->attrs['class'] = array_merge(
 			$classes,
 			array(
-				'attachment-' . $this->size,
-				'size-' . $this->size,
+				'attachment-' . $size_class,
+				'size-' . $size_class,
 				'cloudflared',
 			)
 		);
+		$this->attrs['class'] = array_unique( $this->attrs['class'] );
 
 		$this->attrs['data-picture-class'] = array_merge(
 			$picture_classes,
 			array(
-				'mb-24',
+				'cloudflared', // Placeholde for default classes.
 			)
 		);
 	}

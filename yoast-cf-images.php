@@ -48,14 +48,46 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 /**
  * Returns a Cloudflared image
  *
- * @param  int    $id    The attachment ID.
- * @param  array  $atts  The atts to pass (see wp_get_attachment_image).
- * @param  string $size  The image size.
- * @param  bool   $echo  If the image should be echo'd.
+ * @param  int          $id    The attachment ID.
+ * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
+ * @param  string|array $size  The image size.
+ * @param  bool         $echo  If the image should be echo'd.
  *
- * @return false|string  The HTML
+ * @return false|string  The image HTML
  */
-function get_cf_image( int $id, array $atts = array(), string $size, $echo = true ) {
+function get_cf_image( int $id, array $atts = array(), $size, $echo = true ) {
+
+	$image = get_cf_image_object( $id, $atts, $size, $echo );
+
+	if ( ! $image ) {
+		return; // Bail if there's no image.
+	}
+
+	$html = $image->construct_img_el( true );
+
+	// Construct the <img>, wrap it in a <picture>, and echo it.
+	if ( $echo ) {
+		echo wp_kses( $html, array( 'picture', 'img' ) );
+		return;
+	}
+
+	// Or just return the image object.
+	return $html;
+}
+
+/**
+ * Get a CF image as an object
+ *
+ * @param  int          $id    The attachment ID.
+ * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
+ * @param  string|array $size  The image size.
+ *
+ * @return false|object        The image object
+ */
+function get_cf_image_object( int $id, array $atts = array(), $size ) {
+	if ( ! $id ) {
+		return; // Bail if the ID is falsey.
+	}
 
 	$image_class = Yoast_CF_Images\Cloudflare_Image_Helpers::get_image_class( $size );
 
@@ -66,15 +98,5 @@ function get_cf_image( int $id, array $atts = array(), string $size, $echo = tru
 		return false;
 	}
 
-	// Construct the <img>, and wrap it in a <picture>.
-	$html = $image->construct_img_el( true );
-
-	// Maybe echo the image.
-	if ( $echo ) {
-		echo wp_kses( $html, array( 'picture', 'img' ) );
-		return;
-	}
-
-	// Or just return the HTML.
-	return $html;
+	return $image;
 }
