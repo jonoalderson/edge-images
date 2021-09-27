@@ -181,6 +181,21 @@ class Cloudflare_Image_Helpers {
 	}
 
 	/**
+	 * Normalize an image attr into an array of values
+	 *
+	 * @param  mixed $attr The attr to normalize.
+	 *
+	 * @return array       The array of values
+	 */
+	public static function normalize_attr_array( $attr ) : array {
+		$attr = ( $attr ) ? $attr : array();
+		if ( is_string( $attr ) ) {
+			$attr = explode( ' ', $attr );
+		}
+		return array_unique( $attr );
+	}
+
+	/**
 	 * Flatten an array of classes into a string
 	 *
 	 * @param  mixed $classes The classes.
@@ -189,10 +204,13 @@ class Cloudflare_Image_Helpers {
 	 */
 	public static function classes_array_to_string( $classes ) {
 		if ( is_string( $classes ) ) {
-			return $classes;
+			return sanitize_html_class( $classes );
 		}
 
 		if ( is_array( $classes ) ) {
+			foreach ( $classes as &$class ) {
+				$class = sanitize_html_class( $class );
+			}
 			return implode( ' ', $classes );
 		}
 
