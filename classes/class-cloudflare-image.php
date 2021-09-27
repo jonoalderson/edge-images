@@ -152,7 +152,7 @@ class Cloudflare_Image {
 		if ( is_string( $size ) ) {
 			$vals = Helpers::get_wp_size_vals( $size );
 			if ( $vals && ! empty( $vals ) ) {
-				$image                 = wp_get_attachment_image_src( $this->get_id(), 'full' );
+				$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
 				$this->attrs['width']  = $image[2];
 				$this->attrs['height'] = $image[1];
 			}
