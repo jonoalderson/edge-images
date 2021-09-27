@@ -49,6 +49,8 @@ class Schema_Images {
 
 		$data['url']        = $cf_url;
 		$data['contentUrl'] = $cf_url;
+		$data['width']      = self::SCHEMA_WIDTH;
+		$data['height']     = self::SCHEMA_HEIGHT;
 
 		return $data;
 
