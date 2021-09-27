@@ -91,10 +91,10 @@ class Cloudflare_Image_Helpers {
 	 *
 	 * @return string      The modified SRC attr.
 	 */
-	public static function cf_src( string $src, int $w, int $h = null ) : string {
+	public static function cf_src( string $src, int $w, int $h = null, string $fit = 'contain' ) : string {
 		$cf_properties = array(
 			'width'   => $w,
-			'fit'     => 'crop',
+			'fit'     => $fit,
 			'f'       => 'auto',
 			'gravity' => 'auto',
 			'onerror' => 'redirect',

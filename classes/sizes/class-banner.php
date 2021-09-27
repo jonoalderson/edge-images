@@ -31,6 +31,7 @@ class Banner extends Cloudflare_Image {
 			'data-ratio'         => '4/3',
 			'class'              => array( 'test123', 'test456' ),
 			'data-picture-class' => array( 'banner_test_class' ),
+			'fit'                => 'pad',
 		);
 		ksort( $this->attrs );
 	}

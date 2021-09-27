@@ -57,6 +57,7 @@ class Cloudflare_Image {
 		}
 
 		$this->init_dimensions();
+		$this->init_fit();
 		$this->init_src();
 		$this->init_ratio();
 		$this->init_layout();
@@ -78,10 +79,25 @@ class Cloudflare_Image {
 			return;
 		}
 
-		$layout = $this->get_attr( 'layout' );
-
+		$layout                     = $this->get_attr( 'layout' );
 		$this->attrs['data-layout'] = ( $layout ) ? $layout : 'responsive';
+	}
 
+	/**
+	 * Init the fit
+	 * Default to 'contain'
+	 *
+	 * @return void
+	 */
+	private function init_fit() : void {
+
+		// Bail if a fit is already set.
+		if ( $this->has_fit() ) {
+			return;
+		}
+
+		$fit                     = $this->get_attr( 'data-fit' );
+		$this->attrs['data-fit'] = ( $fit ) ? $fit : 'contain';
 	}
 
 	/**
@@ -91,6 +107,18 @@ class Cloudflare_Image {
 	 */
 	private function has_layout() : bool {
 		if ( ! isset( $this->attrs['data-layout'] ) || ! $this->attrs['data-layout'] ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Checks if a fit is set
+	 *
+	 * @return bool
+	 */
+	private function has_fit() : bool {
+		if ( ! isset( $this->attrs['data-fit'] ) || ! $this->attrs['data-fit'] ) {
 			return false;
 		}
 		return true;
@@ -257,7 +285,7 @@ class Cloudflare_Image {
 
 		// Convert the SRC to a CF string.
 		$height = ( isset( $this->attrs['height'] ) ) ? $this->attrs['height'] : null;
-		$cf_src = Helpers::cf_src( $full_image[0], $this->attrs['width'], $height );
+		$cf_src = Helpers::cf_src( $full_image[0], $this->attrs['width'], $height, $this->attrs['data-fit'] );
 
 		if ( ! $cf_src ) {
 			return;
