@@ -153,8 +153,8 @@ class Cloudflare_Image {
 			$vals = Helpers::get_wp_size_vals( $size );
 			if ( $vals && ! empty( $vals ) ) {
 				$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
-				$this->attrs['width']  = $image[2];
-				$this->attrs['height'] = $image[1];
+				$this->attrs['width']  = $image[1];
+				$this->attrs['height'] = $image[2];
 			}
 			return; // Early exit.
 		}
@@ -264,10 +264,10 @@ class Cloudflare_Image {
 			return; // Bail if already set.
 		}
 
-		$ratio = $this->get_attr( 'ratio' );
+		$ratio = $this->get_attr( 'data-ratio' );
 		if ( ! $ratio ) {
 			if ( isset( $this->attrs['height'] ) && isset( $this->attrs['width'] ) ) {
-				$ratio = $this->attrs['height'] . '/' . $this->attrs['width'];
+				$ratio = $this->attrs['width'] . '/' . $this->attrs['height'];
 			} else {
 				return;
 			}
