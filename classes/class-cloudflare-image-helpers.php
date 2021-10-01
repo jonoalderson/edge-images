@@ -89,6 +89,7 @@ class Cloudflare_Image_Helpers {
 	 * @param  string $src               The SRC attr.
 	 * @param  int    $w                 The width in pixels.
 	 * @param  int    $h                 The height in pixels.
+	 * @param  string $fit               The fit method.
 	 *
 	 * @return string      The modified SRC attr.
 	 */
@@ -100,11 +101,16 @@ class Cloudflare_Image_Helpers {
 			'gravity' => 'auto',
 			'onerror' => 'redirect',
 		);
+
+		// Set a height if we have one.
 		if ( $h ) {
 			$cf_properties['height'] = $h;
 		}
+
+		// Sort our properties alphabetically by key.
 		ksort( $cf_properties );
 
+		// Hard-code the yoast.com domain (for now).
 		$cf_prefix = 'https://yoast.com/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
@@ -112,6 +118,7 @@ class Cloudflare_Image_Helpers {
 			'%2C'
 		);
 
+		// Get the path from the URL.
 		$url  = wp_parse_url( $src );
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
@@ -189,7 +196,9 @@ class Cloudflare_Image_Helpers {
 	 * @return array       The array of values
 	 */
 	public static function normalize_attr_array( $attr ) : array {
-		$attr = ( $attr ) ? $attr : array();
+		if ( ! $attr ) {
+			return array();
+		}
 		if ( is_string( $attr ) ) {
 			$attr = explode( ' ', $attr );
 		}
@@ -205,17 +214,40 @@ class Cloudflare_Image_Helpers {
 	 */
 	public static function classes_array_to_string( $classes ) {
 		if ( is_string( $classes ) ) {
-			return sanitize_html_class( $classes );
+			$classes = explode( ' ', $classes );
 		}
 
 		if ( is_array( $classes ) ) {
-			foreach ( $classes as &$class ) {
-				$class = sanitize_html_class( $class );
-			}
+			$classes = array_map(
+				function( $class ) {
+					return sanitize_html_class( $class );
+				},
+				$classes
+			);
 			return implode( ' ', $classes );
 		}
 
 		return false;
 	}
+
+	/**
+	 * Flatten an array of srcset values into a string
+	 *
+	 * @param  mixed $srcset The srcset values.
+	 *
+	 * @return false|string The flattened srcset string
+	 */
+	public static function srcset_array_to_string( $srcset ) {
+		if ( is_string( $srcset ) ) {
+			return $srcset;
+		}
+
+		if ( is_array( $srcset ) ) {
+			return implode( ', ', $srcset );
+		}
+
+		return false;
+	}
+
 
 }

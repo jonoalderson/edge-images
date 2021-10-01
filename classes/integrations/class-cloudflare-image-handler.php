@@ -192,21 +192,18 @@ class Cloudflare_Image_Handler {
 
 		// Convert the class(es) to a string.
 		$image->attrs['class'] = (
-			isset( $image->attrs['class'] ) &&
-			! empty( $image->attrs['class'] )
+			$image->has_attr( 'class' )
 		) ? Helpers::classes_array_to_string( $image->attrs['class'] ) : array();
 
 		// Convert the picture class(es) to a string.
 		$image->attrs['data-picture-class'] = (
-			isset( $image->attrs['data-picture-class'] ) &&
-			! empty( $image->attrs['data-picture-class'] )
+			$image->has_attr( 'data-picture-class' )
 		) ? Helpers::classes_array_to_string( $image->attrs['data-picture-class'] ) : array();
 
 		// Convert the srcset to a string.
 		$image->attrs['srcset'] = (
-			isset( $image->attrs['srcset'] ) &&
-			! empty( $image->attrs['srcset'] )
-		) ? implode( ', ', $image->attrs['srcset'] ) : array();
+			$image->has_attr( 'srcset' )
+		) ? Helpers::srcset_array_to_string( $image->attrs['srcset'] ) : array();
 
 		return $image->attrs;
 	}

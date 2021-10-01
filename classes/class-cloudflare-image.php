@@ -37,7 +37,7 @@ class Cloudflare_Image {
 	 * @param array  $attrs  The attachment attributes.
 	 * @param string $size The size.
 	 */
-	public function __construct( int $id, array $attrs = array(), $size ) {
+	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
 		$this->id    = $id;
 		$this->attrs = $attrs;
 		$this->set_size( $size );
@@ -293,7 +293,7 @@ class Cloudflare_Image {
 		$cf_src = Helpers::cf_src( $full_image[0], $this->attrs['width'], $height, $this->attrs['data-fit'] );
 
 		if ( ! $cf_src ) {
-			return;
+			return; // Bail if the CF src generation fails.
 		}
 
 		$this->attrs['src']           = $cf_src;
@@ -420,7 +420,7 @@ class Cloudflare_Image {
 	public function construct_img_el( $wrap_in_picture = false ) : string {
 
 		// srcset attributes need special treatment to comma-separate values.
-		$this->attrs['srcset'] = implode( ', ', $this->attrs['srcset'] );
+		$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
 
 		// Build our HTML tag by running through all of our attrs.
 		$html = sprintf(
@@ -480,6 +480,8 @@ class Cloudflare_Image {
 				'cloudflared', // Placeholde for default classes.
 			)
 		);
+		$this->attrs['data-picture-class'] = array_unique( $this->attrs['data-picture-class'] );
+
 	}
 
 	/**
@@ -503,7 +505,7 @@ class Cloudflare_Image {
 	 *
 	 * @return bool
 	 */
-	private function has_attr( string $val ) : bool {
+	public function has_attr( string $val ) : bool {
 		if ( ! isset( $this->attrs[ $val ] ) || ! $this->attrs[ $val ] ) {
 			return false;
 		}
