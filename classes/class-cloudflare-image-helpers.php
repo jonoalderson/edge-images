@@ -74,10 +74,11 @@ class Cloudflare_Image_Helpers {
 			return $default_class;
 		}
 
-		// See if there's a specific size class for this image.
-		$image_size_class = $image_base_class . '\\sizes\\' . $size;
+		$registered_sizes = apply_filters( 'cf_image_sizes', [] );
 
-		$class = ( class_exists( $image_size_class ) ) ? $image_size_class : $default_class;
+		var_dump($registered_sizes[$size]);
+
+		$class = ( array_key_exists( $size, $registered_sizes ) ) ? $registered_sizes[$size] : $default_class;
 
 		return $class;
 	}
