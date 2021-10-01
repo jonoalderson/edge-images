@@ -101,6 +101,20 @@ class Cloudflare_Image_Helpers {
 	}
 
 	/**
+	 * Normaize a size attribute to a string
+	 *
+	 * @param  mixed $size The size.
+	 *
+	 * @return string      The normalized size
+	 */
+	public static function normalize_size_attr( $size ) : string {
+		if ( is_array( $size ) ) {
+			return implode( 'x', $size );
+		}
+		return $size;
+	}
+
+	/**
 	 * Creates an srcset val from a src and dimensions
 	 *
 	 * @param string $src  The image src attr.

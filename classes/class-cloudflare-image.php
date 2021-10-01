@@ -51,11 +51,19 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 
-		// Init attributes from a child class if one exists.
-		if ( method_exists( get_called_class(), 'init_attrs' ) ) {
-			$this->init_attrs();
-		}
+		// Get the cf image sizes array.
+		$cf_image_sizes = apply_filters( 'cf_image_sizes', array() );
 
+		// Get the normalized size to check for.
+		$size = Helpers::normalize_size_attr( $this->get_size() );
+
+		// Set the attrs if there's a matching size, or, use the defaults.
+		$this->attrs = ( array_key_exists( $size, $cf_image_sizes ) ) ? $cf_image_sizes[ $size ] : $this->get_default_attrs();
+
+		// Sort the params.
+		ksort( $this->attrs );
+
+		// Init all of the attributes.
 		$this->init_dimensions();
 		$this->init_fit();
 		$this->init_src();
@@ -64,6 +72,34 @@ class Cloudflare_Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
+	}
+
+	/**
+	 * Returns an array with default properties.
+	 *
+	 * @return array Array with default properties.
+	 */
+	public function get_default_attrs() : array {
+		$attrs = array(
+			'width'              => 123,
+			'height'             => 456,
+			'srcset'             => array(
+				array(
+					'width'  => 456,
+					'height' => 123,
+				),
+				array(
+					'width'  => 567,
+					'height' => 234,
+				),
+			),
+			'sizes'              => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',
+			'data-ratio'         => '4/3',
+			'class'              => array( 'test123', 'test456' ),
+			'data-picture-class' => array( 'banner_test_class' ),
+			'fit'                => 'pad',
+		);
+		return $attrs;
 	}
 
 	/**
@@ -462,7 +498,7 @@ class Cloudflare_Image {
 		$picture_classes = Helpers::normalize_attr_array( $this->get_attr( 'data-picture-class' ) );
 
 		// Get the size class(es).
-		$size_class = ( is_array( $this->size ) ) ? $this->size[0] . 'x' . $this->size[1] : $this->size;
+		$size_class = Helpers::normalize_size_attr( $this->get_size() );
 
 		$this->attrs['class'] = array_merge(
 			$classes,
@@ -561,59 +597,4 @@ class Cloudflare_Image {
 		return $srcset;
 	}
 
-	/**
-	 * Returns an array with default properties.
-	 *
-	 * @return array Array with default properties.
-	 */
-	public function default_image_properties_array() : array {
-		$attrs = array(
-			'width'              => 123,
-			'height'             => 456,
-			'srcset'             => array(
-				array(
-					'width'  => 456,
-					'height' => 123,
-				),
-				array(
-					'width'  => 567,
-					'height' => 234,
-				),
-			),
-			'sizes'              => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',
-			'data-ratio'         => '4/3',
-			'class'              => array( 'test123', 'test456' ),
-			'data-picture-class' => array( 'banner_test_class' ),
-			'fit'                => 'pad',
-			'importance'         => 'high',
-		);
-		ksort( $attrs );
-
-		return $attrs;
-	}
-
-	/**
-	 * Get the appropriate class for the image size
-	 *
-	 * @param  string $size The image size.
-	 *
-	 * @return string       The class name
-	 */
-	public function get_image_class( $size ) : string {
-		$image_base_class   = 'Yoast_CF_Images';
-		$default_properties =  $this->default_image_properties_array();
-
-		// Bail if this is a custom size.
-		if ( is_array( $size ) ) {
-			return $default_class;
-		}
-
-		$registered_sizes = apply_filters( 'cf_image_sizes', [] );
-
-		var_dump($registered_sizes[$size]);
-
-		$class = ( array_key_exists( $size, $registered_sizes ) ) ? $registered_sizes[$size] : $default_class;
-
-		return $class;
-	}
 }

@@ -3,6 +3,7 @@
 namespace Yoast_CF_Images\Integrations;
 
 use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
+use Yoast_CF_Images\Cloudflare_Image;
 
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.
@@ -187,8 +188,9 @@ class Cloudflare_Image_Handler {
 			return $attrs;
 		}
 
-		$image_class = Helpers::get_image_class( $size );
-		$image       = new $image_class( $attachment->ID, $attrs, $size );
+		// Get attrs here
+
+		$image = new Cloudflare_Image( $attachment->ID, $attrs, $size );
 
 		// Convert the class(es) to a string.
 		$image->attrs['class'] = (
