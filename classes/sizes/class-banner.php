@@ -32,6 +32,7 @@ class Banner extends Cloudflare_Image {
 			'class'              => array( 'test123', 'test456' ),
 			'data-picture-class' => array( 'banner_test_class' ),
 			'fit'                => 'pad',
+			'importance'         => 'high',
 		);
 		ksort( $this->attrs );
 	}
