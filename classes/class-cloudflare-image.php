@@ -560,4 +560,60 @@ class Cloudflare_Image {
 
 		return $srcset;
 	}
+
+	/**
+	 * Returns an array with default properties.
+	 *
+	 * @return array Array with default properties.
+	 */
+	public function default_image_properties_array() : array {
+		$attrs = array(
+			'width'              => 123,
+			'height'             => 456,
+			'srcset'             => array(
+				array(
+					'width'  => 456,
+					'height' => 123,
+				),
+				array(
+					'width'  => 567,
+					'height' => 234,
+				),
+			),
+			'sizes'              => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',
+			'data-ratio'         => '4/3',
+			'class'              => array( 'test123', 'test456' ),
+			'data-picture-class' => array( 'banner_test_class' ),
+			'fit'                => 'pad',
+			'importance'         => 'high',
+		);
+		ksort( $attrs );
+
+		return $attrs;
+	}
+
+	/**
+	 * Get the appropriate class for the image size
+	 *
+	 * @param  string $size The image size.
+	 *
+	 * @return string       The class name
+	 */
+	public function get_image_class( $size ) : string {
+		$image_base_class   = 'Yoast_CF_Images';
+		$default_properties =  $this->default_image_properties_array();
+
+		// Bail if this is a custom size.
+		if ( is_array( $size ) ) {
+			return $default_class;
+		}
+
+		$registered_sizes = apply_filters( 'cf_image_sizes', [] );
+
+		var_dump($registered_sizes[$size]);
+
+		$class = ( array_key_exists( $size, $registered_sizes ) ) ? $registered_sizes[$size] : $default_class;
+
+		return $class;
+	}
 }

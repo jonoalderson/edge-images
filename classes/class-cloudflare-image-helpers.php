@@ -59,31 +59,6 @@ class Cloudflare_Image_Helpers {
 	const WIDTH_STEP = 100;
 
 	/**
-	 * Get the appropriate class for the image size
-	 *
-	 * @param  string $size The image size.
-	 *
-	 * @return string       The class name
-	 */
-	public static function get_image_class( $size ) : string {
-		$image_base_class = 'Yoast_CF_Images';
-		$default_class    = $image_base_class . '\\Cloudflare_Image';
-
-		// Bail if this is a custom size.
-		if ( is_array( $size ) ) {
-			return $default_class;
-		}
-
-		$registered_sizes = apply_filters( 'cf_image_sizes', [] );
-
-		var_dump($registered_sizes[$size]);
-
-		$class = ( array_key_exists( $size, $registered_sizes ) ) ? $registered_sizes[$size] : $default_class;
-
-		return $class;
-	}
-
-	/**
 	 * Replace a SRC string with a Cloudflared version
 	 *
 	 * @param  string $src               The SRC attr.
