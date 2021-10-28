@@ -17,13 +17,6 @@ class Cloudflare_Image_Helpers {
 	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
 
 	/**
-	 * The Cloudflare host domain
-	 *
-	 * @var string
-	 */
-	const CF_HOST = 'https://www.daysoftheyear.com';
-
-	/**
 	 * The content width in pixels
 	 *
 	 * @var integer
@@ -86,7 +79,7 @@ class Cloudflare_Image_Helpers {
 		ksort( $cf_properties );
 
 		// Hard-code the yoast.com domain (for now).
-		$cf_prefix = self::CF_HOST . '/cdn-cgi/image/';
+		$cf_prefix = YOAST_CF_IMAGES_PLUGIN_DOMAIN . '/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
 			'',
