@@ -120,7 +120,7 @@ class Cloudflare_Image_Handler {
 	}
 
 	/**
-	 * Remove the (first two) height and width attrs from <img> markup.
+	 * Remove the (first two) height and width attrs from <img> markup
 	 *
 	 * NOTE: Widthout this, we create duplicate properties
 	 *       with wp_get_attachment_image_attributes!
@@ -135,7 +135,7 @@ class Cloudflare_Image_Handler {
 	}
 
 	/**
-	 * Remove data- attributes
+	 * Remove data- attributes from the <img> tag
 	 *
 	 * @param  string $html The HTML <img> tag.
 	 *
