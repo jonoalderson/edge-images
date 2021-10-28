@@ -34,18 +34,18 @@ class Preloads {
 			return;
 		}
 
-		$this->preload_image( $thumbnail_id, 'banner' );
+		self::preload_image( $thumbnail_id, 'banner' );
 	}
 
 	/**
-	 * Add a rel preload tag for an image
+	 * Echoes a rel preload tag for an image
 	 *
 	 * @param  int   $id   The image ID.
 	 * @param  mixed $size The image size.
 	 *
 	 * @return void
 	 */
-	private function preload_image( int $id, $size ) : void {
+	public static function preload_image( int $id, $size ) : void {
 
 		$image = get_cf_image_object( $id, array(), $size );
 		if ( ! $image ) {
@@ -54,8 +54,8 @@ class Preloads {
 
 		echo sprintf(
 			'<link rel="preload" as="image" imagesrcset="%s" imagesizes="%s">',
-			implode( ' ', $image->attrs['srcset'] ),
-			$image->attrs['sizes'],
+			esc_attr( implode( ', ', $image->attrs['srcset'] ) ),
+			esc_attr( $image->attrs['sizes'] ),
 		);
 
 	}

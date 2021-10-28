@@ -21,7 +21,7 @@ class Cloudflare_Image_Helpers {
 	 *
 	 * @var string
 	 */
-	const CF_HOST = 'https://yoast.com';
+	const CF_HOST = 'https://www.daysoftheyear.com';
 
 	/**
 	 * The content width in pixels
@@ -59,30 +59,6 @@ class Cloudflare_Image_Helpers {
 	const WIDTH_STEP = 100;
 
 	/**
-	 * Get the appropriate class for the image size
-	 *
-	 * @param  string $size The image size.
-	 *
-	 * @return string       The class name
-	 */
-	public static function get_image_class( $size ) : string {
-		$image_base_class = 'Yoast_CF_Images';
-		$default_class    = $image_base_class . '\\Cloudflare_Image';
-
-		// Bail if this is a custom size.
-		if ( is_array( $size ) ) {
-			return $default_class;
-		}
-
-		// See if there's a specific size class for this image.
-		$image_size_class = $image_base_class . '\\sizes\\' . $size;
-
-		$class = ( class_exists( $image_size_class ) ) ? $image_size_class : $default_class;
-
-		return $class;
-	}
-
-	/**
 	 * Replace a SRC string with a Cloudflared version
 	 *
 	 * @param  string $src               The SRC attr.
@@ -92,7 +68,7 @@ class Cloudflare_Image_Helpers {
 	 *
 	 * @return string      The modified SRC attr.
 	 */
-	public static function cf_src( string $src, int $w, int $h = null, string $fit = 'contain' ) : string {
+	public static function cf_src( string $src, int $w, int $h = null, string $fit = 'cover' ) : string {
 		$cf_properties = array(
 			'width'   => $w,
 			'fit'     => $fit,
@@ -110,7 +86,7 @@ class Cloudflare_Image_Helpers {
 		ksort( $cf_properties );
 
 		// Hard-code the yoast.com domain (for now).
-		$cf_prefix = 'https://yoast.com/cdn-cgi/image/';
+		$cf_prefix = self::CF_HOST . '/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
 			'',
@@ -122,6 +98,20 @@ class Cloudflare_Image_Helpers {
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
 		return $cf_string . $path;
+	}
+
+	/**
+	 * Normaize a size attribute to a string
+	 *
+	 * @param  mixed $size The size.
+	 *
+	 * @return string      The normalized size
+	 */
+	public static function normalize_size_attr( $size ) : string {
+		if ( is_array( $size ) ) {
+			return implode( 'x', $size );
+		}
+		return $size;
 	}
 
 	/**

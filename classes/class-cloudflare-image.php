@@ -51,11 +51,19 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 
-		// Init attributes from a child class if one exists.
-		if ( method_exists( get_called_class(), 'init_attrs' ) ) {
-			$this->init_attrs();
-		}
+		// Get the cf image sizes array.
+		$cf_image_sizes = apply_filters( 'cf_image_sizes', array() );
 
+		// Get the normalized size to check for.
+		$size = Helpers::normalize_size_attr( $this->get_size() );
+
+		// Set the attrs if there's a matching size, or, use the defaults.
+		$this->attrs = ( array_key_exists( $size, $cf_image_sizes ) ) ? wp_parse_args( $cf_image_sizes[ $size ], $this->get_default_attrs() ) : $this->get_default_attrs();
+
+		// Sort the params.
+		ksort( $this->attrs );
+
+		// Init all of the attributes.
 		$this->init_dimensions();
 		$this->init_fit();
 		$this->init_src();
@@ -64,6 +72,27 @@ class Cloudflare_Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
+	}
+
+	/**
+	 * Returns an array with default properties.
+	 *
+	 * @return array Array with default properties.
+	 */
+	public function get_default_attrs() : array {
+		$width  = Helpers::get_content_width();
+		$height = $width * 0.75;
+		$attrs  = array(
+			'width'              => $width,
+			'height'             => $height,
+			'sizes'              => '100vw',
+			'class'              => array(),
+			'data-picture-class' => array(),
+			'data-fit'           => 'cover',
+			'loading'            => 'lazy',
+			'decoding'           => 'async',
+		);
+		return $attrs;
 	}
 
 	/**
@@ -85,7 +114,7 @@ class Cloudflare_Image {
 
 	/**
 	 * Init the fit
-	 * Default to 'contain'
+	 * Default to 'cover'
 	 *
 	 * @return void
 	 */
@@ -96,8 +125,9 @@ class Cloudflare_Image {
 			return;
 		}
 
-		$fit                     = $this->get_attr( 'data-fit' );
-		$this->attrs['data-fit'] = ( $fit ) ? $fit : 'contain';
+		$fit = $this->get_attr( 'data-fit' );
+
+		$this->attrs['data-fit'] = ( $fit ) ? $fit : 'cover';
 	}
 
 	/**
@@ -462,7 +492,7 @@ class Cloudflare_Image {
 		$picture_classes = Helpers::normalize_attr_array( $this->get_attr( 'data-picture-class' ) );
 
 		// Get the size class(es).
-		$size_class = ( is_array( $this->size ) ) ? $this->size[0] . 'x' . $this->size[1] : $this->size;
+		$size_class = Helpers::normalize_size_attr( $this->get_size() );
 
 		$this->attrs['class'] = array_merge(
 			$classes,
@@ -560,4 +590,28 @@ class Cloudflare_Image {
 
 		return $srcset;
 	}
+
+	/**
+	 * Converts array properties like class and srcset into strings
+	 *
+	 * @return void
+	 */
+	public function flatten_array_properties() : void {
+
+		// Convert the class to a string.
+		if ( $this->has_attr( 'class' ) ) {
+			$this->attrs['class'] = Helpers::classes_array_to_string( $this->attrs['class'] );
+		}
+
+		// Convert the picture class(es) to a string.
+		if ( $this->has_attr( 'data-picture-class' ) ) {
+			$this->attrs['data-picture-class'] = Helpers::classes_array_to_string( $this->attrs['data-picture-class'] );
+		}
+
+		// Convert the srcset to a (comma-separated) string.
+		if ( $this->has_attr( 'srcset' ) ) {
+			$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
+		}
+	}
+
 }
