@@ -1,5 +1,6 @@
-picture {
+picture[style*="--aspect-ratio"] {
 	display: block;
+	height: auto;
 }
 picture[style*="--aspect-ratio"] > :first-child {
   display: block;

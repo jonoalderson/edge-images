@@ -58,7 +58,7 @@ class Cloudflare_Image {
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
 		// Set the attrs if there's a matching size, or, use the defaults.
-		$this->attrs = ( array_key_exists( $size, $cf_image_sizes ) ) ? $cf_image_sizes[ $size ] : $this->get_default_attrs();
+		$this->attrs = ( array_key_exists( $size, $cf_image_sizes ) ) ? wp_parse_args( $cf_image_sizes[ $size ], $this->get_default_attrs() ) : $this->get_default_attrs();
 
 		// Sort the params.
 		ksort( $this->attrs );
@@ -80,24 +80,17 @@ class Cloudflare_Image {
 	 * @return array Array with default properties.
 	 */
 	public function get_default_attrs() : array {
-		$attrs = array(
-			'width'              => 123,
-			'height'             => 456,
-			'srcset'             => array(
-				array(
-					'width'  => 456,
-					'height' => 123,
-				),
-				array(
-					'width'  => 567,
-					'height' => 234,
-				),
-			),
-			'sizes'              => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',
-			'data-ratio'         => '4/3',
-			'class'              => array( 'test123', 'test456' ),
-			'data-picture-class' => array( 'banner_test_class' ),
-			'fit'                => 'pad',
+		$width  = Helpers::get_content_width();
+		$height = $width * 0.75;
+		$attrs  = array(
+			'width'              => $width,
+			'height'             => $height,
+			'sizes'              => '100vw',
+			'class'              => array(),
+			'data-picture-class' => array(),
+			'data-fit'           => 'cover',
+			'loading'            => 'lazy',
+			'decoding'           => 'async',
 		);
 		return $attrs;
 	}
@@ -121,7 +114,7 @@ class Cloudflare_Image {
 
 	/**
 	 * Init the fit
-	 * Default to 'contain'
+	 * Default to 'cover'
 	 *
 	 * @return void
 	 */
@@ -132,8 +125,9 @@ class Cloudflare_Image {
 			return;
 		}
 
-		$fit                     = $this->get_attr( 'data-fit' );
-		$this->attrs['data-fit'] = ( $fit ) ? $fit : 'contain';
+		$fit = $this->get_attr( 'data-fit' );
+
+		$this->attrs['data-fit'] = ( $fit ) ? $fit : 'cover';
 	}
 
 	/**
@@ -595,6 +589,29 @@ class Cloudflare_Image {
 		$srcset = array_unique( $srcset );
 
 		return $srcset;
+	}
+
+	/**
+	 * Converts array properties like class and srcset into strings
+	 *
+	 * @return void
+	 */
+	public function flatten_array_properties() : void {
+
+		// Convert the class to a string.
+		if ( $this->has_attr( 'class' ) ) {
+			$this->attrs['class'] = Helpers::classes_array_to_string( $this->attrs['class'] );
+		}
+
+		// Convert the picture class(es) to a string.
+		if ( $this->has_attr( 'data-picture-class' ) ) {
+			$this->attrs['data-picture-class'] = Helpers::classes_array_to_string( $this->attrs['data-picture-class'] );
+		}
+
+		// Convert the srcset to a (comma-separated) string.
+		if ( $this->has_attr( 'srcset' ) ) {
+			$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
+		}
 	}
 
 }

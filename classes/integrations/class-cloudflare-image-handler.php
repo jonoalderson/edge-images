@@ -188,24 +188,11 @@ class Cloudflare_Image_Handler {
 			return $attrs;
 		}
 
-		// Get attrs here
-
+		// Get the image object.
 		$image = new Cloudflare_Image( $attachment->ID, $attrs, $size );
 
-		// Convert the class(es) to a string.
-		$image->attrs['class'] = (
-			$image->has_attr( 'class' )
-		) ? Helpers::classes_array_to_string( $image->attrs['class'] ) : array();
-
-		// Convert the picture class(es) to a string.
-		$image->attrs['data-picture-class'] = (
-			$image->has_attr( 'data-picture-class' )
-		) ? Helpers::classes_array_to_string( $image->attrs['data-picture-class'] ) : array();
-
-		// Convert the srcset to a string.
-		$image->attrs['srcset'] = (
-			$image->has_attr( 'srcset' )
-		) ? Helpers::srcset_array_to_string( $image->attrs['srcset'] ) : array();
+		// Flatten the array properties.
+		$image->flatten_array_properties();
 
 		return $image->attrs;
 	}

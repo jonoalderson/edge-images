@@ -21,7 +21,7 @@ class Cloudflare_Image_Helpers {
 	 *
 	 * @var string
 	 */
-	const CF_HOST = 'https://yoast.com';
+	const CF_HOST = 'https://www.daysoftheyear.com';
 
 	/**
 	 * The content width in pixels
@@ -68,7 +68,7 @@ class Cloudflare_Image_Helpers {
 	 *
 	 * @return string      The modified SRC attr.
 	 */
-	public static function cf_src( string $src, int $w, int $h = null, string $fit = 'contain' ) : string {
+	public static function cf_src( string $src, int $w, int $h = null, string $fit = 'cover' ) : string {
 		$cf_properties = array(
 			'width'   => $w,
 			'fit'     => $fit,
@@ -86,7 +86,7 @@ class Cloudflare_Image_Helpers {
 		ksort( $cf_properties );
 
 		// Hard-code the yoast.com domain (for now).
-		$cf_prefix = 'https://yoast.com/cdn-cgi/image/';
+		$cf_prefix = self::CF_HOST . '/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
 			'',
