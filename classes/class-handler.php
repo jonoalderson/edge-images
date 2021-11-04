@@ -1,14 +1,14 @@
 <?php
 
-namespace Yoast_CF_Images\Integrations;
+namespace Yoast_CF_Images;
 
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
+use Yoast_CF_Images\Helpers;
 use Yoast_CF_Images\Cloudflare_Image;
 
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.
  */
-class Cloudflare_Image_Handler {
+class Handler {
 
 	/**
 	 * Register the integration
@@ -18,14 +18,20 @@ class Cloudflare_Image_Handler {
 	 * @return void
 	 */
 	public static function register() : void {
+
+		// Bail if we shouldn't be transforming images.
+		if ( ! Helpers::should_transform_image() ) {
+			return;
+		}
+
 		$instance = new self();
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_style_attribute' ), 10 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 1000, 5 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_data_attributes' ), PHP_INT_MAX - 100 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_data_attributes' ), PHP_INT_MAX );
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
-		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 1000, 5 );
+		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 100, 5 );
 	}
 
 	/**
@@ -120,7 +126,7 @@ class Cloudflare_Image_Handler {
 	}
 
 	/**
-	 * Remove the (first two) height and width attrs from <img> markup
+	 * Remove the (first two) height and width attrs from <img> markup.
 	 *
 	 * NOTE: Widthout this, we create duplicate properties
 	 *       with wp_get_attachment_image_attributes!
@@ -135,7 +141,7 @@ class Cloudflare_Image_Handler {
 	}
 
 	/**
-	 * Remove data- attributes from the <img> tag
+	 * Remove data- attributes
 	 *
 	 * @param  string $html The HTML <img> tag.
 	 *

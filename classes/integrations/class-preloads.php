@@ -2,7 +2,7 @@
 
 namespace Yoast_CF_Images\Integrations;
 
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
+use Yoast_CF_Images\{Helpers, Cloudflare_Image};
 
 /**
  * Configures hero image preload headers (using the CF rewriter).
@@ -48,7 +48,9 @@ class Preloads {
 	public static function preload_image( int $id, $size ) : void {
 
 		$image = get_cf_image_object( $id, array(), $size );
-		if ( ! $image ) {
+
+		// Bail if there's no image, or if it's malformed.
+		if ( ! $image || ! self::is_valid_image( $image ) ) {
 			return;
 		}
 
@@ -58,6 +60,22 @@ class Preloads {
 			esc_attr( $image->attrs['sizes'] ),
 		);
 
+	}
+
+	/**
+	 * Checks if an image is valid for preloading
+	 *
+	 * @param  Cloudflare_Image $image The image.
+	 *
+	 * @return bool
+	 */
+	private static function is_valid_image( Cloudflare_Image $image ) : bool {
+		if (
+			! isset( $image->attrs['srcset'] ) ||
+			! isset( $image->attrs['sizes'] ) ) {
+				return false;
+		}
+		return true;
 	}
 
 }

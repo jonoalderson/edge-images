@@ -2,12 +2,12 @@
 
 namespace Yoast_CF_Images;
 
-use Yoast_CF_Images\Cloudflare_Image_Handler as Handler;
+use Yoast_CF_Images\Handler;
 
 /**
  * Provides helper methods.
  */
-class Cloudflare_Image_Helpers {
+class Helpers {
 
 	/**
 	 * The plugin styles URL
@@ -229,6 +229,18 @@ class Cloudflare_Image_Helpers {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Decide if an image should be transformed
+	 *
+	 * @return bool
+	 */
+	public static function should_transform_image() : bool {
+		if ( is_admin() ) {
+			return false;
+		}
+		return true;
 	}
 
 

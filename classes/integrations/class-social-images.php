@@ -2,7 +2,7 @@
 
 namespace Yoast_CF_Images\Integrations;
 
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
+use Yoast_CF_Images\Helpers;
 
 /**
  * Configures the og:image to use the CF rewriter.

@@ -1,8 +1,7 @@
 <?php
 namespace Yoast_CF_Images;
 
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
-use Yoast_CF_Images\Integrations\Cloudflare_Image_Handler as Handler;
+use Yoast_CF_Images\{Helpers, Handler};
 
 /**
  * Generates and managers a Cloudflared image.
