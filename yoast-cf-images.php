@@ -79,7 +79,7 @@ function get_cf_image( int $id, array $atts = array(), $size, $echo = true ) {
 
 	// Construct the <img>, wrap it in a <picture>, and echo it.
 	if ( $echo ) {
-		echo wp_kses( $html, array( 'picture', 'img' ) );
+		echo $html;
 		return;
 	}
 
@@ -102,7 +102,7 @@ function get_cf_image_object( int $id, array $atts = array(), $size ) {
 	if (
 		! class_exists( 'Yoast_CF_Images\Helpers' ) ||
 		! method_exists( 'Yoast_CF_Images\Helpers', 'should_transform_image' ) ||
-		! Yoast_CF_Images\Helpers::should_transform_image() ||
+		! Yoast_CF_Images\Helpers::should_transform_image( $id ) ||
 		! $id // Maintain native failure conditions for missing/invalid IDs.
 	) {
 		return false;

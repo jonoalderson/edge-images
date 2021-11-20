@@ -54,32 +54,29 @@ class Helpers {
 	/**
 	 * Replace a SRC string with a Cloudflared version
 	 *
-	 * @param  string $src               The SRC attr.
-	 * @param  int    $w                 The width in pixels.
-	 * @param  int    $h                 The height in pixels.
-	 * @param  string $fit               The fit method.
+	 * @param  string $src The src.
+	 * @param  array  $args The args.
 	 *
 	 * @return string      The modified SRC attr.
 	 */
-	public static function cf_src( string $src, int $w, int $h = null, string $fit = 'cover' ) : string {
-		$cf_properties = array(
-			'width'   => $w,
-			'fit'     => $fit,
-			'f'       => 'auto',
-			'gravity' => 'auto',
-			'onerror' => 'redirect',
+	public static function cf_src( string $src, array $args ) : string {
+
+		$defaults = array(
+			'width'    => self::get_content_width(),
+			'fit'      => 'cover',
+			'f'        => 'auto',
+			'gravity'  => 'auto',
+			'onerror'  => 'redirect',
+			'metadata' => 'none',
 		);
 
-		// Set a height if we have one.
-		if ( $h ) {
-			$cf_properties['height'] = $h;
-		}
+		$cf_properties = wp_parse_args( $args, $defaults );
 
 		// Sort our properties alphabetically by key.
 		ksort( $cf_properties );
 
 		// Hard-code the yoast.com domain (for now).
-		$cf_prefix = YOAST_CF_IMAGES_PLUGIN_DOMAIN . '/cdn-cgi/image/';
+		$cf_prefix = self::get_rewrite_domain() . '/cdn-cgi/image/';
 		$cf_string = $cf_prefix . http_build_query(
 			$cf_properties,
 			'',
@@ -111,16 +108,18 @@ class Helpers {
 	 * Creates an srcset val from a src and dimensions
 	 *
 	 * @param string $src  The image src attr.
-	 * @param int    $w    The width in pixels.
-	 * @param int    $h    The height in pixels.
+	 * @param array  $args    The args.
 	 *
 	 * @return string   The srcset value
 	 */
-	public static function create_srcset_val( string $src, int $w, int $h = null ) : string {
+	public static function create_srcset_val( string $src, $args ) : string {
 		return sprintf(
 			'%s %dw',
-			self::cf_src( $src, $w, $h ),
-			$w
+			self::cf_src(
+				$src,
+				$args
+			),
+			$args['width']
 		);
 	}
 
@@ -130,6 +129,13 @@ class Helpers {
 	 * @return int The content width value
 	 */
 	public static function get_content_width() : int {
+		// See if there's a filtered width.
+		$filtered_width = apply_filters( 'cf_images_content_width', 0 );
+		if ( $filtered_width ) {
+			return $filtered_width;
+		}
+
+		// Fall back to the WP content_width var, or our default.
 		global $content_width;
 		if ( ! $content_width || $content_width > self::CONTENT_WIDTH ) {
 			$content_width = self::CONTENT_WIDTH;
@@ -232,16 +238,90 @@ class Helpers {
 	}
 
 	/**
-	 * Decide if an image should be transformed
+	 * Determins if images should be transformed
 	 *
 	 * @return bool
 	 */
-	public static function should_transform_image() : bool {
+	public static function should_transform_images() : bool {
+
+		// Bail if we're in the admin.
 		if ( is_admin() ) {
 			return false;
 		}
+
+		// Bail if the functionality has been disabled via a filter.
+		$disabled = apply_filters( 'cf_images_disable', false );
+		if ( $disabled ) {
+			return false;
+		}
+
 		return true;
 	}
 
+	/**
+	 * Decide if an image should be transformed
+	 *
+	 * @param int $id The image ID.
+	 *
+	 * @return bool
+	 */
+	public static function should_transform_image( int $id ) : bool {
+
+		// Bail if functionality has been disabled via a filter.
+		if ( ! self::should_transform_images() ) {
+			return false;
+		}
+
+		// Bail if this image ID has been filtered.
+		$excluded_images = apply_filters( 'cf_images_exclude', array() );
+		if ( $id && in_array( $id, $excluded_images, true ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get the domain to use as the CF rewrite base
+	 *
+	 * @return string The domain
+	 */
+	public static function get_rewrite_domain() : string {
+		$domain = apply_filters( 'cf_images_domain', false );
+		if ( ! $domain ) {
+			$domain = WP_HOME;
+		}
+		return $domain;
+	}
+
+	/**
+	 * Get the permitted <img> attributes
+	 *
+	 * @return array The attributes
+	 */
+	public static function allowed_img_attrs() : array {
+		return array(
+			'src'      => array(),
+			'width'    => array(),
+			'height'   => array(),
+			'srcset'   => array(),
+			'sizes'    => array(),
+			'loading'  => array(),
+			'decoding' => array(),
+			'class'    => array(),
+		);
+	}
+
+	/**
+	 * Get the permitted <picture> attributes
+	 *
+	 * @return array The attributes
+	 */
+	public static function allowed_picture_attrs() : array {
+		return array(
+			'style' => array(),
+			'class' => array(),
+		);
+	}
 
 }
