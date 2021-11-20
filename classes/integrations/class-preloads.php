@@ -2,7 +2,7 @@
 
 namespace Yoast_CF_Images\Integrations;
 
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
+use Yoast_CF_Images\{Helpers, Cloudflare_Image};
 
 /**
  * Configures hero image preload headers (using the CF rewriter).
@@ -16,7 +16,7 @@ class Preloads {
 	 */
 	public static function register() : void {
 		$instance = new self();
-		add_action( 'wp_head', array( $instance, 'preload_hero_image_on_single_posts' ) );
+		add_action( 'wp_head', array( $instance, 'preload_hero_image_on_single_posts' ), 1 );
 	}
 
 	/**
@@ -34,30 +34,48 @@ class Preloads {
 			return;
 		}
 
-		$this->preload_image( $thumbnail_id, 'banner' );
+		self::preload_image( $thumbnail_id, 'banner' );
 	}
 
 	/**
-	 * Add a rel preload tag for an image
+	 * Echoes a rel preload tag for an image
 	 *
 	 * @param  int   $id   The image ID.
 	 * @param  mixed $size The image size.
 	 *
 	 * @return void
 	 */
-	private function preload_image( int $id, $size ) : void {
+	public static function preload_image( int $id, $size ) : void {
 
 		$image = get_cf_image_object( $id, array(), $size );
-		if ( ! $image ) {
+
+		// Bail if there's no image, or if it's malformed.
+		if ( ! $image || ! self::is_valid_image( $image ) ) {
 			return;
 		}
 
 		echo sprintf(
 			'<link rel="preload" as="image" imagesrcset="%s" imagesizes="%s">',
-			implode( ' ', $image->attrs['srcset'] ),
-			$image->attrs['sizes'],
+			esc_attr( implode( ', ', $image->attrs['srcset'] ) ),
+			esc_attr( $image->attrs['sizes'] ),
 		);
 
+	}
+
+	/**
+	 * Checks if an image is valid for preloading
+	 *
+	 * @param  Cloudflare_Image $image The image.
+	 *
+	 * @return bool
+	 */
+	private static function is_valid_image( Cloudflare_Image $image ) : bool {
+		if (
+			! isset( $image->attrs['srcset'] ) ||
+			! isset( $image->attrs['sizes'] ) ) {
+				return false;
+		}
+		return true;
 	}
 
 }

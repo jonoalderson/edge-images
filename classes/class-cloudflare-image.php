@@ -1,8 +1,7 @@
 <?php
 namespace Yoast_CF_Images;
 
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
-use Yoast_CF_Images\Integrations\Cloudflare_Image_Handler as Handler;
+use Yoast_CF_Images\{Helpers, Handler};
 
 /**
  * Generates and managers a Cloudflared image.
@@ -58,14 +57,13 @@ class Cloudflare_Image {
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
 		// Set the attrs if there's a matching size, or, use the defaults.
-		$this->attrs = ( array_key_exists( $size, $cf_image_sizes ) ) ? $cf_image_sizes[ $size ] : $this->get_default_attrs();
+		$this->attrs = ( array_key_exists( $size, $cf_image_sizes ) ) ? wp_parse_args( $cf_image_sizes[ $size ], $this->get_default_attrs() ) : $this->get_default_attrs();
 
 		// Sort the params.
 		ksort( $this->attrs );
 
 		// Init all of the attributes.
 		$this->init_dimensions();
-		$this->init_fit();
 		$this->init_src();
 		$this->init_ratio();
 		$this->init_layout();
@@ -80,24 +78,17 @@ class Cloudflare_Image {
 	 * @return array Array with default properties.
 	 */
 	public function get_default_attrs() : array {
-		$attrs = array(
-			'width'              => 123,
-			'height'             => 456,
-			'srcset'             => array(
-				array(
-					'width'  => 456,
-					'height' => 123,
-				),
-				array(
-					'width'  => 567,
-					'height' => 234,
-				),
-			),
-			'sizes'              => '(max-width: 1234px) calc(100vw - 20px), calc(100vw - 20px)',
-			'data-ratio'         => '4/3',
-			'class'              => array( 'test123', 'test456' ),
-			'data-picture-class' => array( 'banner_test_class' ),
-			'fit'                => 'pad',
+		$width  = Helpers::get_content_width();
+		$height = $width * 0.75;
+		$attrs  = array(
+			'width'         => $width,
+			'height'        => $height,
+			'sizes'         => '100vw',
+			'class'         => array(),
+			'picture-class' => array(),
+			'fit'           => 'cover',
+			'loading'       => 'lazy',
+			'decoding'      => 'async',
 		);
 		return $attrs;
 	}
@@ -111,56 +102,19 @@ class Cloudflare_Image {
 	private function init_layout() : void {
 
 		// Bail if a layout is already set.
-		if ( $this->has_layout() ) {
+		if ( $this->has_attr( 'layout' ) ) {
 			return;
 		}
 
-		$layout                     = $this->get_attr( 'layout' );
-		$this->attrs['data-layout'] = ( $layout ) ? $layout : 'responsive';
+		$this->attrs['layout'] = 'responsive';
 	}
 
 	/**
-	 * Init the fit
-	 * Default to 'contain'
+	 * Get the ID
 	 *
-	 * @return void
+	 * @return int
 	 */
-	private function init_fit() : void {
-
-		// Bail if a fit is already set.
-		if ( $this->has_fit() ) {
-			return;
-		}
-
-		$fit                     = $this->get_attr( 'data-fit' );
-		$this->attrs['data-fit'] = ( $fit ) ? $fit : 'contain';
-	}
-
-	/**
-	 * Checks if a layout is set
-	 *
-	 * @return bool
-	 */
-	private function has_layout() : bool {
-		if ( ! isset( $this->attrs['data-layout'] ) || ! $this->attrs['data-layout'] ) {
-			return false;
-		}
-		return true;
-	}
-
-	/**
-	 * Checks if a fit is set
-	 *
-	 * @return bool
-	 */
-	private function has_fit() : bool {
-		if ( ! isset( $this->attrs['data-fit'] ) || ! $this->attrs['data-fit'] ) {
-			return false;
-		}
-		return true;
-	}
-
-	public function get_id() {
+	public function get_id() : int {
 		return $this->id;
 	}
 
@@ -276,12 +230,12 @@ class Cloudflare_Image {
 	private function calculate_height_from_ratio( int $width ) {
 
 		// We need the width and the ratio.
-		if ( ! isset( $this->attrs['data-ratio'] ) ) {
+		if ( ! isset( $this->attrs['ratio'] ) ) {
 			return false;
 		}
 
 		// Get the ratio components.
-		$ratio = preg_split( '#/#', $this->attrs['data-ratio'] );
+		$ratio = preg_split( '#/#', $this->attrs['ratio'] );
 		if ( ! isset( $ratio[0] ) || ! isset( $ratio[1] ) ) {
 			return false;
 		}
@@ -296,11 +250,11 @@ class Cloudflare_Image {
 	 * @return void
 	 */
 	private function init_ratio() : void {
-		if ( isset( $this->attrs['data-ratio'] ) && $this->attrs['data-ratio'] ) {
+		if ( isset( $this->attrs['ratio'] ) && $this->attrs['ratio'] ) {
 			return; // Bail if already set.
 		}
 
-		$ratio = $this->get_attr( 'data-ratio' );
+		$ratio = $this->get_attr( 'ratio' );
 		if ( ! $ratio ) {
 			if ( isset( $this->attrs['height'] ) && isset( $this->attrs['width'] ) ) {
 				$ratio = $this->attrs['width'] . '/' . $this->attrs['height'];
@@ -308,7 +262,7 @@ class Cloudflare_Image {
 				return;
 			}
 		}
-		$this->attrs['data-ratio'] = $ratio;
+		$this->attrs['ratio'] = $ratio;
 	}
 
 	/**
@@ -325,15 +279,20 @@ class Cloudflare_Image {
 		}
 
 		// Convert the SRC to a CF string.
-		$height = ( isset( $this->attrs['height'] ) ) ? $this->attrs['height'] : null;
-		$cf_src = Helpers::cf_src( $full_image[0], $this->attrs['width'], $height, $this->attrs['data-fit'] );
+		$args   = array(
+			'width'  => ( $this->has_attr( 'width' ) ) ? $this->get_attr( 'width' ) : null,
+			'height' => ( $this->has_attr( 'height' ) ) ? $this->get_attr( 'height' ) : null,
+			'fit'    => ( $this->has_attr( 'fit' ) ) ? $this->get_attr( 'fit' ) : null,
+			'blur'   => ( $this->has_attr( 'blur' ) ) ? $this->get_attr( 'blur' ) : null,
+		);
+		$cf_src = Helpers::cf_src( $full_image[0], $args );
 
 		if ( ! $cf_src ) {
 			return; // Bail if the CF src generation fails.
 		}
 
-		$this->attrs['src']           = $cf_src;
-		$this->attrs['data-full-src'] = $full_image[0];
+		$this->attrs['src']      = $cf_src;
+		$this->attrs['full-src'] = $full_image[0];
 	}
 
 	/**
@@ -343,21 +302,21 @@ class Cloudflare_Image {
 	 */
 	private function init_srcset() : void {
 
-		if ( ! isset( $this->attrs['data-layout'] ) || ! $this->attrs['data-layout'] ) {
-			$this->attrs['data-layout'] = 'responsive';
+		if ( ! isset( $this->attrs['layout'] ) || ! $this->attrs['layout'] ) {
+			$this->attrs['layout'] = 'responsive';
 		}
 
-		switch ( $this->attrs['data-layout'] ) {
+		switch ( $this->attrs['layout'] ) {
 			case 'responsive':
 				$srcset = array_merge(
 					$this->get_generic_srcset_sizes(),
-					$this->get_srcset_sizes_from_context( $this->attrs['data-full-src'] )
+					$this->get_srcset_sizes_from_context( $this->attrs['full-src'] )
 				);
 				break;
 			case 'fixed':
 				$srcset = array_merge(
 					$this->get_x2_srcset_size(),
-					$this->get_srcset_sizes_from_context( $this->attrs['data-full-src'] )
+					$this->get_srcset_sizes_from_context( $this->attrs['full-src'] )
 				);
 				break;
 		}
@@ -375,7 +334,7 @@ class Cloudflare_Image {
 		$max    = min( 2 * $this->attrs['width'], Helpers::WIDTH_MAX );
 		for ( $w = Helpers::WIDTH_MIN; $w <= $max; $w += Helpers::WIDTH_STEP ) {
 			$h        = $this->calculate_height_from_ratio( $w );
-			$srcset[] = Helpers::create_srcset_val( $this->attrs['data-full-src'], $w, $h );
+			$srcset[] = Helpers::create_srcset_val( $this->attrs['full-src'], $this->get_attrs() );
 			if ( $w >= 1000 ) {
 				$w += 100; // Increase the increments on larger sizes.
 			}
@@ -391,8 +350,8 @@ class Cloudflare_Image {
 	private function get_x2_srcset_size() : array {
 		$w        = $this->attrs['width'];
 		$h        = $this->calculate_height_from_ratio( $w );
-		$srcset[] = Helpers::create_srcset_val( $this->attrs['data-full-src'], $w, $h );
-		$srcset[] = Helpers::create_srcset_val( $this->attrs['data-full-src'], $w * 2, $h * 2 );
+		$srcset[] = Helpers::create_srcset_val( $this->attrs['full-src'], $this->get_attrs() );
+		$srcset[] = Helpers::create_srcset_val( $this->attrs['full-src'], $this->get_attrs() );
 		return $srcset;
 	}
 
@@ -476,6 +435,14 @@ class Cloudflare_Image {
 			)
 		);
 
+		$html = wp_kses(
+			$html,
+			array(
+				'picture' => Helpers::allowed_picture_attrs(),
+				'img'     => Helpers::allowed_img_attrs(),
+			)
+		);
+
 		if ( ! $wrap_in_picture ) {
 			return $html;
 		}
@@ -495,7 +462,7 @@ class Cloudflare_Image {
 		$classes = Helpers::normalize_attr_array( $this->get_attr( 'class' ) );
 
 		// Get (and normalize) the picture class(es).
-		$picture_classes = Helpers::normalize_attr_array( $this->get_attr( 'data-picture-class' ) );
+		$picture_classes = Helpers::normalize_attr_array( $this->get_attr( 'picture-class' ) );
 
 		// Get the size class(es).
 		$size_class = Helpers::normalize_size_attr( $this->get_size() );
@@ -510,13 +477,13 @@ class Cloudflare_Image {
 		);
 		$this->attrs['class'] = array_unique( $this->attrs['class'] );
 
-		$this->attrs['data-picture-class'] = array_merge(
+		$this->attrs['picture-class'] = array_merge(
 			$picture_classes,
 			array(
 				'cloudflared', // Placeholde for default classes.
 			)
 		);
-		$this->attrs['data-picture-class'] = array_unique( $this->attrs['data-picture-class'] );
+		$this->attrs['picture-class'] = array_unique( $this->attrs['picture-class'] );
 
 	}
 
@@ -532,6 +499,15 @@ class Cloudflare_Image {
 			return false;
 		}
 		return $this->attrs[ $val ];
+	}
+
+	/**
+	 * Get the attributes array
+	 *
+	 * @return array The attributes
+	 */
+	private function get_attrs() : array {
+		return $this->attrs;
 	}
 
 	/**
@@ -578,23 +554,53 @@ class Cloudflare_Image {
 		// Create the srcset strings.
 		$srcset = array();
 		foreach ( $sizes as $v ) {
-			$h        = ( isset( $v['width'] ) ) ? $v['height'] : null;
-			$srcset[] = Helpers::create_srcset_val( $src, $v['width'], $h );
+			$h              = ( isset( $v['width'] ) ) ? $v['height'] : null;
+			$args           = $this->get_attrs();
+			$args['width']  = $v['width'];
+			$args['height'] = $h;
+			$srcset[]       = Helpers::create_srcset_val( $src, $args );
 
 			// Generate a 2x size if it's smaller than our max.
 			if ( ( $v['width'] * 2 ) <= Helpers::WIDTH_MAX ) {
-				$srcset[] = Helpers::create_srcset_val( $src, $v['width'] * 2, $h * 2 );
+				$args['width']  = $v['width'] * 2;
+				$args['height'] = $h * 2;
+				$srcset[]       = Helpers::create_srcset_val( $src, $args );
 			}
 
 			// Generate a smaller size if it's larger than our min.
 			if ( ceil( $v['width'] / 2 ) > Helpers::WIDTH_MIN ) {
-				$srcset[] = Helpers::create_srcset_val( $src, ceil( $v['width'] / 2 ), ceil( $h / 2 ) );
+				$args['width']  = ceil( $v['width'] / 2 );
+				$args['height'] = ceil( $h / 2 );
+				$srcset[]       = Helpers::create_srcset_val( $src, $args );
 			}
 		}
 
 		$srcset = array_unique( $srcset );
 
 		return $srcset;
+	}
+
+	/**
+	 * Converts array properties like class and srcset into strings
+	 *
+	 * @return void
+	 */
+	public function flatten_array_properties() : void {
+
+		// Convert the class to a string.
+		if ( $this->has_attr( 'class' ) ) {
+			$this->attrs['class'] = Helpers::classes_array_to_string( $this->attrs['class'] );
+		}
+
+		// Convert the picture class(es) to a string.
+		if ( $this->has_attr( 'picture-class' ) ) {
+			$this->attrs['picture-class'] = Helpers::classes_array_to_string( $this->attrs['picture-class'] );
+		}
+
+		// Convert the srcset to a (comma-separated) string.
+		if ( $this->has_attr( 'srcset' ) ) {
+			$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
+		}
 	}
 
 }

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Yoast Cloudflare images integration
- * Version: 1.1
+ * Version: 1.3
  * Description: Provides support for Cloudflared images
  * Author: Jono Alderson
  * Text Domain: yoast-cf-image
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'YOAST_CF_IMAGES_VERSION' ) ) {
-	define( 'YOAST_CF_IMAGES_VERSION', '1.1' );
+	define( 'YOAST_CF_IMAGES_VERSION', '1.3' );
 }
 
 if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_DIR' ) ) {
@@ -37,11 +37,14 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	// Load our autoloaders.
 	require_once 'autoload.php';
 
-	// Load our integrations.
-	Yoast_CF_Images\Integrations\Cloudflare_Image_Handler::register();
+	// Load our core functionality.
+	Yoast_CF_Images\Handler::register();
+
+	// Additional bits.
 	Yoast_CF_Images\Integrations\Social_Images::register();
 	Yoast_CF_Images\Integrations\Schema_Images::register();
 	Yoast_CF_Images\Integrations\Preloads::register();
+	Yoast_CF_Images\Integrations\XML_Sitemaps::register();
 
 } )();
 
@@ -59,15 +62,20 @@ function get_cf_image( int $id, array $atts = array(), $size, $echo = true ) {
 
 	$image = get_cf_image_object( $id, $atts, $size, $echo );
 
+	// Try to fall back to a normal WP image if we didn't get an image object.
 	if ( ! $image ) {
-		return; // Bail if there's no image.
+		$image = wp_get_attachment_image( $id, $size, false, $atts );
+		if ( $echo ) {
+			echo wp_kses( $image, array( 'img' ) );
+		}
+		return $image;
 	}
 
 	$html = $image->construct_img_el( true );
 
 	// Construct the <img>, wrap it in a <picture>, and echo it.
 	if ( $echo ) {
-		echo wp_kses( $html, array( 'picture', 'img' ) );
+		echo $html;
 		return;
 	}
 
@@ -85,14 +93,19 @@ function get_cf_image( int $id, array $atts = array(), $size, $echo = true ) {
  * @return false|object        The image object
  */
 function get_cf_image_object( int $id, array $atts = array(), $size ) {
-	if ( ! $id ) {
-		return; // Bail if the ID is falsey.
+
+	// Fall back to a normal image if we don't have everything we need.
+	if (
+		! class_exists( 'Yoast_CF_Images\Helpers' ) ||
+		! method_exists( 'Yoast_CF_Images\Helpers', 'should_transform_image' ) ||
+		! Yoast_CF_Images\Helpers::should_transform_image( $id ) ||
+		! $id // Maintain native failure conditions for missing/invalid IDs.
+	) {
+		return false;
 	}
 
-	$image_class = Yoast_CF_Images\Cloudflare_Image_Helpers::get_image_class( $size );
-
 	// Get the image.
-	$image = new $image_class( $id, $atts, $size );
+	$image = new Yoast_CF_Images\Cloudflare_Image( $id, $atts, $size );
 
 	if ( ! $image ) {
 		return false;

@@ -2,7 +2,7 @@
 
 namespace Yoast_CF_Images\Integrations;
 
-use Yoast_CF_Images\Cloudflare_Image_Helpers as Helpers;
+use Yoast_CF_Images\Helpers;
 
 /**
  * Configures the og:image to use the CF rewriter.
@@ -92,7 +92,11 @@ class Social_Images {
 		}
 
 		// Convert the image src to a Cloudflare string.
-		$src = Helpers::cf_src( $image[0], self::OG_WIDTH, self::OG_HEIGHT );
+		$args = array(
+			'width'  => self::OG_WIDTH,
+			'height' => self::OG_HEIGHT,
+		);
+		$src  = Helpers::cf_src( $image[0], $args );
 
 		return ( $src ) ? $src : $output;
 	}
