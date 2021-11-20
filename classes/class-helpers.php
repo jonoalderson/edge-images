@@ -61,16 +61,16 @@ class Helpers {
 	 */
 	public static function cf_src( string $src, array $args ) : string {
 
-		$defaults = array(
-			'width'    => self::get_content_width(),
-			'fit'      => 'cover',
-			'f'        => 'auto',
-			'gravity'  => 'auto',
-			'onerror'  => 'redirect',
-			'metadata' => 'none',
+		$cf_properties = array(
+			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
+			'height'   => ( isset( $args['height'] ) ) ? $args['height'] : $args['width'] * 0.75,
+			'blur'     => ( isset( $args['blur'] ) ) ? $args['blur'] : 0,
+			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
+			'f'        => ( isset( $args['f'] ) ) ? $args['f'] : 'auto',
+			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
+			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
+			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',
 		);
-
-		$cf_properties = wp_parse_args( $args, $defaults );
 
 		// Sort our properties alphabetically by key.
 		ksort( $cf_properties );

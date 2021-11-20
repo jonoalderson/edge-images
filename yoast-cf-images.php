@@ -29,10 +29,6 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	define( 'YOAST_CF_IMAGES_PLUGIN_FILE', __FILE__ );
 }
 
-if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_DOMAIN' ) ) {
-	define( 'YOAST_CF_IMAGES_PLUGIN_DOMAIN', 'https://www.daysoftheyear.com' );
-}
-
 /**
  * Init the plugin
  */
