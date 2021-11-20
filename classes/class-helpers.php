@@ -63,14 +63,22 @@ class Helpers {
 
 		$cf_properties = array(
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
-			'height'   => ( isset( $args['height'] ) ) ? $args['height'] : $args['width'] * 0.75,
-			'blur'     => ( isset( $args['blur'] ) ) ? $args['blur'] : 0,
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
 			'f'        => ( isset( $args['f'] ) ) ? $args['f'] : 'auto',
 			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
 			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
 			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',
 		);
+
+		// OPTIONAL: Height.
+		if ( isset( $args['height'] ) ) {
+			$cf_properties['height'] = $args['height'];
+		}
+
+		// OPTIONAL: Blur.
+		if ( isset( $args['blur'] ) ) {
+			$cf_properties['blur'] = $args['blur'];
+		}
 
 		// Sort our properties alphabetically by key.
 		ksort( $cf_properties );
