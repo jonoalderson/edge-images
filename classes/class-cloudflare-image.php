@@ -296,11 +296,31 @@ class Cloudflare_Image {
 	}
 
 	/**
+	 * Determines if an image is an SVG.
+	 *
+	 * @return bool
+	 */
+	public function is_svg() : bool {
+		if ( ! isset( $this->attrs['src'] ) ) {
+			// Presume it's not, if we don't know.
+			return false;
+		}
+		if ( strpos( $this->attrs['src'], '.svg' ) !== false ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Init the SRCSET attr
 	 *
 	 * @return void
 	 */
 	private function init_srcset() : void {
+
+		if ( $this->is_svg() ) {
+			return;
+		}
 
 		if ( ! isset( $this->attrs['layout'] ) || ! $this->attrs['layout'] ) {
 			$this->attrs['layout'] = 'responsive';
