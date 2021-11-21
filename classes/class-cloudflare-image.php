@@ -83,7 +83,7 @@ class Cloudflare_Image {
 		$attrs  = array(
 			'width'         => $width,
 			'height'        => $height,
-			'sizes'         => "(max-width: {$width}) 100vw, {$width}px",
+			'sizes'         => "(max-width: {$width}px) 100vw, {$width}px",
 			'class'         => array(),
 			'picture-class' => array(),
 			'fit'           => 'cover',
