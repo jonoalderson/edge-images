@@ -131,7 +131,8 @@ class Cloudflare_Image {
 		}
 
 		// If we don't have a size, try and work out some values.
-		if ( ! $this->has_size() ) {
+		// If it's an SVG, we know the sizes.
+		if ( ! $this->has_size() || $this->is_svg() ) {
 			$this->init_width();
 			$this->init_height();
 			return; // Early exit.
