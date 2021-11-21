@@ -110,16 +110,11 @@ class Handler {
 	 */
 	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
-		// Bail if this image has been excluded via a filter.
-		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
-			return $html;
-		}
-
 		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
 			isset( $attr['ratio'] ) ? $attr['ratio'] : '1:1',
-			isset( $attr['layout'] ) ? $attr['layout'] : 'unknown',
+			isset( $attr['layout'] ) ? $attr['layout'] : 'responsive',
 			isset( $attr['picture-class'] ) ? Helpers::classes_array_to_string( $attr['picture-class'] ) : null,
 			$html
 		);
