@@ -81,8 +81,6 @@ class Cloudflare_Image {
 		$width  = Helpers::get_content_width();
 		$height = $width * 0.75;
 		$attrs  = array(
-			'width'         => $width,
-			'height'        => $height,
 			'sizes'         => "(max-width: {$width}px) 100vw, {$width}px",
 			'class'         => array(),
 			'picture-class' => array(),
