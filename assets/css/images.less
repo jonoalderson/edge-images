@@ -1,8 +1,10 @@
-picture[style*="--aspect-ratio"] {
+[style*="--aspect-ratio"] {
 	display: block;
 	height: auto;
+	overflow: hidden;
 	& > :first-child {
 		width: 100%;
+	  	object-fit: cover;
 	}
 	& > img {
 	  height: auto;

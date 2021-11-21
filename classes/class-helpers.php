@@ -297,7 +297,7 @@ class Helpers {
 	public static function get_rewrite_domain() : string {
 		$domain = apply_filters( 'cf_images_domain', false );
 		if ( ! $domain ) {
-			$domain = WP_HOME;
+			$domain = get_site_url();
 		}
 		return $domain;
 	}
@@ -317,6 +317,7 @@ class Helpers {
 			'loading'  => array(),
 			'decoding' => array(),
 			'class'    => array(),
+			'alt'      => array(),
 		);
 	}
 
