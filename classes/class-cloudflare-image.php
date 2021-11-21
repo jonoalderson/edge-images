@@ -272,14 +272,15 @@ class Cloudflare_Image {
 	 */
 	private function init_src() : void {
 
-		// Bail if this is an SVG.
-		if ( $this->is_svg() ) {
-			return;
-		}
-
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
+			return;
+		}
+		$this->attrs['src'] = $full_image;
+
+		// Bail if this is an SVG.
+		if ( $this->is_svg() ) {
 			return;
 		}
 
