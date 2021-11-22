@@ -492,9 +492,6 @@ class Cloudflare_Image {
 		// Get (and normalize) the picture class(es).
 		$picture_classes = Helpers::normalize_attr_array( $this->get_attr( 'picture-class' ) );
 
-		print_r( $this );
-		die;
-
 		// Get the size class(es).
 		$size_class = Helpers::normalize_size_attr( $this->get_size() );
 
@@ -515,6 +512,10 @@ class Cloudflare_Image {
 			)
 		);
 		$this->attrs['picture-class'] = array_unique( $this->attrs['picture-class'] );
+
+		echo 'test4';
+		print_r( $this );
+		die;
 
 	}
 
