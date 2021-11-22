@@ -115,10 +115,13 @@ class Handler {
 			return $html;
 		}
 
+		print_r( $attr['picture-class'] );
+		die;
+
 		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
-			isset( $attr['ratio'] ) ? $attr['ratio'] : $attr['width'] . '/' . $attr['height'],
+			isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1',
 			isset( $attr['layout'] ) ? $attr['layout'] : 'unknown',
 			isset( $attr['picture-class'] ) ? Helpers::classes_array_to_string( $attr['picture-class'] ) : null,
 			$html
