@@ -39,12 +39,11 @@ class Cloudflare_Image {
 	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
 		$this->id    = $id;
 		$this->attrs = $attrs;
-
-		echo 'test5';
-		print_r( $attrs );
-		die;
-
 		$this->set_size( $size );
+
+		echo 'test6';
+		echo $this->get_attr( 'picture-class' );
+		die;
 		$this->init();
 	}
 
