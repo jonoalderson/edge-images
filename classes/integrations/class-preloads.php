@@ -16,25 +16,6 @@ class Preloads {
 	 */
 	public static function register() : void {
 		$instance = new self();
-		add_action( 'wp_head', array( $instance, 'preload_hero_image_on_single_posts' ), 1 );
-	}
-
-	/**
-	 * Preload the hero image for singular posts
-	 *
-	 * @return void
-	 */
-	public function preload_hero_image_on_single_posts() : void {
-		if ( ! is_singular() ) {
-			return;
-		}
-
-		$thumbnail_id = get_post_thumbnail_id();
-		if ( ! $thumbnail_id ) {
-			return;
-		}
-
-		self::preload_image( $thumbnail_id, 'banner' );
 	}
 
 	/**
