@@ -512,11 +512,6 @@ class Cloudflare_Image {
 			)
 		);
 		$this->attrs['picture-class'] = array_unique( $this->attrs['picture-class'] );
-
-		echo 'test4';
-		print_r( $this );
-		die;
-
 	}
 
 	/**
