@@ -39,6 +39,8 @@ class Cloudflare_Image {
 	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
 		$this->id    = $id;
 		$this->attrs = $attrs;
+		print_r( $attrs );
+		die;
 		$this->set_size( $size );
 		$this->init();
 	}
