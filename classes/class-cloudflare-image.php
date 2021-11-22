@@ -508,7 +508,7 @@ class Cloudflare_Image {
 		$this->attrs['picture-class'] = array_merge(
 			$picture_classes,
 			array(
-				'cloudflared', // Placeholde for default classes.
+				$size_class,
 			)
 		);
 		$this->attrs['picture-class'] = array_unique( $this->attrs['picture-class'] );
