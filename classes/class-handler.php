@@ -115,9 +115,6 @@ class Handler {
 			return $html;
 		}
 
-		print_r( $attr['picture-class'] );
-		die;
-
 		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
