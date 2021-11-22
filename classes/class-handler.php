@@ -110,10 +110,6 @@ class Handler {
 	 */
 	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
-		echo 'test2';
-		print_r( $attr );
-		die;
-
 		// Bail if this image has been excluded via a filter.
 		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
 			return $html;
