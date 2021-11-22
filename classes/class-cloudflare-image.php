@@ -40,10 +40,6 @@ class Cloudflare_Image {
 		$this->id    = $id;
 		$this->attrs = $attrs;
 		$this->set_size( $size );
-
-		echo 'test6';
-		echo $this->get_attr( 'picture-class' );
-		die;
 		$this->init();
 	}
 
