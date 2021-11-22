@@ -195,6 +195,10 @@ class Handler {
 			return $attrs;
 		}
 
+		echo 'test1';
+		print_r( $attrs );
+		die;
+
 		// Get the image object.
 		$image = new Cloudflare_Image( $attachment->ID, $attrs, $size );
 
