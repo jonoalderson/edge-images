@@ -110,6 +110,10 @@ class Handler {
 	 */
 	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
+		echo 'test2';
+		print_r( $attr );
+		die;
+
 		// Bail if this image has been excluded via a filter.
 		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
 			return $html;
@@ -194,10 +198,6 @@ class Handler {
 		if ( ! $this->image_should_use_cloudflare( $attachment->ID, $attrs ) ) {
 			return $attrs;
 		}
-
-		echo 'test1';
-		print_r( $attrs );
-		die;
 
 		// Get the image object.
 		$image = new Cloudflare_Image( $attachment->ID, $attrs, $size );
