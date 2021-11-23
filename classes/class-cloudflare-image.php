@@ -38,7 +38,7 @@ class Cloudflare_Image {
 	 */
 	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
 		$this->id    = $id;
-		$this->attrs = $attrs;
+		$this->attrs = wp_parse_args( $attrs, $this->get_default_attrs() );
 		$this->set_size( $size );
 		$this->init();
 	}
@@ -50,25 +50,19 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 
+		// Get the normalized size string.
+		$size = Helpers::normalize_size_attr( $this->get_size() );
+
 		// Get the cf image sizes array.
 		$cf_image_sizes = apply_filters( 'cf_image_sizes', array() );
 
-		// Get the normalized size to check for.
-		$size = Helpers::normalize_size_attr( $this->get_size() );
-
-		// Set the attrs.
-		$this->attrs = wp_parse_args( $this->attrs, $this->get_default_attrs() );
-
-		// Grab the attrs for the image size, if there's a matching option.
+		// Grab the attrs for the image size, or continue with defaults.
 		if ( array_key_exists( $size, $cf_image_sizes ) ) {
 			$this->attrs = wp_parse_args( $cf_image_sizes[ $size ], $this->attrs );
 		}
 
 		// Sort the params.
 		ksort( $this->attrs );
-
-		print_r( $this );
-		die;
 
 		// Init all of the attributes.
 		$this->init_dimensions();
