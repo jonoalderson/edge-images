@@ -56,8 +56,13 @@ class Cloudflare_Image {
 		// Get the normalized size to check for.
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
-		// Set the attrs if there's a matching size, or, use the defaults.
-		$this->attrs = ( array_key_exists( $size, $cf_image_sizes ) ) ? wp_parse_args( $cf_image_sizes[ $size ], $this->get_default_attrs() ) : $this->get_default_attrs();
+		// Set the attrs.
+		$this->attrs = wp_parse_args( $this->attrs, $this->get_default_attrs() );
+
+		// Grab the attrs for the image size, if there's a matching option.
+		if ( array_key_exists( $size, $cf_image_sizes ) ) {
+			$this->attrs = wp_parse_args( $cf_image_sizes[ $size ], $this->attrs );
+		}
 
 		// Sort the params.
 		ksort( $this->attrs );
