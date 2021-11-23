@@ -50,6 +50,9 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 
+		print_r( $this );
+		die;
+
 		// Get the cf image sizes array.
 		$cf_image_sizes = apply_filters( 'cf_image_sizes', array() );
 
