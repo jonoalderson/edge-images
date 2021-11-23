@@ -50,9 +50,6 @@ class Cloudflare_Image {
 	 */
 	private function init() : void {
 
-		print_r( $this );
-		die;
-
 		// Get the cf image sizes array.
 		$cf_image_sizes = apply_filters( 'cf_image_sizes', array() );
 
@@ -64,6 +61,9 @@ class Cloudflare_Image {
 
 		// Sort the params.
 		ksort( $this->attrs );
+
+		print_r( $this );
+		die;
 
 		// Init all of the attributes.
 		$this->init_dimensions();
