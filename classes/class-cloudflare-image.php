@@ -466,8 +466,7 @@ class Cloudflare_Image {
 		$html = wp_kses(
 			$html,
 			array(
-				'picture' => Helpers::allowed_picture_attrs(),
-				'img'     => Helpers::allowed_img_attrs(),
+				'img' => Helpers::allowed_img_attrs(),
 			)
 		);
 

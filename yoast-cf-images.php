@@ -67,6 +67,7 @@ function get_cf_image( int $id, array $atts = array(), $size, $echo = true ) {
 		$image = wp_get_attachment_image( $id, $size, false, $atts );
 		if ( $echo ) {
 			echo wp_kses( $image, array( 'img' ) );
+			return;
 		}
 		return $image;
 	}
@@ -75,7 +76,7 @@ function get_cf_image( int $id, array $atts = array(), $size, $echo = true ) {
 
 	// Construct the <img>, wrap it in a <picture>, and echo it.
 	if ( $echo ) {
-		echo $html;
+		echo wp_kses( $html, array( 'picture', 'img' ) );
 		return;
 	}
 
