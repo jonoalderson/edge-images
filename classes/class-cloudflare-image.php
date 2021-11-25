@@ -362,15 +362,19 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function get_generic_srcset_sizes() : array {
-		$srcset = array();
-		$args   = $this->get_attrs();
-		$max    = min( 2 * $args['width'], Helpers::WIDTH_MAX );
+		$srcset          = array();
+		$args            = $this->get_attrs();
+		$max             = min( 2 * $args['width'], Helpers::WIDTH_MAX );
+		$args['quality'] = Helpers::get_image_quality_high();
 		for ( $w = Helpers::WIDTH_MIN; $w <= $max; $w += Helpers::WIDTH_STEP ) {
 			$args['width']  = $w;
 			$args['height'] = $this->calculate_height_from_ratio( $w );
 			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 			if ( $w >= 1000 ) {
-				$w += 100; // Increase the increments on larger sizes.
+				$w += Helpers::WIDTH_STEP; // Increase the increments on larger sizes.
+				if ( $args['quality'] >= Helpers::get_image_quality_low() ) {
+					$args['quality'] = $args['quality'] - 5; // Decrement the quality as we increse size.
+				}
 			}
 		}
 		return $srcset;
@@ -385,7 +389,7 @@ class Cloudflare_Image {
 		$args            = $this->get_attrs();
 		$args['width']   = $attrs['width'] * 2;
 		$args['height']  = $this->calculate_height_from_ratio( $attrs['width'] );
-		$args['quality'] = Helpers::IMAGE_QUALITY_LOW;
+		$args['quality'] = Helpers::get_image_quality_low();
 		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 		return $srcset;
 	}
@@ -593,15 +597,16 @@ class Cloudflare_Image {
 			if ( ( $v['width'] * 2 ) <= Helpers::WIDTH_MAX ) {
 				$args['width']   = $v['width'] * 2;
 				$args['height']  = $h * 2;
-				$args['quality'] = Helpers::IMAGE_QUALITY_LOW;
+				$args['quality'] = Helpers::get_image_quality_low();
 				$srcset[]        = Helpers::create_srcset_val( $src, $args );
 			}
 
 			// Generate a smaller size if it's larger than our min.
 			if ( ceil( $v['width'] / 2 ) > Helpers::WIDTH_MIN ) {
-				$args['width']  = ceil( $v['width'] / 2 );
-				$args['height'] = ceil( $h / 2 );
-				$srcset[]       = Helpers::create_srcset_val( $src, $args );
+				$args['width']   = ceil( $v['width'] / 2 );
+				$args['height']  = ceil( $h / 2 );
+				$args['quality'] = Helpers::get_image_quality_high();
+				$srcset[]        = Helpers::create_srcset_val( $src, $args );
 			}
 		}
 
