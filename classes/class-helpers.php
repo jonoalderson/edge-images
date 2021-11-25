@@ -78,7 +78,8 @@ class Helpers {
 		$cf_properties = array(
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
-			'f'        => ( isset( $args['f'] ) ) ? $args['f'] : 'auto',
+			'f'        => ( isset( $args['format'] ) ) ? $args['format'] : 'auto',
+			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : 'none',
 			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
 			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
 			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',

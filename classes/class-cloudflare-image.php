@@ -291,12 +291,12 @@ class Cloudflare_Image {
 
 		// Convert the SRC to a CF string.
 		$args   = array(
-			'width'  => ( $this->has_attr( 'width' ) ) ? $this->get_attr( 'width' ) : null,
-			'height' => ( $this->has_attr( 'height' ) ) ? $this->get_attr( 'height' ) : null,
-			'fit'    => ( $this->has_attr( 'fit' ) ) ? $this->get_attr( 'fit' ) : null,
-			'blur'   => ( $this->has_attr( 'blur' ) ) ? $this->get_attr( 'blur' ) : null,
-			'f'      => ( $this->has_attr( 'format' ) ) ? $this->get_attr( 'format' ) : null,
-			'q'      => ( $this->has_attr( 'quality' ) ) ? $this->get_attr( 'quality' ) : null,
+			'width'   => ( $this->has_attr( 'width' ) ) ? $this->get_attr( 'width' ) : null,
+			'height'  => ( $this->has_attr( 'height' ) ) ? $this->get_attr( 'height' ) : null,
+			'fit'     => ( $this->has_attr( 'fit' ) ) ? $this->get_attr( 'fit' ) : null,
+			'blur'    => ( $this->has_attr( 'blur' ) ) ? $this->get_attr( 'blur' ) : null,
+			'format'  => ( $this->has_attr( 'format' ) ) ? $this->get_attr( 'format' ) : null,
+			'quality' => ( $this->has_attr( 'quality' ) ) ? $this->get_attr( 'quality' ) : null,
 		);
 		$cf_src = Helpers::cf_src( $full_image[0], $args );
 
