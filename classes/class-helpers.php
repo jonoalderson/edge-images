@@ -173,7 +173,7 @@ class Helpers {
 	 *
 	 * @return int The image step value
 	 */
-	public static function get_image_step_value() : int {
+	public static function get_width_step() : int {
 		return apply_filters( 'cf_images_step_value', self::WIDTH_STEP );
 	}
 
