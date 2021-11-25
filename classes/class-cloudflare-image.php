@@ -603,9 +603,10 @@ class Cloudflare_Image {
 
 			// Generate a smaller size if it's larger than our min.
 			if ( ceil( $v['width'] / 2 ) > Helpers::WIDTH_MIN ) {
-				$args['width']  = ceil( $v['width'] / 2 );
-				$args['height'] = ceil( $h / 2 );
-				$srcset[]       = Helpers::create_srcset_val( $src, $args );
+				$args['width']   = ceil( $v['width'] / 2 );
+				$args['height']  = ceil( $h / 2 );
+				$args['quality'] = Helpers::IMAGE_QUALITY_HIGH;
+				$srcset[]        = Helpers::create_srcset_val( $src, $args );
 			}
 		}
 
