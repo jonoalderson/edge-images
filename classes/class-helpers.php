@@ -63,7 +63,7 @@ class Helpers {
 	 *
 	 * @var integer
 	 */
-	const IMAGE_QUALITY_LOW = 50;
+	const IMAGE_QUALITY_LOW = 60;
 
 	/**
 	 * Replace a SRC string with a Cloudflared version
@@ -79,7 +79,7 @@ class Helpers {
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
 			'f'        => ( isset( $args['format'] ) ) ? $args['format'] : 'auto',
-			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : 'none',
+			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : IMAGE_QUALITY_HIGH,
 			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
 			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
 			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',
