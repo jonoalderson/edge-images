@@ -52,6 +52,20 @@ class Helpers {
 	const WIDTH_STEP = 100;
 
 	/**
+	 * The default image quality.
+	 *
+	 * @var integer
+	 */
+	const IMAGE_QUALITY_HIGH = 85;
+
+	/**
+	 * The image quality for 2x images.
+	 *
+	 * @var integer
+	 */
+	const IMAGE_QUALITY_LOW = 50;
+
+	/**
 	 * Replace a SRC string with a Cloudflared version
 	 *
 	 * @param  string $src The src.

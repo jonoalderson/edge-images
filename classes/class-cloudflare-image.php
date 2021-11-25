@@ -295,6 +295,8 @@ class Cloudflare_Image {
 			'height' => ( $this->has_attr( 'height' ) ) ? $this->get_attr( 'height' ) : null,
 			'fit'    => ( $this->has_attr( 'fit' ) ) ? $this->get_attr( 'fit' ) : null,
 			'blur'   => ( $this->has_attr( 'blur' ) ) ? $this->get_attr( 'blur' ) : null,
+			'f'      => ( $this->has_attr( 'format' ) ) ? $this->get_attr( 'format' ) : null,
+			'q'      => ( $this->has_attr( 'quality' ) ) ? $this->get_attr( 'quality' ) : null,
 		);
 		$cf_src = Helpers::cf_src( $full_image[0], $args );
 
@@ -361,10 +363,12 @@ class Cloudflare_Image {
 	 */
 	private function get_generic_srcset_sizes() : array {
 		$srcset = array();
-		$max    = min( 2 * $this->attrs['width'], Helpers::WIDTH_MAX );
+		$args   = $this->get_attrs();
+		$max    = min( 2 * $args['width'], Helpers::WIDTH_MAX );
 		for ( $w = Helpers::WIDTH_MIN; $w <= $max; $w += Helpers::WIDTH_STEP ) {
-			$h        = $this->calculate_height_from_ratio( $w );
-			$srcset[] = Helpers::create_srcset_val( $this->attrs['full-src'], $this->get_attrs() );
+			$args['width']  = $w;
+			$args['height'] = $this->calculate_height_from_ratio( $w );
+			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 			if ( $w >= 1000 ) {
 				$w += 100; // Increase the increments on larger sizes.
 			}
@@ -378,10 +382,11 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function get_x2_srcset_size() : array {
-		$w        = $this->attrs['width'];
-		$h        = $this->calculate_height_from_ratio( $w );
-		$srcset[] = Helpers::create_srcset_val( $this->attrs['full-src'], $this->get_attrs() );
-		$srcset[] = Helpers::create_srcset_val( $this->attrs['full-src'], $this->get_attrs() );
+		$args            = $this->get_attrs();
+		$args['width']   = $attrs['width'] * 2;
+		$args['height']  = $this->calculate_height_from_ratio( $attrs['width'] );
+		$args['quality'] = Helpers::IMAGE_QUALITY_LOW;
+		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 		return $srcset;
 	}
 
@@ -487,29 +492,25 @@ class Cloudflare_Image {
 	 */
 	private function init_classes() : void {
 
-		// Get (and normalize) the class(es).
-		$classes = Helpers::normalize_attr_array( $this->get_attr( 'class' ) );
-
-		// Get (and normalize) the picture class(es).
-		$picture_classes = Helpers::normalize_attr_array( $this->get_attr( 'picture-class' ) );
-
 		// Get the size class(es).
 		$size_class = Helpers::normalize_size_attr( $this->get_size() );
 
+		// Get (and normalize) the class(es).
 		$this->attrs['class'] = array_merge(
-			$classes,
+			Helpers::normalize_attr_array( $this->get_attr( 'class' ) ),
 			array(
 				'attachment-' . $size_class,
 				'size-' . $size_class,
-				'cloudflared',
+				'img-cloudflared',
 			)
 		);
 		$this->attrs['class'] = array_unique( $this->attrs['class'] );
 
+		// Get (and normalize) the picture class(es).
 		$this->attrs['picture-class'] = array_merge(
-			$picture_classes,
+			Helpers::normalize_attr_array( $this->get_attr( 'picture-class' ) ),
 			array(
-				$size_class,
+				'picture-' . $size_class,
 			)
 		);
 		$this->attrs['picture-class'] = array_unique( $this->attrs['picture-class'] );
@@ -590,9 +591,13 @@ class Cloudflare_Image {
 
 			// Generate a 2x size if it's smaller than our max.
 			if ( ( $v['width'] * 2 ) <= Helpers::WIDTH_MAX ) {
-				$args['width']  = $v['width'] * 2;
-				$args['height'] = $h * 2;
-				$srcset[]       = Helpers::create_srcset_val( $src, $args );
+				$args['width']   = $v['width'] * 2;
+				$args['height']  = $h * 2;
+				$args['quality'] = Helpers::IMAGE_QUALITY_LOW;
+				$srcset[]        = Helpers::create_srcset_val( $src, $args );
+				print_r( $srcset );
+				die;
+
 			}
 
 			// Generate a smaller size if it's larger than our min.
