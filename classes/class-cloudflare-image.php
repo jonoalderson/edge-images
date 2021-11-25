@@ -372,11 +372,7 @@ class Cloudflare_Image {
 			if ( $w >= 1000 ) {
 				$w += 100; // Increase the increments on larger sizes.
 			}
-			echo 'doing';
-			print_r( $srcset );
 		}
-		echo 'done';
-		print_r( $srcset );
 		return $srcset;
 	}
 
@@ -599,9 +595,6 @@ class Cloudflare_Image {
 				$args['height']  = $h * 2;
 				$args['quality'] = Helpers::IMAGE_QUALITY_LOW;
 				$srcset[]        = Helpers::create_srcset_val( $src, $args );
-				print_r( $srcset );
-				die;
-
 			}
 
 			// Generate a smaller size if it's larger than our min.
