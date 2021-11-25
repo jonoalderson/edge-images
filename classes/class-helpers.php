@@ -63,7 +63,7 @@ class Helpers {
 	 *
 	 * @var integer
 	 */
-	const IMAGE_QUALITY_LOW = 60;
+	const IMAGE_QUALITY_LOW = 65;
 
 	/**
 	 * Replace a SRC string with a Cloudflared version

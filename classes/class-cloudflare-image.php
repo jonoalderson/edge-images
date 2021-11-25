@@ -362,15 +362,19 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function get_generic_srcset_sizes() : array {
-		$srcset = array();
-		$args   = $this->get_attrs();
-		$max    = min( 2 * $args['width'], Helpers::WIDTH_MAX );
+		$srcset  = array();
+		$args    = $this->get_attrs();
+		$max     = min( 2 * $args['width'], Helpers::WIDTH_MAX );
+		$quality = Helpers::IMAGE_QUALITY_HIGH;
 		for ( $w = Helpers::WIDTH_MIN; $w <= $max; $w += Helpers::WIDTH_STEP ) {
 			$args['width']  = $w;
 			$args['height'] = $this->calculate_height_from_ratio( $w );
 			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 			if ( $w >= 1000 ) {
 				$w += 100; // Increase the increments on larger sizes.
+				if ( $quality >= Helpers::IMAGE_QUALITY_LOW ) {
+					$args['quality'] -= 5; // Decrement the quality as we increse size.
+				}
 			}
 		}
 		return $srcset;
