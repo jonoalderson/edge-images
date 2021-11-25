@@ -169,6 +169,33 @@ class Helpers {
 	}
 
 	/**
+	 * Get the image step value
+	 *
+	 * @return int The image step value
+	 */
+	public static function get_image_step_value() : int {
+		return apply_filters( 'cf_images_step_value', self::WIDTH_STEP );
+	}
+
+	/**
+	 * Get the min width value
+	 *
+	 * @return int The image min width value
+	 */
+	public static function get_image_min_width() : int {
+		return apply_filters( 'cf_images_min_width', self::WIDTH_MIN );
+	}
+
+	/**
+	 * Get the max width value
+	 *
+	 * @return int The image max width value
+	 */
+	public static function get_image_max_width() : int {
+		return apply_filters( 'cf_images_max_width', self::WIDTH_MAX );
+	}
+
+	/**
 	 * Get the low image quality value
 	 *
 	 * @return int The image quality value
