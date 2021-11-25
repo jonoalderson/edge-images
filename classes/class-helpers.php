@@ -14,56 +14,49 @@ class Helpers {
 	 *
 	 * @var string
 	 */
-	const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
+	public const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
 
 	/**
 	 * The content width in pixels
 	 *
 	 * @var integer
 	 */
-	const CONTENT_WIDTH = 600;
-
-	/**
-	 * The min width a default srcset val should be generated at, in pixels.
-	 *
-	 * @var integer
-	 */
-	const MIN_WIDTH = 400;
+	private const CONTENT_WIDTH = 600;
 
 	/**
 	 * The max width a default srcset val should ever be generated at, in pixels.
 	 *
 	 * @var integer
 	 */
-	const WIDTH_MAX = 2400;
+	private const WIDTH_MAX = 2400;
 
 	/**
 	 * The min width a default srcset val should be generated at, in pixels.
 	 *
 	 * @var integer
 	 */
-	const WIDTH_MIN = 400;
+	private const WIDTH_MIN = 400;
 
 	/**
 	 * The width to increment default srcset vals.
 	 *
 	 * @var integer
 	 */
-	const WIDTH_STEP = 100;
+	private const WIDTH_STEP = 100;
 
 	/**
 	 * The default image quality.
 	 *
 	 * @var integer
 	 */
-	const IMAGE_QUALITY_HIGH = 85;
+	private const IMAGE_QUALITY_HIGH = 85;
 
 	/**
 	 * The image quality for 2x images.
 	 *
 	 * @var integer
 	 */
-	const IMAGE_QUALITY_LOW = 65;
+	private const IMAGE_QUALITY_LOW = 65;
 
 	/**
 	 * Replace a SRC string with a Cloudflared version
@@ -79,7 +72,7 @@ class Helpers {
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
 			'f'        => ( isset( $args['format'] ) ) ? $args['format'] : 'auto',
-			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : self::IMAGE_QUALITY_HIGH,
+			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : self::get_image_quality_high(),
 			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
 			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
 			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',
@@ -164,6 +157,51 @@ class Helpers {
 			$content_width = self::CONTENT_WIDTH;
 		}
 		return $content_width;
+	}
+
+	/**
+	 * Get the low image quality value
+	 *
+	 * @return int The image quality value
+	 */
+	public static function get_image_quality_low() : int {
+		return apply_filters( 'cf_images_quality_low', self::IMAGE_QUALITY_LOW );
+	}
+
+	/**
+	 * Get the image step value
+	 *
+	 * @return int The image step value
+	 */
+	public static function get_width_step() : int {
+		return apply_filters( 'cf_images_step_value', self::WIDTH_STEP );
+	}
+
+	/**
+	 * Get the min width value
+	 *
+	 * @return int The image min width value
+	 */
+	public static function get_image_min_width() : int {
+		return apply_filters( 'cf_images_min_width', self::WIDTH_MIN );
+	}
+
+	/**
+	 * Get the max width value
+	 *
+	 * @return int The image max width value
+	 */
+	public static function get_image_max_width() : int {
+		return apply_filters( 'cf_images_max_width', self::WIDTH_MAX );
+	}
+
+	/**
+	 * Get the low image quality value
+	 *
+	 * @return int The image quality value
+	 */
+	public static function get_image_quality_high() : int {
+		return apply_filters( 'cf_images_quality_high', self::IMAGE_QUALITY_HIGH );
 	}
 
 	/**
