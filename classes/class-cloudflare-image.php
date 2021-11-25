@@ -372,9 +372,6 @@ class Cloudflare_Image {
 			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 			if ( $w >= 1000 ) {
 				$w += 100; // Increase the increments on larger sizes.
-				if ( $args['quality'] >= Helpers::IMAGE_QUALITY_LOW ) {
-					$args['quality'] -= 5; // Decrement the quality as we increse size.
-				}
 			}
 		}
 		return $srcset;
