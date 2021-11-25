@@ -72,7 +72,7 @@ class Helpers {
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
 			'f'        => ( isset( $args['format'] ) ) ? $args['format'] : 'auto',
-			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : IMAGE_QUALITY_HIGH,
+			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : self::get_image_quality_high(),
 			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
 			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
 			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',
