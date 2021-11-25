@@ -372,7 +372,11 @@ class Cloudflare_Image {
 			if ( $w >= 1000 ) {
 				$w += 100; // Increase the increments on larger sizes.
 			}
+			echo 'doing';
+			print_r( $srcset );
 		}
+		echo 'done';
+		print_r( $srcset );
 		return $srcset;
 	}
 
