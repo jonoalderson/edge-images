@@ -376,9 +376,6 @@ class Cloudflare_Image {
 			// For larger images.
 			if ( $w >= 1000 ) {
 				$w += $width_step; // Increase the step increments.
-				if ( $args['quality'] >= Helpers::get_image_quality_low() ) {
-					$args['quality'] -= 5; // Decrement the quality as we increse size.
-				}
 			}
 		}
 
