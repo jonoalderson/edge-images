@@ -362,21 +362,22 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function get_generic_srcset_sizes() : array {
-		$srcset     = array();
-		$args       = $this->get_attrs();
-		$max        = min( 2 * $args['width'], Helpers::get_image_max_width() );
-		$width_step = Helpers::get_width_step();
-
+		$srcset          = array();
+		$args            = $this->get_attrs();
+		$max_width       = min( 2 * $args['width'], Helpers::get_image_max_width() );
 		$args['quality'] = Helpers::get_image_quality_high();
+		$width_step      = Helpers::get_width_step();
 
-		for ( $w = Helpers::get_image_min_width(); $w <= $max; $w += $width_step ) {
+		for ( $w = Helpers::get_image_min_width(); $w <= $max_width; $w += $width_step ) {
 			$args['width']  = $w;
 			$args['height'] = $this->calculate_height_from_ratio( $w );
 			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+
+			// For larger images.
 			if ( $w >= 1000 ) {
-				$w += $width_step; // Increase the increments on larger sizes.
+				$w += $width_step; // Increase the step increments.
 				if ( $args['quality'] >= Helpers::get_image_quality_low() ) {
-					$args['quality'] = $args['quality'] - 5; // Decrement the quality as we increse size.
+					$args['quality'] -= 5; // Decrement the quality as we increse size.
 				}
 			}
 		}
