@@ -60,8 +60,8 @@ class Cloudflare_Image {
 		if ( array_key_exists( $size, $cf_image_sizes ) ) {
 			$this->attrs = wp_parse_args( $cf_image_sizes[ $size ], $this->attrs );
 		} else {
-			print_r( $this->get_size() );
-			die;
+			$this->set_width( $this->get_size()[0] );
+			$this->set_height( $this->get_size()[1] );
 		}
 
 		// Sort the params.
@@ -86,9 +86,6 @@ class Cloudflare_Image {
 		$width  = Helpers::get_content_width();
 		$height = $width * 0.75;
 		$attrs  = array(
-			'width'         => $width,
-			'height'        => $height,
-			'sizes'         => "(max-width: {$width}px) 100vw, {$width}px",
 			'class'         => array(),
 			'picture-class' => array(),
 			'fit'           => 'cover',
@@ -161,6 +158,10 @@ class Cloudflare_Image {
 			$this->attrs['height'] = $size[1];
 			return;
 		}
+
+		$width                 = Helpers::get_content_width();
+		$this->attrs['width']  = $width;
+		$this->attrs['height'] = $width * 0.75;
 
 	}
 
