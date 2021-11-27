@@ -334,13 +334,14 @@ class Cloudflare_Image {
 		switch ( $this->attrs['layout'] ) {
 			case 'responsive':
 				$srcset = array_merge(
+					$this->get_dpx_srcset_sizes(),
 					$this->get_generic_srcset_sizes(),
 					$this->get_srcset_sizes_from_context( $this->attrs['full-src'] )
 				);
 				break;
 			case 'fixed':
 				$srcset = array_merge(
-					$this->get_x2_srcset_size(),
+					$this->get_dpx_srcset_sizes(),
 					$this->get_srcset_sizes_from_context( $this->attrs['full-src'] )
 				);
 				break;
@@ -355,22 +356,20 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function get_generic_srcset_sizes() : array {
-		$srcset     = array();
-		$args       = $this->get_attrs();
-		$max        = min( 2 * $args['width'], Helpers::get_image_max_width() );
-		$width_step = Helpers::get_width_step();
-
+		$srcset          = array();
+		$args            = $this->get_attrs();
+		$max_width       = min( 2 * $args['width'], Helpers::get_image_max_width() );
 		$args['quality'] = Helpers::get_image_quality_high();
+		$width_step      = Helpers::get_width_step();
 
-		for ( $w = Helpers::get_image_min_width(); $w <= $max; $w += $width_step ) {
+		for ( $w = Helpers::get_image_min_width(); $w <= $max_width; $w += $width_step ) {
 			$args['width']  = $w;
 			$args['height'] = $this->calculate_height_from_ratio( $w );
 			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+
+			// For larger images.
 			if ( $w >= 1000 ) {
-				$w += $width_step; // Increase the increments on larger sizes.
-				if ( $args['quality'] >= Helpers::get_image_quality_low() ) {
-					$args['quality'] = $args['quality'] - 5; // Decrement the quality as we increse size.
-				}
+				$w += $width_step; // Increase the step increments.
 			}
 		}
 
@@ -378,16 +377,26 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Adds x2 srcset values
+	 * Adds DPX srcset values
 	 *
 	 * @return array The srcset values
 	 */
-	private function get_x2_srcset_size() : array {
-		$args            = $this->get_attrs();
+	private function get_dpx_srcset_sizes() : array {
+		$attrs = $this->get_attrs();
+		$args  = $attrs;
+
+		// 1.5x.
+		$args['width']   = ceil( $attrs['width'] * 1.5 );
+		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
+		$args['quality'] = Helpers::get_image_quality_medium();
+		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+
+		// 2x.
 		$args['width']   = $attrs['width'] * 2;
-		$args['height']  = $this->calculate_height_from_ratio( $attrs['width'] );
+		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
 		$args['quality'] = Helpers::get_image_quality_low();
 		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+
 		return $srcset;
 	}
 

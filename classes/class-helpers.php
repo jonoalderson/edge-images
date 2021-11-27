@@ -52,6 +52,13 @@ class Helpers {
 	private const IMAGE_QUALITY_HIGH = 85;
 
 	/**
+	 * The image quality for 1.5x images.
+	 *
+	 * @var integer
+	 */
+	private const IMAGE_QUALITY_MEDIUM = 75;
+
+	/**
 	 * The image quality for 2x images.
 	 *
 	 * @var integer
@@ -167,6 +174,16 @@ class Helpers {
 	public static function get_image_quality_low() : int {
 		return apply_filters( 'cf_images_quality_low', self::IMAGE_QUALITY_LOW );
 	}
+
+	/**
+	 * Get the medium image quality value
+	 *
+	 * @return int The image quality value
+	 */
+	public static function get_image_quality_medium() : int {
+		return apply_filters( 'cf_images_quality_low', self::IMAGE_QUALITY_MEDIUM );
+	}
+
 
 	/**
 	 * Get the image step value
