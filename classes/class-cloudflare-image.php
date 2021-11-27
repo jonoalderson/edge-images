@@ -382,7 +382,8 @@ class Cloudflare_Image {
 	 * @return array The srcset values
 	 */
 	private function get_dpx_srcset_sizes() : array {
-		$args = $this->get_attrs();
+		$attrs = $this->get_attrs();
+		$args  = $attrs;
 
 		// 1.5x.
 		$args['width']   = ceil( $attrs['width'] * 1.5 );
