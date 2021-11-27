@@ -37,7 +37,9 @@ class Cloudflare_Image {
 	 * @param string $size The size.
 	 */
 	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
-		$this->id    = $id;
+		$this->id = $id;
+		print_r( $attrs );
+		die;
 		$this->attrs = wp_parse_args( $attrs, $this->get_default_attrs() );
 		$this->set_size( $size );
 		$this->init();
