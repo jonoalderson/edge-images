@@ -386,13 +386,13 @@ class Cloudflare_Image {
 
 		// 1.5x.
 		$args['width']   = ceil( $attrs['width'] * 1.5 );
-		$args['height']  = $this->calculate_height_from_ratio( $attrs['width'] );
+		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
 		$args['quality'] = Helpers::get_image_quality_medium();
 		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		// 2x.
 		$args['width']   = $attrs['width'] * 2;
-		$args['height']  = $this->calculate_height_from_ratio( $attrs['width'] );
+		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
 		$args['quality'] = Helpers::get_image_quality_low();
 		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
