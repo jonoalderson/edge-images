@@ -59,9 +59,6 @@ class Cloudflare_Image {
 		// Grab the attrs for the image size, or continue with defaults.
 		if ( array_key_exists( $size, $cf_image_sizes ) ) {
 			$this->attrs = wp_parse_args( $cf_image_sizes[ $size ], $this->attrs );
-		} else {
-			$this->set_width( $this->get_size()[0] );
-			$this->set_height( $this->get_size()[1] );
 		}
 
 		// Sort the params.
