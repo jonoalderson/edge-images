@@ -334,6 +334,7 @@ class Cloudflare_Image {
 		switch ( $this->attrs['layout'] ) {
 			case 'responsive':
 				$srcset = array_merge(
+					$this->get_dpx_srcset_sizes(),
 					$this->get_generic_srcset_sizes(),
 					$this->get_srcset_sizes_from_context( $this->attrs['full-src'] )
 				);
@@ -376,7 +377,7 @@ class Cloudflare_Image {
 	}
 
 	/**
-	 * Adds x2 srcset values
+	 * Adds DPX srcset values
 	 *
 	 * @return array The srcset values
 	 */
