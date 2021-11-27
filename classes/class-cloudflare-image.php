@@ -83,9 +83,6 @@ class Cloudflare_Image {
 		$width  = Helpers::get_content_width();
 		$height = $width * 0.75;
 		$attrs  = array(
-			'width'         => $width,
-			'height'        => $height,
-			'sizes'         => "(max-width: {$width}px) 100vw, {$width}px",
 			'class'         => array(),
 			'picture-class' => array(),
 			'fit'           => 'cover',
@@ -133,14 +130,6 @@ class Cloudflare_Image {
 			return;
 		}
 
-		// If we don't have a size, try and work out some values.
-		// If it's an SVG, we know the sizes.
-		if ( ! $this->has_size() || $this->is_svg() ) {
-			$this->init_width();
-			$this->init_height();
-			return; // Early exit.
-		}
-
 		$size = $this->get_size();
 
 		if ( is_string( $size ) ) {
@@ -158,6 +147,10 @@ class Cloudflare_Image {
 			$this->attrs['height'] = $size[1];
 			return;
 		}
+
+		$width                 = Helpers::get_content_width();
+		$this->attrs['width']  = $width;
+		$this->attrs['height'] = $width * 0.75;
 
 	}
 
