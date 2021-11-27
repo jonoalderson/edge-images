@@ -37,9 +37,7 @@ class Cloudflare_Image {
 	 * @param string $size The size.
 	 */
 	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
-		$this->id = $id;
-		print_r( $attrs );
-		die;
+		$this->id    = $id;
 		$this->attrs = wp_parse_args( $attrs, $this->get_default_attrs() );
 		$this->set_size( $size );
 		$this->init();
@@ -61,6 +59,9 @@ class Cloudflare_Image {
 		// Grab the attrs for the image size, or continue with defaults.
 		if ( array_key_exists( $size, $cf_image_sizes ) ) {
 			$this->attrs = wp_parse_args( $cf_image_sizes[ $size ], $this->attrs );
+		} else {
+			print_r( $this->get_size() );
+			die;
 		}
 
 		// Sort the params.
