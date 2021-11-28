@@ -16,6 +16,30 @@ class Preloads {
 	 */
 	public static function register() : void {
 		$instance = new self();
+		add_action( 'wp_head', array( $instance, 'preload_filtered_images' ), 10 );
+	}
+
+	/**
+	 * Preload any filtered images.
+	 *
+	 * @return void
+	 */
+	public function preload_filtered_images() : void {
+		$images = apply_filters( 'preload_cf_images', array() );
+
+		echo 'here2';
+		print_r( $images );
+		die;
+
+		// Bail if there aren't any images.
+		if ( empty( $images ) ) {
+			return;
+		}
+
+		// Iterate through the images.
+		foreach ( $images as $image => $size ) {
+			$this->preload_image( $id, $size );
+		}
 	}
 
 	/**
@@ -26,12 +50,12 @@ class Preloads {
 	 *
 	 * @return void
 	 */
-	public static function preload_image( int $id, $size ) : void {
+	private function preload_image( int $id, $size ) : void {
 
 		$image = get_cf_image_object( $id, array(), $size );
 
 		// Bail if there's no image, or if it's malformed.
-		if ( ! $image || ! self::is_valid_image( $image ) ) {
+		if ( ! $image || ! $this->is_valid( $image ) ) {
 			return;
 		}
 
@@ -46,16 +70,25 @@ class Preloads {
 	/**
 	 * Checks if an image is valid for preloading
 	 *
-	 * @param  Cloudflare_Image $image The image.
+	 * @param  mixed $image The image.
 	 *
 	 * @return bool
 	 */
-	private static function is_valid_image( Cloudflare_Image $image ) : bool {
+	private function is_valid( $image ) : bool {
+
+		// Bail if this isn't a Cloudflare Image.
+		if ( ! is_a( 'Yoast_CF_Images\Cloudflare_Image' ) ) {
+			return false;
+		}
+
+		// Bail if we're missing key properties.
 		if (
 			! isset( $image->attrs['srcset'] ) ||
-			! isset( $image->attrs['sizes'] ) ) {
-				return false;
+			! isset( $image->attrs['sizes'] )
+		) {
+			return false;
 		}
+
 		return true;
 	}
 
