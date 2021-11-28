@@ -34,8 +34,10 @@ class Preloads {
 
 		// Iterate through the images.
 		foreach ( $images as $image ) {
-			print_r( $image );
-			die;
+			// Bail if we don't have an ID and a size.
+			if ( ! isset( $image['id'] ) || ! isset( $image['size'] ) ) {
+				continue;
+			}
 			$this->preload_image( $image['id'], $image['size'] );
 		}
 	}
