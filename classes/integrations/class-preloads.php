@@ -33,8 +33,10 @@ class Preloads {
 		}
 
 		// Iterate through the images.
-		foreach ( $images as $image => $size ) {
-			$this->preload_image( $id, $size );
+		foreach ( $images as $image ) {
+			print_r( $image );
+			die;
+			$this->preload_image( $image['id'], $image['size'] );
 		}
 	}
 
