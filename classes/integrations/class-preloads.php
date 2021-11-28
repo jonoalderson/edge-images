@@ -27,10 +27,6 @@ class Preloads {
 	public function preload_filtered_images() : void {
 		$images = apply_filters( 'preload_cf_images', array() );
 
-		echo 'here2';
-		print_r( $images );
-		die;
-
 		// Bail if there aren't any images.
 		if ( empty( $images ) ) {
 			return;
