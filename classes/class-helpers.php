@@ -181,7 +181,7 @@ class Helpers {
 	 * @return int The image quality value
 	 */
 	public static function get_image_quality_medium() : int {
-		return apply_filters( 'cf_images_quality_low', self::IMAGE_QUALITY_MEDIUM );
+		return apply_filters( 'cf_images_quality_medium', self::IMAGE_QUALITY_MEDIUM );
 	}
 
 
