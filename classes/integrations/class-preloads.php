@@ -34,6 +34,10 @@ class Preloads {
 
 		// Iterate through the images.
 		foreach ( $images as $image ) {
+			// Bail if we don't have an ID and a size.
+			if ( ! isset( $image['id'] ) || ! isset( $image['size'] ) ) {
+				continue;
+			}
 			$this->preload_image( $image['id'], $image['size'] );
 		}
 	}
@@ -73,7 +77,7 @@ class Preloads {
 	private function is_valid( $image ) : bool {
 
 		// Bail if this isn't a Cloudflare Image.
-		if ( ! is_a( 'Yoast_CF_Images\Cloudflare_Image' ) ) {
+		if ( ! is_a( $image, 'Yoast_CF_Images\Cloudflare_Image' ) ) {
 			return false;
 		}
 
