@@ -77,7 +77,7 @@ class Preloads {
 	private function is_valid( $image ) : bool {
 
 		// Bail if this isn't a Cloudflare Image.
-		if ( ! is_a( 'Yoast_CF_Images\Cloudflare_Image' ) ) {
+		if ( ! is_a( $image, 'Yoast_CF_Images\Cloudflare_Image' ) ) {
 			return false;
 		}
 
