@@ -45,7 +45,7 @@ class XML_Sitemaps {
 			'width'  => self::IMAGE_WIDTH,
 			'height' => self::IMAGE_HEIGHT,
 		);
-		return Helpers::cf_src( $uri, $args );
+		return Helpers::edge_src( $uri, $args );
 	}
 
 

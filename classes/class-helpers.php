@@ -66,20 +66,20 @@ class Helpers {
 	private const IMAGE_QUALITY_LOW = 65;
 
 	/**
-	 * Replace a SRC string with a Cloudflared version
+	 * Replace a SRC string with an edge version
 	 *
 	 * @param  string $src The src.
 	 * @param  array  $args The args.
 	 *
 	 * @return string      The modified SRC attr.
 	 */
-	public static function cf_src( string $src, array $args ) : string {
+	public static function edge_src( string $src, array $args ) : string {
 
 		if ( ! self::should_transform_image_src() ) {
 			return $src;
 		}
 
-		$cf_properties = array(
+		$edge_properties = array(
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
 			'f'        => ( isset( $args['format'] ) ) ? $args['format'] : 'auto',
@@ -91,21 +91,21 @@ class Helpers {
 
 		// OPTIONAL: Height.
 		if ( isset( $args['height'] ) ) {
-			$cf_properties['height'] = $args['height'];
+			$edge_properties['height'] = $args['height'];
 		}
 
 		// OPTIONAL: Blur.
 		if ( isset( $args['blur'] ) ) {
-			$cf_properties['blur'] = $args['blur'];
+			$edge_properties['blur'] = $args['blur'];
 		}
 
 		// Sort our properties alphabetically by key.
-		ksort( $cf_properties );
+		ksort( $edge_properties );
 
 		// Hard-code the yoast.com domain (for now).
-		$cf_prefix = self::get_rewrite_domain() . '/cdn-cgi/image/';
-		$cf_string = $cf_prefix . http_build_query(
-			$cf_properties,
+		$edge_prefix = self::get_rewrite_domain() . '/cdn-cgi/image/';
+		$edge_string = $edge_prefix . http_build_query(
+			$edge_properties,
 			'',
 			'%2C'
 		);
@@ -114,7 +114,7 @@ class Helpers {
 		$url  = wp_parse_url( $src );
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
-		return $cf_string . $path;
+		return $edge_string . $path;
 	}
 
 	/**
@@ -142,7 +142,7 @@ class Helpers {
 	public static function create_srcset_val( string $src, $args ) : string {
 		return sprintf(
 			'%s %dw',
-			self::cf_src(
+			self::edge_src(
 				$src,
 				$args
 			),
@@ -157,7 +157,7 @@ class Helpers {
 	 */
 	public static function get_content_width() : int {
 		// See if there's a filtered width.
-		$filtered_width = apply_filters( 'cf_images_content_width', 0 );
+		$filtered_width = apply_filters( 'edge_images_content_width', 0 );
 		if ( $filtered_width ) {
 			return $filtered_width;
 		}
@@ -176,7 +176,7 @@ class Helpers {
 	 * @return int The image quality value
 	 */
 	public static function get_image_quality_low() : int {
-		return apply_filters( 'cf_images_quality_low', self::IMAGE_QUALITY_LOW );
+		return apply_filters( 'edge_images_quality_low', self::IMAGE_QUALITY_LOW );
 	}
 
 	/**
@@ -185,7 +185,7 @@ class Helpers {
 	 * @return int The image quality value
 	 */
 	public static function get_image_quality_medium() : int {
-		return apply_filters( 'cf_images_quality_medium', self::IMAGE_QUALITY_MEDIUM );
+		return apply_filters( 'edge_images_quality_medium', self::IMAGE_QUALITY_MEDIUM );
 	}
 
 
@@ -195,7 +195,7 @@ class Helpers {
 	 * @return int The image step value
 	 */
 	public static function get_width_step() : int {
-		return apply_filters( 'cf_images_step_value', self::WIDTH_STEP );
+		return apply_filters( 'edge_images_step_value', self::WIDTH_STEP );
 	}
 
 	/**
@@ -204,7 +204,7 @@ class Helpers {
 	 * @return int The image min width value
 	 */
 	public static function get_image_min_width() : int {
-		return apply_filters( 'cf_images_min_width', self::WIDTH_MIN );
+		return apply_filters( 'edge_images_min_width', self::WIDTH_MIN );
 	}
 
 	/**
@@ -213,7 +213,7 @@ class Helpers {
 	 * @return int The image max width value
 	 */
 	public static function get_image_max_width() : int {
-		return apply_filters( 'cf_images_max_width', self::WIDTH_MAX );
+		return apply_filters( 'edge_images_max_width', self::WIDTH_MAX );
 	}
 
 	/**
@@ -222,7 +222,7 @@ class Helpers {
 	 * @return int The image quality value
 	 */
 	public static function get_image_quality_high() : int {
-		return apply_filters( 'cf_images_quality_high', self::IMAGE_QUALITY_HIGH );
+		return apply_filters( 'edge_images_quality_high', self::IMAGE_QUALITY_HIGH );
 	}
 
 	/**
@@ -332,7 +332,7 @@ class Helpers {
 		}
 
 		// Bail if the functionality has been disabled via a filter.
-		$disabled = apply_filters( 'cf_images_disable', false );
+		$disabled = apply_filters( 'edge_images_disable', false );
 		if ( $disabled ) {
 			return false;
 		}
@@ -355,7 +355,7 @@ class Helpers {
 		}
 
 		// Bail if this image ID has been filtered.
-		$excluded_images = apply_filters( 'cf_images_exclude', array() );
+		$excluded_images = apply_filters( 'edge_images_exclude', array() );
 		if ( $id && in_array( $id, $excluded_images, true ) ) {
 			return false;
 		}
@@ -393,12 +393,12 @@ class Helpers {
 	}
 
 	/**
-	 * Get the domain to use as the CF rewrite base
+	 * Get the domain to use as the edge rewrite base
 	 *
 	 * @return string The domain
 	 */
 	public static function get_rewrite_domain() : string {
-		$domain = apply_filters( 'cf_images_domain', false );
+		$domain = apply_filters( 'edge_images_domain', false );
 		if ( ! $domain ) {
 			$domain = get_site_url();
 		}

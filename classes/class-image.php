@@ -55,7 +55,7 @@ class Image {
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
 		// Get the cf image sizes array.
-		$cf_image_sizes = apply_filters( 'cf_image_sizes', Helpers::get_wp_image_sizes() );
+		$edge_image_sizes = apply_filters( 'edge_image_sizes', Helpers::get_wp_image_sizes() );
 
 		// Grab the attrs for the image size, or continue with defaults.
 		if ( array_key_exists( $size, $cf_image_sizes ) ) {
@@ -267,7 +267,7 @@ class Image {
 	}
 
 	/**
-	 * Replace the SRC attr with a Cloudflared version
+	 * Replace the SRC attr with an edge version
 	 *
 	 * @return void
 	 */
@@ -507,7 +507,7 @@ class Image {
 			array(
 				'attachment-' . $size_class,
 				'size-' . $size_class,
-				'img-cloudflared',
+				'img-edge-transformed',
 			)
 		);
 		$this->attrs['class'] = array_unique( $this->attrs['class'] );

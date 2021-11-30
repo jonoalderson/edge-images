@@ -98,7 +98,7 @@ if ( ! function_exists( 'get_edge_image' ) ) {
 
 if ( ! function_exists( 'get_edge_image_object' ) ) {
 	/**
-	 * Get a CF image as an object
+	 * Get a an edge image as an object
 	 *
 	 * @param  int          $id    The attachment ID.
 	 * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
