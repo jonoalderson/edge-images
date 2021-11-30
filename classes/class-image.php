@@ -54,12 +54,12 @@ class Image {
 		// Get the normalized size string.
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
-		// Get the cf image sizes array.
+		// Get the edge image sizes array.
 		$edge_image_sizes = apply_filters( 'edge_image_sizes', Helpers::get_wp_image_sizes() );
 
 		// Grab the attrs for the image size, or continue with defaults.
-		if ( array_key_exists( $size, $cf_image_sizes ) ) {
-			$this->attrs = wp_parse_args( $cf_image_sizes[ $size ], $this->attrs );
+		if ( array_key_exists( $size, $edge_image_sizes ) ) {
+			$this->attrs = wp_parse_args( $edge_image_sizes[ $size ], $this->attrs );
 		}
 
 		// Sort the params.
