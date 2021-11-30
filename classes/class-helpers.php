@@ -363,7 +363,14 @@ class Helpers {
 		return true;
 	}
 
-	public static function should_transform_image_src( int $id ) {
+	/**
+	 * Determines if the src should be transformed.
+	 *
+	 * @param string $src The image src value.
+	 *
+	 * @return bool
+	 */
+	public static function should_transform_image_src( $src ) : bool {
 
 		// Don't ever transform the src if this is a local or dev environment.
 		if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'development' ) {
@@ -376,9 +383,11 @@ class Helpers {
 	/**
 	 * Determines if an image is an SVG.
 	 *
+	 * @param string $src The image src value.
+	 *
 	 * @return bool
 	 */
-	public static function is_svg( $src ) : bool {
+	public static function is_svg( string $src ) : bool {
 		if ( strpos( $src, '.svg' ) !== false ) {
 			return true;
 		}

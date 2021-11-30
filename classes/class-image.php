@@ -279,7 +279,7 @@ class Image {
 		$this->attrs['full-src'] = $full_image[0];
 
 		// Bail if this is an SVG.
-		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
+		if ( Helpers::should_transform_image_src( $this->attrs['src'] ) ) {
 			return;
 		}
 
