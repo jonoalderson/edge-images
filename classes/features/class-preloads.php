@@ -63,7 +63,7 @@ class Preloads {
 			'<link rel="preload" as="image" imagesrcset="%s" imagesizes="%s">',
 			esc_attr( implode( ', ', $image->attrs['srcset'] ) ),
 			esc_attr( $image->attrs['sizes'] ),
-		);
+		) . PHP_EOL;
 
 	}
 
