@@ -128,6 +128,11 @@ class Handler {
 			return $html;
 		}
 
+		// Bail if the HTML is missing or empty.
+		if ( ! $html || $html === '' ) {
+			return '';
+		}
+
 		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
