@@ -5,7 +5,7 @@ namespace Edge_Images\Integrations\Yoast_SEO;
 use Edge_Images\Helpers;
 
 /**
- * Configures the og:image to use the CF rewriter.
+ * Configures the og:image to use the image rewriter.
  */
 class Social_Images {
 

@@ -5,7 +5,7 @@ namespace Edge_Images\Integrations\Yoast_SEO;
 use Edge_Images\Helpers;
 
 /**
- * Configures XML sitemaps to use the CF rewriter.
+ * Configures XML sitemaps to use the image rewriter.
  */
 class XML_Sitemaps {
 
