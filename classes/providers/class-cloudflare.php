@@ -53,7 +53,7 @@ class Cloudflare {
 	 * @return string The edge URL.
 	 */
 	public function get_edge_url() : string {
-		$edge_prefix = self::get_rewrite_domain() . '/cdn-cgi/image/';
+		$edge_prefix = Helpers::get_rewrite_domain() . '/cdn-cgi/image/';
 		$edge_url    = $edge_prefix . http_build_query(
 			$this->get_properties(),
 			'',
