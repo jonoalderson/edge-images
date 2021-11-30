@@ -425,6 +425,9 @@ class Helpers {
 			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
 		}
 
+		print_r( $image_sizes );
+		die;
+
 		return $image_sizes;
 	}
 
