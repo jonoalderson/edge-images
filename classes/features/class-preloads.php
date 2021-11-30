@@ -1,6 +1,6 @@
 <?php
 
-namespace Edge_Images\Integrations;
+namespace Edge_Images\Features;
 
 use Edge_Images\{Helpers, Image};
 

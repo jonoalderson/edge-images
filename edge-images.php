@@ -45,7 +45,7 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	Edge_Images\Handler::register();
 
 	// Features.
-	Edge_Images\Preloads::register();
+	Edge_Images\Features\Preloads::register();
 
 	// Integrations.
 	Edge_Images\Integrations\Yoast_SEO\Social_Images::register();
