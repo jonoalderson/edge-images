@@ -89,15 +89,17 @@ class Helpers {
 			return $src;
 		}
 
-		// Create our provider.
-		$provider = new $provider_class( $args );
-		$edge_url = $provider->get_edge_url();
-
-		// Get the path from the URL.
+		// Get the image path from the URL.
 		$url  = wp_parse_url( $src );
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
-		return $edge_url . $path;
+		// Create our provider.
+		$provider = new $provider_class( $path, $args );
+
+		// Get the edge URL.
+		$edge_url = $provider->get_edge_url();
+
+		return $edge_url;
 	}
 
 	/**
@@ -354,8 +356,10 @@ class Helpers {
 	public static function should_transform_image_src() : bool {
 
 		// Don't ever transform the src if this is a local or dev environment.
-		if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'development' ) {
-			return false;
+		switch ( wp_get_environment_type() ) {
+			case 'local':
+			case 'development':
+				return false;
 		}
 
 		return true;

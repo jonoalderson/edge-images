@@ -12,9 +12,11 @@ class Cloudflare {
 	/**
 	 * Create the provider
 	 *
-	 * @param array $args The arguments.
+	 * @param string $path The path to the image.
+	 * @param array  $args The arguments.
 	 */
-	public function __construct( array $args = array() ) {
+	public function __construct( string $path, array $args = array() ) {
+		$this->path = $path;
 		$this->args = $args;
 	}
 
@@ -24,6 +26,7 @@ class Cloudflare {
 	 * @return array The properties.
 	 */
 	private function get_properties() : array {
+
 		$properties = array(
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : Helpers::get_content_width(),
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
@@ -49,22 +52,20 @@ class Cloudflare {
 
 	/**
 	 * Get the edge URL
+	 * E.g., https://staging.prosettings.net/cdn-cgi/image/f=auto%2Cfit=cover[...]path-to-image.jpg
 	 *
 	 * @return string The edge URL.
 	 */
 	public function get_edge_url() : string {
 		$edge_prefix = Helpers::get_rewrite_domain() . '/cdn-cgi/image/';
-		$edge_url    = $edge_prefix . http_build_query(
+
+		$edge_url = $edge_prefix . http_build_query(
 			$this->get_properties(),
 			'',
 			'%2C'
 		);
-		return $edge_url;
+
+		return $edge_url . $this->path;
 	}
-
-
-
-
-
 
 }

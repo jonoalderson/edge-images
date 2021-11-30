@@ -282,11 +282,11 @@ class Image {
 		$this->attrs['full-src'] = $full_image[0];
 
 		// Bail if we shouldn't transform the src.
-		if ( Helpers::should_transform_image_src() ) {
+		if ( ! Helpers::should_transform_image_src() ) {
 			return;
 		}
 
-		$this->convert_src_to_cf();
+		$this->convert_src_to_edge();
 	}
 
 	/**
@@ -294,22 +294,14 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function convert_src_to_cf() : void {
-		$args   = array(
-			'width'   => ( $this->has_attr( 'width' ) ) ? $this->get_attr( 'width' ) : null,
-			'height'  => ( $this->has_attr( 'height' ) ) ? $this->get_attr( 'height' ) : null,
-			'fit'     => ( $this->has_attr( 'fit' ) ) ? $this->get_attr( 'fit' ) : null,
-			'blur'    => ( $this->has_attr( 'blur' ) ) ? $this->get_attr( 'blur' ) : null,
-			'format'  => ( $this->has_attr( 'format' ) ) ? $this->get_attr( 'format' ) : null,
-			'quality' => ( $this->has_attr( 'quality' ) ) ? $this->get_attr( 'quality' ) : null,
-		);
-		$cf_src = Helpers::edge_src( $this->attrs['full-src'], $args );
+	private function convert_src_to_edge() : void {
+		$edge_src = Helpers::edge_src( $this->attrs['full-src'], $this->get_attrs() );
 
-		if ( ! $cf_src ) {
-			return; // Bail if the CF src generation fails.
+		if ( ! $edge_src ) {
+			return; // Bail if the edge src generation fails.
 		}
 
-		$this->attrs['src'] = $cf_src;
+		$this->attrs['src'] = $edge_src;
 	}
 
 	/**

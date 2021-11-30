@@ -45,10 +45,11 @@ class Schema_Images {
 			return $data; // Bail if this isn't the primary image.
 		}
 
-		$args     = array(
+		$args = array(
 			'width'  => self::SCHEMA_WIDTH,
 			'height' => self::SCHEMA_HEIGHT,
 		);
+
 		$edge_url = Helpers::edge_src( $data['url'], $args );
 
 		$data['url']        = $edge_url;
