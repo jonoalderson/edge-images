@@ -16,7 +16,6 @@ class Cloudflare {
 	 */
 	public function __construct( array $args = array() ) {
 		$this->args = $args;
-		$this->init();
 	}
 
 	/**
