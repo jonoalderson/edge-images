@@ -422,16 +422,13 @@ class Helpers {
 			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
 		}
 
-		// Tidy up.
+		// Tidy up default WP nonsense.
 		foreach ( $image_sizes as &$size ) {
 			unset( $size['crop'] );
 			if ( $size['height'] === 9999 ) {
 				unset( $size['height'] );
 			}
 		}
-
-		print_r( $image_sizes );
-		die;
 
 		return $image_sizes;
 	}
