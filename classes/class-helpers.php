@@ -97,7 +97,7 @@ class Helpers {
 		$url  = wp_parse_url( $src );
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
-		return $edge_string . $path;
+		return $edge_url . $path;
 	}
 
 	/**
