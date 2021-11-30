@@ -419,10 +419,15 @@ class Helpers {
 		}
 
 		if ( isset( $_wp_additional_image_sizes ) && count( $_wp_additional_image_sizes ) ) {
-			foreach ( $_wp_additional_image_sizes as &$size ) {
-				unset( $size['crop'] );
-			}
 			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
+		}
+
+		// Tidy up.
+		foreach ( $image_sizes as &$size ) {
+			unset( $size['crop'] );
+			if ( $size['height'] === 9999 ) {
+				unset( $size['height'] );
+			}
 		}
 
 		print_r( $image_sizes );
