@@ -196,7 +196,7 @@ class Handler {
 		}
 
 		// Get the image object.
-		$image = new Cloudflare_Image( $attachment->ID, $attrs, $size );
+		$image = new Image( $attachment->ID, $attrs, $size );
 
 		// Flatten the array properties.
 		$image->flatten_array_properties();
