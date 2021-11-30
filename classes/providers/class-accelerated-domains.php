@@ -52,7 +52,7 @@ class Accelerated_Domains {
 	 * @return string The edge URL.
 	 */
 	public function get_edge_url() : string {
-		$edge_prefix = Helpers::get_rewrite_domain() . '/acd-cgi/img/v1/';
+		$edge_prefix = Helpers::get_rewrite_domain() . '/acd-cgi/img/v1';
 
 		$edge_url = sprintf(
 			'%s%s?%s',
@@ -61,7 +61,7 @@ class Accelerated_Domains {
 			http_build_query(
 				$this->get_properties(),
 				'',
-				'%2C'
+				'&'
 			)
 		);
 
