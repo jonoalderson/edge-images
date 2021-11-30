@@ -403,4 +403,34 @@ class Helpers {
 		);
 	}
 
+	/**
+	 * Gets the registered (and custom) system image sizes
+	 *
+	 * @return array The image sizes
+	 */
+	public static function get_wp_image_sizes() : array {
+		global $_wp_additional_image_sizes;
+
+		$default_image_sizes = get_intermediate_image_sizes();
+
+		foreach ( $default_image_sizes as $size ) {
+			$image_sizes[ $size ]['width']  = intval( get_option( "{$size}_size_w" ) );
+			$image_sizes[ $size ]['height'] = intval( get_option( "{$size}_size_h" ) );
+		}
+
+		if ( isset( $_wp_additional_image_sizes ) && count( $_wp_additional_image_sizes ) ) {
+			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
+		}
+
+		// Tidy up default WP nonsense.
+		foreach ( $image_sizes as &$size ) {
+			unset( $size['crop'] );
+			if ( $size['height'] === 9999 ) {
+				unset( $size['height'] );
+			}
+		}
+
+		return $image_sizes;
+	}
+
 }
