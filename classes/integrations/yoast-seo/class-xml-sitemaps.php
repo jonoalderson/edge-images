@@ -45,11 +45,7 @@ class XML_Sitemaps {
 			'width'  => self::IMAGE_WIDTH,
 			'height' => self::IMAGE_HEIGHT,
 		);
-
-		echo wp_get_environment_type();
-		die;
 		return Helpers::cf_src( $uri, $args );
-
 	}
 
 
