@@ -366,11 +366,9 @@ class Helpers {
 	/**
 	 * Determines if the src should be transformed.
 	 *
-	 * @param string $src The image src value.
-	 *
 	 * @return bool
 	 */
-	public static function should_transform_image_src( $src ) : bool {
+	public static function should_transform_image_src() : bool {
 
 		// Don't ever transform the src if this is a local or dev environment.
 		if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'development' ) {

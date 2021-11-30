@@ -278,12 +278,20 @@ class Image {
 		$this->attrs['src']      = $full_image[0];
 		$this->attrs['full-src'] = $full_image[0];
 
-		// Bail if this is an SVG.
-		if ( Helpers::should_transform_image_src( $this->attrs['src'] ) ) {
+		// Bail if we shouldn't transform the src.
+		if ( Helpers::should_transform_image_src() ) {
 			return;
 		}
 
-		// Convert the SRC to a CF string.
+		$this->convert_src_to_cf();
+	}
+
+	/**
+	 * Convert the src to a CF string.
+	 *
+	 * @return void
+	 */
+	private function convert_src_to_cf() : void {
 		$args   = array(
 			'width'   => ( $this->has_attr( 'width' ) ) ? $this->get_attr( 'width' ) : null,
 			'height'  => ( $this->has_attr( 'height' ) ) ? $this->get_attr( 'height' ) : null,
