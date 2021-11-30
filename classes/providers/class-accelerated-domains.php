@@ -2,7 +2,7 @@
 
 namespace Edge_Images\Providers;
 
-use Edge_Images\{Helpers, Image};
+use Edge_Images\Helpers;
 
 /**
  * Describes the Accelerated Domains edge provider.

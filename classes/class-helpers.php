@@ -356,8 +356,10 @@ class Helpers {
 	public static function should_transform_image_src() : bool {
 
 		// Don't ever transform the src if this is a local or dev environment.
-		if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'development' ) {
-			return false;
+		switch ( wp_get_environment_type() ) {
+			case 'local':
+			case 'development':
+				return false;
 		}
 
 		return true;
