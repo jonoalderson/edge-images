@@ -106,7 +106,7 @@ function get_cf_image_object( int $id, array $atts = array(), $size ) {
 	}
 
 	// Get the image.
-	$image = new Edge_Images\Cloudflare_Image( $id, $atts, $size );
+	$image = new Edge_Images\Image( $id, $atts, $size );
 
 	if ( ! $image ) {
 		return false;
