@@ -30,7 +30,7 @@ class XML_Sitemaps {
 	 */
 	public static function register() : void {
 		$instance = new self();
-		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ) );
+		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ), 100 );
 	}
 
 	/**
@@ -45,6 +45,9 @@ class XML_Sitemaps {
 			'width'  => self::IMAGE_WIDTH,
 			'height' => self::IMAGE_HEIGHT,
 		);
+
+		echo wp_get_environment_type();
+		die;
 		return Helpers::cf_src( $uri, $args );
 
 	}
