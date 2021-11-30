@@ -28,16 +28,16 @@ class Accelerated_Domains {
 	private function get_properties() : array {
 
 		$properties = array(
-			'width'   => ( isset( $args['width'] ) ) ? $args['width'] : Helpers::get_content_width(),
-			'fit'     => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
-			'format'  => ( isset( $args['format'] ) ) ? $args['format'] : 'webp',
-			'quality' => ( isset( $args['quality'] ) ) ? $args['quality'] : Helpers::get_image_quality_high(),
-			'gravity' => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
+			'width'   => ( isset( $this->args['width'] ) ) ? $this->args['width'] : Helpers::get_content_width(),
+			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
+			'format'  => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
+			'quality' => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_high(),
+			'gravity' => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : 'auto',
 		);
 
 		// Optional properties.
-		if ( isset( $args['height'] ) ) {
-			$properties['height'] = $args['height'];
+		if ( isset( $this->args['height'] ) ) {
+			$properties['height'] = $this->args['height'];
 		}
 
 		ksort( $properties );

@@ -28,21 +28,21 @@ class Cloudflare {
 	private function get_properties() : array {
 
 		$properties = array(
-			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : Helpers::get_content_width(),
-			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
-			'f'        => ( isset( $args['format'] ) ) ? $args['format'] : 'auto',
-			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : Helpers::get_image_quality_high(),
-			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
-			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
-			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',
+			'width'    => ( isset( $this->args['width'] ) ) ? $this->args['width'] : Helpers::get_content_width(),
+			'fit'      => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
+			'f'        => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'auto',
+			'q'        => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_high(),
+			'gravity'  => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : 'auto',
+			'onerror'  => ( isset( $this->args['onerror'] ) ) ? $this->args['onerror'] : 'redirect',
+			'metadata' => ( isset( $this->args['metadata'] ) ) ? $this->args['metadata'] : 'none',
 		);
 
 		// Optional properties.
-		if ( isset( $args['height'] ) ) {
-			$properties['height'] = $args['height'];
+		if ( isset( $this->args['height'] ) ) {
+			$properties['height'] = $this->args['height'];
 		}
-		if ( isset( $args['blur'] ) ) {
-			$properties['blur'] = $args['blur'];
+		if ( isset( $this->args['blur'] ) ) {
+			$properties['blur'] = $this->args['blur'];
 		}
 
 		ksort( $properties );
