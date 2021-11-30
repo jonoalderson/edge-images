@@ -16,7 +16,7 @@ class Preloads {
 	 */
 	public static function register() : void {
 		$instance = new self();
-		add_action( 'wp_head', array( $instance, 'preload_filtered_images' ), 10 );
+		add_action( 'wp_head', array( $instance, 'preload_filtered_images' ), 1 );
 	}
 
 	/**
