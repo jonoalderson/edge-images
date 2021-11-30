@@ -3,7 +3,7 @@
 namespace Edge_Images;
 
 use Edge_Images\Helpers;
-use Edge_Images\Cloudflare_Image;
+use Edge_Images\Image;
 
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.

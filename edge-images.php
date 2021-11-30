@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Edge Images
- * Version: 1.5
+ * Version: 1.4.2
  * Description: Provides support for Cloudflare's images transformation service.
  * Author: Jono Alderson
  * Text Domain: edge-images
@@ -14,7 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '1.5' );
+	define( 'EDGE_IMAGES_VERSION', '1.4.2' );
+}
+
+if ( ! defined( 'EDGE_IMAGES_NAMESPACE' ) ) {
+	define( 'EDGE_IMAGES_NAMESPACE', 'Edge_Images' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
@@ -40,7 +44,7 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	// Load our core functionality.
 	Edge_Images\Handler::register();
 
-	// Additional bits.
+	// Additional features.
 	Edge_Images\Integrations\Social_Images::register();
 	Edge_Images\Integrations\Schema_Images::register();
 	Edge_Images\Integrations\Preloads::register();
@@ -48,69 +52,74 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 
 } )();
 
-/**
- * Returns a Cloudflared image
- *
- * @param  int          $id    The attachment ID.
- * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
- * @param  string|array $size  The image size.
- * @param  bool         $echo  If the image should be echo'd.
- *
- * @return false|string  The image HTML
- */
-function get_cf_image( int $id, array $atts = array(), $size, $echo = true ) {
 
-	$image = get_cf_image_object( $id, $atts, $size, $echo );
+if ( ! function_exists( 'get_edge_image' ) ) {
+	/**
+	 * Returns a Cloudflared image
+	 *
+	 * @param  int          $id    The attachment ID.
+	 * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
+	 * @param  string|array $size  The image size.
+	 * @param  bool         $echo  If the image should be echo'd.
+	 *
+	 * @return false|string  The image HTML
+	 */
+	function get_edge_image( int $id, array $atts = array(), $size, $echo = true ) {
 
-	// Try to fall back to a normal WP image if we didn't get an image object.
-	if ( ! $image ) {
-		$image = wp_get_attachment_image( $id, $size, false, $atts );
+		$image = get_edge_image_object( $id, $atts, $size, $echo );
+
+		// Try to fall back to a normal WP image if we didn't get an image object.
+		if ( ! $image ) {
+			$image = wp_get_attachment_image( $id, $size, false, $atts );
+			if ( $echo ) {
+				echo wp_kses( $image, array( 'img' ) );
+				return;
+			}
+			return $image;
+		}
+
+		$html = $image->construct_img_el( true );
+
+		// Construct the <img>, wrap it in a <picture>, and echo it.
 		if ( $echo ) {
-			echo wp_kses( $image, array( 'img' ) );
+			echo wp_kses( $html, array( 'picture', 'img' ) );
 			return;
 		}
-		return $image;
+
+		// Or just return the image object.
+		return $html;
 	}
-
-	$html = $image->construct_img_el( true );
-
-	// Construct the <img>, wrap it in a <picture>, and echo it.
-	if ( $echo ) {
-		echo wp_kses( $html, array( 'picture', 'img' ) );
-		return;
-	}
-
-	// Or just return the image object.
-	return $html;
 }
 
-/**
- * Get a CF image as an object
- *
- * @param  int          $id    The attachment ID.
- * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
- * @param  string|array $size  The image size.
- *
- * @return false|object        The image object
- */
-function get_cf_image_object( int $id, array $atts = array(), $size ) {
+if ( ! function_exists( 'get_edge_image_object' ) ) {
+	/**
+	 * Get a CF image as an object
+	 *
+	 * @param  int          $id    The attachment ID.
+	 * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
+	 * @param  string|array $size  The image size.
+	 *
+	 * @return false|object        The image object
+	 */
+	function get_edge_image_object( int $id, array $atts = array(), $size ) {
 
-	// Fall back to a normal image if we don't have everything we need.
-	if (
-		! class_exists( 'Edge_Images\Helpers' ) ||
-		! method_exists( 'Edge_Images\Helpers', 'should_transform_image' ) ||
-		! Edge_Images\Helpers::should_transform_image( $id ) ||
-		! $id // Maintain native failure conditions for missing/invalid IDs.
-	) {
-		return false;
+		// Fall back to a normal image if we don't have everything we need.
+		if (
+			! class_exists( 'Edge_Images\Helpers' ) ||
+			! method_exists( 'Edge_Images\Helpers', 'should_transform_image' ) ||
+			! Edge_Images\Helpers::should_transform_image( $id ) ||
+			! $id // Maintain native failure conditions for missing/invalid IDs.
+		) {
+			return false;
+		}
+
+		// Get the image.
+		$image = new Edge_Images\Image( $id, $atts, $size );
+
+		if ( ! $image ) {
+			return false;
+		}
+
+		return $image;
 	}
-
-	// Get the image.
-	$image = new Edge_Images\Image( $id, $atts, $size );
-
-	if ( ! $image ) {
-		return false;
-	}
-
-	return $image;
 }
