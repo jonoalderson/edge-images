@@ -82,7 +82,7 @@ class Handler {
 
 		$attrs = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
 
-		$image = get_cf_image( $block['attrs']['id'], $attrs, 'content', false );
+		$image = get_edge_image( $block['attrs']['id'], $attrs, 'content', false );
 
 		return $image;
 	}
