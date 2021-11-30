@@ -10,12 +10,43 @@ use Edge_Images\Helpers;
 class XML_Sitemaps {
 
 	/**
+	 * The width value to use
+	 *
+	 * @var integer
+	 */
+	const IMAGE_WIDTH = 1200;
+
+	/**
+	 * The height value to use
+	 *
+	 * @var integer
+	 */
+	const IMAGE_HEIGHT = 675;
+
+	/**
 	 * Register the Integration
 	 *
 	 * @return void
 	 */
 	public static function register() : void {
 		$instance = new self();
+		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ), 100 );
 	}
+
+	/**
+	 * Transform the URI to an edge version
+	 *
+	 * @param  string $uri The URI.
+	 *
+	 * @return string      The modified URI
+	 */
+	public function use_edge_src( string $uri ) : string {
+		$args = array(
+			'width'  => self::IMAGE_WIDTH,
+			'height' => self::IMAGE_HEIGHT,
+		);
+		return Helpers::edge_src( $uri, $args );
+	}
+
 
 }

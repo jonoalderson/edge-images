@@ -54,12 +54,12 @@ class Image {
 		// Get the normalized size string.
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
-		// Get the cf image sizes array.
-		$cf_image_sizes = apply_filters( 'cf_image_sizes', Helpers::get_wp_image_sizes() );
+		// Get the edge image sizes array.
+		$edge_image_sizes = apply_filters( 'edge_image_sizes', Helpers::get_wp_image_sizes() );
 
 		// Grab the attrs for the image size, or continue with defaults.
-		if ( array_key_exists( $size, $cf_image_sizes ) ) {
-			$this->attrs = wp_parse_args( $cf_image_sizes[ $size ], $this->attrs );
+		if ( array_key_exists( $size, $edge_image_sizes ) ) {
+			$this->attrs = wp_parse_args( $edge_image_sizes[ $size ], $this->attrs );
 		}
 
 		// Sort the params.
@@ -133,19 +133,22 @@ class Image {
 
 		$size = $this->get_size();
 
-		if ( is_string( $size ) ) {
-			$vals = Helpers::get_wp_size_vals( $size );
-			if ( $vals && ! empty( $vals ) ) {
-				$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
-				$this->attrs['width']  = $image[1];
-				$this->attrs['height'] = $image[2];
-			}
-			return; // Early exit.
-		}
-
+		// If the $size is an array, just use the values provided.
 		if ( is_array( $size ) ) {
 			$this->attrs['width']  = $size[0];
 			$this->attrs['height'] = $size[1];
+			return;
+		}
+
+		// If it's a string, go fetch the values.
+		if ( is_string( $size ) ) {
+			$vals = Helpers::get_wp_size_vals( $size );
+			if ( ! $vals ) {
+				return;
+			}
+			$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
+			$this->attrs['width']  = $image[1];
+			$this->attrs['height'] = $image[2];
 			return;
 		}
 
@@ -264,7 +267,7 @@ class Image {
 	}
 
 	/**
-	 * Replace the SRC attr with a Cloudflared version
+	 * Replace the SRC attr with an edge version
 	 *
 	 * @return void
 	 */
@@ -300,7 +303,7 @@ class Image {
 			'format'  => ( $this->has_attr( 'format' ) ) ? $this->get_attr( 'format' ) : null,
 			'quality' => ( $this->has_attr( 'quality' ) ) ? $this->get_attr( 'quality' ) : null,
 		);
-		$cf_src = Helpers::cf_src( $this->attrs['full-src'], $args );
+		$cf_src = Helpers::edge_src( $this->attrs['full-src'], $args );
 
 		if ( ! $cf_src ) {
 			return; // Bail if the CF src generation fails.
@@ -504,7 +507,7 @@ class Image {
 			array(
 				'attachment-' . $size_class,
 				'size-' . $size_class,
-				'img-cloudflared',
+				'img-edge-transformed',
 			)
 		);
 		$this->attrs['class'] = array_unique( $this->attrs['class'] );

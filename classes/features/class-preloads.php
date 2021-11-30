@@ -5,7 +5,7 @@ namespace Edge_Images\Features;
 use Edge_Images\{Helpers, Image};
 
 /**
- * Configures hero image preload headers (using the CF rewriter).
+ * Configures hero image preload headers (using the edge rewriter).
  */
 class Preloads {
 
@@ -25,7 +25,7 @@ class Preloads {
 	 * @return void
 	 */
 	public function preload_filtered_images() : void {
-		$images = apply_filters( 'preload_cf_images', array() );
+		$images = apply_filters( 'preload_edge_images', array() );
 
 		// Bail if there aren't any images.
 		if ( empty( $images ) ) {
@@ -76,7 +76,7 @@ class Preloads {
 	 */
 	private function is_valid( $image ) : bool {
 
-		// Bail if this isn't a Cloudflare Image.
+		// Bail if this isn't an Image.
 		if ( ! is_a( $image, 'Edge_Images\Image' ) ) {
 			return false;
 		}

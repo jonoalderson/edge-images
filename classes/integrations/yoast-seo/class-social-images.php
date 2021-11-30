@@ -5,7 +5,7 @@ namespace Edge_Images\Integrations\Yoast_SEO;
 use Edge_Images\Helpers;
 
 /**
- * Configures the og:image to use the image rewriter.
+ * Configures the og:image to use the edge.
  */
 class Social_Images {
 
@@ -31,8 +31,8 @@ class Social_Images {
 	public static function register() : void {
 		$instance = new self();
 		add_filter( 'wpseo_opengraph_image_size', array( $instance, 'set_full_size_og_image' ) );
-		add_filter( 'wpseo_opengraph_image', array( $instance, 'route_image_through_cf' ), 10, 2 );
-		add_filter( 'wpseo_twitter_image', array( $instance, 'route_image_through_cf' ), 10, 2 );
+		add_filter( 'wpseo_opengraph_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
+		add_filter( 'wpseo_twitter_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
 		add_filter( 'wpseo_frontend_presentation', array( $instance, 'set_image_dimensions' ), 30, 1 );
 	}
 
@@ -77,7 +77,7 @@ class Social_Images {
 	 *
 	 * @return string The modified string
 	 */
-	public function route_image_through_cf( string $output, object $presenter ) : string {
+	public function route_image_through_edge( string $output, object $presenter ) : string {
 
 		// Get the image ID.
 		$image_id = $presenter->model->open_graph_image_id;
@@ -96,7 +96,7 @@ class Social_Images {
 			'width'  => self::OG_WIDTH,
 			'height' => self::OG_HEIGHT,
 		);
-		$src  = Helpers::cf_src( $image[0], $args );
+		$src  = Helpers::edge_src( $image[0], $args );
 
 		return ( $src ) ? $src : $output;
 	}

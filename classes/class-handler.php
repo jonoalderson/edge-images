@@ -6,7 +6,7 @@ use Edge_Images\Helpers;
 use Edge_Images\Image;
 
 /**
- * Filters wp_get_attachment_image and related functions to use Cloudflare.
+ * Filters wp_get_attachment_image and related functions to use the edge.
  */
 class Handler {
 
@@ -25,7 +25,7 @@ class Handler {
 		}
 
 		$instance = new self();
-		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_cloudflare' ), 100, 3 );
+		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_edge' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
@@ -51,7 +51,7 @@ class Handler {
 	 * @return void
 	 */
 	public function enqueue_css() : void {
-		wp_enqueue_style( 'yoast-cf-images-image', Helpers::STYLES_URL . '/images.css', array(), EDGE_IMAGES_VERSION );
+		wp_enqueue_style( 'edge-images', Helpers::STYLES_URL . '/images.css', array(), EDGE_IMAGES_VERSION );
 	}
 
 	/**
@@ -179,7 +179,7 @@ class Handler {
 	}
 
 	/**
-	 * Check whether an image should use Cloudflare
+	 * Check whether an image should use the edge
 	 *
 	 * @param int   $id The attachment ID.
 	 *
@@ -187,7 +187,7 @@ class Handler {
 	 *
 	 * @return bool
 	 */
-	public function image_should_use_cloudflare( int $id, array $attrs ) : bool {
+	public function image_should_use_edge( int $id, array $attrs ) : bool {
 
 		// Bail if we shouldn't be transforming this image.
 		if ( ! Helpers::should_transform_image( $id ) ) {
@@ -200,7 +200,7 @@ class Handler {
 	}
 
 	/**
-	 * Alter an image to use Cloudflare
+	 * Alter an image to use the edge
 	 *
 	 * @param array        $attrs      The attachment attributes.
 	 * @param object       $attachment The attachment.
@@ -208,8 +208,8 @@ class Handler {
 	 *
 	 * @return array             The modified image attributes
 	 */
-	public function route_images_through_cloudflare( array $attrs, object $attachment, $size ) : array {
-		if ( ! $this->image_should_use_cloudflare( $attachment->ID, $attrs ) ) {
+	public function route_images_through_edge( array $attrs, object $attachment, $size ) : array {
+		if ( ! $this->image_should_use_edge( $attachment->ID, $attrs ) ) {
 			return $attrs;
 		}
 
