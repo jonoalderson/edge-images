@@ -30,6 +30,19 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 100, 5 );
+		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
+	}
+
+	/**
+	 * Adds our aspect ratio variable as a safe style
+	 *
+	 * @param  array $styles The safe styles.
+	 *
+	 * @return array         The filtered styles
+	 */
+	public function allow_picture_ratio_style( array $styles ) : array {
+		$styles[] = '--aspect-ratio';
+		return $styles;
 	}
 
 	/**
@@ -113,6 +126,11 @@ class Handler {
 		// Bail if this image has been excluded via a filter.
 		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
 			return $html;
+		}
+
+		// Bail if the HTML is missing or empty.
+		if ( ! $html || $html === '' ) {
+			return '';
 		}
 
 		// Construct the HTML.
