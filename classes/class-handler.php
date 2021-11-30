@@ -55,6 +55,18 @@ class Handler {
 	}
 
 	/**
+	 * Adds our aspect ratio variable as a safe style
+	 *
+	 * @param  array $styles The safe styles.
+	 *
+	 * @return array         The filtered styles
+	 */
+	public function allow_picture_ratio_style( array $styles ) : array {
+		$styles[] = '--aspect-ratio';
+		return $styles;
+	}
+
+	/**
 	 * Alter block editor image rendering
 	 *
 	 * TODO: Account for when images are linked (via $block['attrs']['linkDestination']).
