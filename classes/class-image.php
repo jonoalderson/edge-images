@@ -282,7 +282,7 @@ class Image {
 		$this->attrs['full-src'] = $full_image[0];
 
 		// Bail if we shouldn't transform the src.
-		if ( Helpers::should_transform_image_src() ) {
+		if ( ! Helpers::should_transform_image_src() ) {
 			return;
 		}
 
