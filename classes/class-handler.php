@@ -3,7 +3,7 @@
 namespace Edge_Images;
 
 use Edge_Images\Helpers;
-use Edge_Images\Cloudflare_Image;
+use Edge_Images\Image;
 
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.
@@ -196,7 +196,7 @@ class Handler {
 		}
 
 		// Get the image object.
-		$image = new Cloudflare_Image( $attachment->ID, $attrs, $size );
+		$image = new Image( $attachment->ID, $attrs, $size );
 
 		// Flatten the array properties.
 		$image->flatten_array_properties();
