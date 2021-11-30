@@ -270,11 +270,6 @@ class Image {
 	 */
 	private function init_src() : void {
 
-		// Don't transform the src if this is a local or dev environment.
-		if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'development' ) {
-			return;
-		}
-
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
@@ -284,7 +279,7 @@ class Image {
 		$this->attrs['full-src'] = $full_image[0];
 
 		// Bail if this is an SVG.
-		if ( $this->is_svg() ) {
+		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
 			return;
 		}
 
@@ -307,29 +302,13 @@ class Image {
 	}
 
 	/**
-	 * Determines if an image is an SVG.
-	 *
-	 * @return bool
-	 */
-	public function is_svg() : bool {
-		if ( ! isset( $this->attrs['src'] ) ) {
-			// Presume it's not, if we don't know.
-			return false;
-		}
-		if ( strpos( $this->attrs['src'], '.svg' ) !== false ) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
 	 * Init the SRCSET attr
 	 *
 	 * @return void
 	 */
 	private function init_srcset() : void {
 
-		if ( $this->is_svg() ) {
+		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
 			return;
 		}
 
