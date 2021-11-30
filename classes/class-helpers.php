@@ -89,15 +89,17 @@ class Helpers {
 			return $src;
 		}
 
-		// Create our provider.
-		$provider = new $provider_class( $args );
-		$edge_url = $provider->get_edge_url();
-
-		// Get the path from the URL.
+		// Get the image path from the URL.
 		$url  = wp_parse_url( $src );
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
-		return $edge_string . $path;
+		// Create our provider.
+		$provider = new $provider_class( $path, $args );
+
+		// Get the edge URL.
+		$edge_url = $provider->get_edge_url();
+
+		return $edge_url;
 	}
 
 	/**
