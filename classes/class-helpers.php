@@ -75,40 +75,23 @@ class Helpers {
 	 */
 	public static function edge_src( string $src, array $args ) : string {
 
+		// Bail if we shouldn't transform the image based on the src.
 		if ( ! self::should_transform_image_src() ) {
 			return $src;
 		}
 
-		$edge_properties = array(
-			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
-			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
-			'f'        => ( isset( $args['format'] ) ) ? $args['format'] : 'auto',
-			'q'        => ( isset( $args['quality'] ) ) ? $args['quality'] : self::get_image_quality_high(),
-			'gravity'  => ( isset( $args['gravity'] ) ) ? $args['gravity'] : 'auto',
-			'onerror'  => ( isset( $args['onerror'] ) ) ? $args['onerror'] : 'redirect',
-			'metadata' => ( isset( $args['metadata'] ) ) ? $args['metadata'] : 'none',
-		);
+		// Get the provider class (default to Cloudflare).
+		$provider       = apply_filters( 'edge_images_provider', 'cloudflare' );
+		$provider_class = 'Edge_Images\Providers\\' . ucfirst( $provider );
 
-		// OPTIONAL: Height.
-		if ( isset( $args['height'] ) ) {
-			$edge_properties['height'] = $args['height'];
+		// Bail if we can't find one.
+		if ( ! class_exists( $provider_class ) ) {
+			return $src;
 		}
 
-		// OPTIONAL: Blur.
-		if ( isset( $args['blur'] ) ) {
-			$edge_properties['blur'] = $args['blur'];
-		}
-
-		// Sort our properties alphabetically by key.
-		ksort( $edge_properties );
-
-		// Hard-code the yoast.com domain (for now).
-		$edge_prefix = self::get_rewrite_domain() . '/cdn-cgi/image/';
-		$edge_string = $edge_prefix . http_build_query(
-			$edge_properties,
-			'',
-			'%2C'
-		);
+		// Create our provider.
+		$provider = new $provider_class( $args );
+		$edge_url = $provider->get_edge_url();
 
 		// Get the path from the URL.
 		$url  = wp_parse_url( $src );
