@@ -44,11 +44,13 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	// Load our core functionality.
 	Edge_Images\Handler::register();
 
-	// Additional features.
-	Edge_Images\Integrations\Social_Images::register();
-	Edge_Images\Integrations\Schema_Images::register();
-	Edge_Images\Integrations\Preloads::register();
-	Edge_Images\Integrations\XML_Sitemaps::register();
+	// Features.
+	Edge_Images\Preloads::register();
+
+	// Integrations.
+	Edge_Images\Integrations\Yoast_SEO\Social_Images::register();
+	Edge_Images\Integrations\Yoast_SEO\Schema_Images::register();
+	Edge_Images\Integrations\Yoast_SEO\XML_Sitemaps::register();
 
 } )();
 
