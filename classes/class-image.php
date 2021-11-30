@@ -303,7 +303,7 @@ class Image {
 			'format'  => ( $this->has_attr( 'format' ) ) ? $this->get_attr( 'format' ) : null,
 			'quality' => ( $this->has_attr( 'quality' ) ) ? $this->get_attr( 'quality' ) : null,
 		);
-		$cf_src = Helpers::cf_src( $this->attrs['full-src'], $args );
+		$cf_src = Helpers::edge_src( $this->attrs['full-src'], $args );
 
 		if ( ! $cf_src ) {
 			return; // Bail if the CF src generation fails.
