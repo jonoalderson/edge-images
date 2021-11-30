@@ -75,6 +75,10 @@ class Helpers {
 	 */
 	public static function cf_src( string $src, array $args ) : string {
 
+		if ( ! self::should_transform_image_src() ) {
+			return $src;
+		}
+
 		$cf_properties = array(
 			'width'    => ( isset( $args['width'] ) ) ? $args['width'] : self::get_content_width(),
 			'fit'      => ( isset( $args['fit'] ) ) ? $args['fit'] : 'cover',
@@ -357,6 +361,35 @@ class Helpers {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Determines if the src should be transformed.
+	 *
+	 * @return bool
+	 */
+	public static function should_transform_image_src() : bool {
+
+		// Don't ever transform the src if this is a local or dev environment.
+		if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'development' ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Determines if an image is an SVG.
+	 *
+	 * @param string $src The image src value.
+	 *
+	 * @return bool
+	 */
+	public static function is_svg( string $src ) : bool {
+		if ( strpos( $src, '.svg' ) !== false ) {
+			return true;
+		}
+		return false;
 	}
 
 	/**

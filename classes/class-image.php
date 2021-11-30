@@ -278,12 +278,20 @@ class Image {
 		$this->attrs['src']      = $full_image[0];
 		$this->attrs['full-src'] = $full_image[0];
 
-		// Bail if this is an SVG.
-		if ( $this->is_svg() ) {
+		// Bail if we shouldn't transform the src.
+		if ( Helpers::should_transform_image_src() ) {
 			return;
 		}
 
-		// Convert the SRC to a CF string.
+		$this->convert_src_to_cf();
+	}
+
+	/**
+	 * Convert the src to a CF string.
+	 *
+	 * @return void
+	 */
+	private function convert_src_to_cf() : void {
 		$args   = array(
 			'width'   => ( $this->has_attr( 'width' ) ) ? $this->get_attr( 'width' ) : null,
 			'height'  => ( $this->has_attr( 'height' ) ) ? $this->get_attr( 'height' ) : null,
@@ -292,7 +300,7 @@ class Image {
 			'format'  => ( $this->has_attr( 'format' ) ) ? $this->get_attr( 'format' ) : null,
 			'quality' => ( $this->has_attr( 'quality' ) ) ? $this->get_attr( 'quality' ) : null,
 		);
-		$cf_src = Helpers::cf_src( $full_image[0], $args );
+		$cf_src = Helpers::cf_src( $this->attrs['full-src'], $args );
 
 		if ( ! $cf_src ) {
 			return; // Bail if the CF src generation fails.
@@ -302,29 +310,13 @@ class Image {
 	}
 
 	/**
-	 * Determines if an image is an SVG.
-	 *
-	 * @return bool
-	 */
-	public function is_svg() : bool {
-		if ( ! isset( $this->attrs['src'] ) ) {
-			// Presume it's not, if we don't know.
-			return false;
-		}
-		if ( strpos( $this->attrs['src'], '.svg' ) !== false ) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
 	 * Init the SRCSET attr
 	 *
 	 * @return void
 	 */
 	private function init_srcset() : void {
 
-		if ( $this->is_svg() ) {
+		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
 			return;
 		}
 
