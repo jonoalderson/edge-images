@@ -55,7 +55,7 @@ class Image {
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
 		// Get the cf image sizes array.
-		$cf_image_sizes = apply_filters( 'cf_image_sizes', $this->get_wp_image_sizes() );
+		$cf_image_sizes = apply_filters( 'cf_image_sizes', Helpers::get_wp_image_sizes() );
 
 		// Grab the attrs for the image size, or continue with defaults.
 		if ( array_key_exists( $size, $cf_image_sizes ) ) {
@@ -73,26 +73,6 @@ class Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
-	}
-
-	private function get_wp_image_sizes() {
-		global $_wp_additional_image_sizes;
-
-		$default_image_sizes = get_intermediate_image_sizes();
-
-		foreach ( $default_image_sizes as $size ) {
-			$image_sizes[ $size ]['width']  = intval( get_option( "{$size}_size_w" ) );
-			$image_sizes[ $size ]['height'] = intval( get_option( "{$size}_size_h" ) );
-		}
-
-		if ( isset( $_wp_additional_image_sizes ) && count( $_wp_additional_image_sizes ) ) {
-			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
-		}
-
-		print_r( $image_sizes );
-		die;
-
-		return $image_sizes;
 	}
 
 	/**
