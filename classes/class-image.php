@@ -270,6 +270,11 @@ class Image {
 	 */
 	private function init_src() : void {
 
+		// Don't transform the src if this is a local or dev environment.
+		if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'development' ) {
+			return;
+		}
+
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
