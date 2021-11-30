@@ -133,19 +133,22 @@ class Image {
 
 		$size = $this->get_size();
 
-		if ( is_string( $size ) ) {
-			$vals = Helpers::get_wp_size_vals( $size );
-			if ( $vals && ! empty( $vals ) ) {
-				$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
-				$this->attrs['width']  = $image[1];
-				$this->attrs['height'] = $image[2];
-			}
-			return; // Early exit.
-		}
-
+		// If the $size is an array, just use the values provided.
 		if ( is_array( $size ) ) {
 			$this->attrs['width']  = $size[0];
 			$this->attrs['height'] = $size[1];
+			return;
+		}
+
+		// If it's a string, go fetch the values.
+		if ( is_string( $size ) ) {
+			$vals = Helpers::get_wp_size_vals( $size );
+			if ( ! $vals ) {
+				return;
+			}
+			$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
+			$this->attrs['width']  = $image[1];
+			$this->attrs['height'] = $image[2];
 			return;
 		}
 
