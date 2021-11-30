@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: Yoast Cloudflare images integration
+ * Plugin Name: Edge Images
  * Version: 1.4.2
- * Description: Provides support for Cloudflared images
+ * Description: Provides support for Cloudflare's images transformation service.
  * Author: Jono Alderson
- * Text Domain: yoast-cf-image
+ * Text Domain: edge-images
  */
 
 // Prevent direct file access.
@@ -13,20 +13,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Set our constants.
-if ( ! defined( 'YOAST_CF_IMAGES_VERSION' ) ) {
-	define( 'YOAST_CF_IMAGES_VERSION', '1.4.2' );
+if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
+	define( 'EDGE_IMAGES_VERSION', '1.4.2' );
 }
 
-if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_DIR' ) ) {
-	define( 'YOAST_CF_IMAGES_PLUGIN_DIR', __DIR__ );
+if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
+	define( 'EDGE_IMAGES_PLUGIN_DIR', __DIR__ );
 }
 
-if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL' ) ) {
-	define( 'YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL', trailingslashit( plugins_url() ) . trailingslashit( plugin_basename( __DIR__ ) ) );
+if ( ! defined( 'EDGE_IMAGES_PLUGIN_URL' ) ) {
+	define( 'EDGE_IMAGES_PLUGIN_URL', trailingslashit( plugins_url() ) . trailingslashit( plugin_basename( __DIR__ ) ) );
 }
 
-if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
-	define( 'YOAST_CF_IMAGES_PLUGIN_FILE', __FILE__ );
+if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
+	define( 'EDGE_IMAGES_PLUGIN_FILE', __FILE__ );
 }
 
 /**
@@ -38,13 +38,13 @@ if ( ! defined( 'YOAST_CF_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 
 	// Load our core functionality.
-	Yoast_CF_Images\Handler::register();
+	Edge_Images\Handler::register();
 
 	// Additional bits.
-	Yoast_CF_Images\Integrations\Social_Images::register();
-	Yoast_CF_Images\Integrations\Schema_Images::register();
-	Yoast_CF_Images\Integrations\Preloads::register();
-	Yoast_CF_Images\Integrations\XML_Sitemaps::register();
+	Edge_Images\Integrations\Social_Images::register();
+	Edge_Images\Integrations\Schema_Images::register();
+	Edge_Images\Integrations\Preloads::register();
+	Edge_Images\Integrations\XML_Sitemaps::register();
 
 } )();
 
@@ -97,16 +97,16 @@ function get_cf_image_object( int $id, array $atts = array(), $size ) {
 
 	// Fall back to a normal image if we don't have everything we need.
 	if (
-		! class_exists( 'Yoast_CF_Images\Helpers' ) ||
-		! method_exists( 'Yoast_CF_Images\Helpers', 'should_transform_image' ) ||
-		! Yoast_CF_Images\Helpers::should_transform_image( $id ) ||
+		! class_exists( 'Edge_Images\Helpers' ) ||
+		! method_exists( 'Edge_Images\Helpers', 'should_transform_image' ) ||
+		! Edge_Images\Helpers::should_transform_image( $id ) ||
 		! $id // Maintain native failure conditions for missing/invalid IDs.
 	) {
 		return false;
 	}
 
 	// Get the image.
-	$image = new Yoast_CF_Images\Cloudflare_Image( $id, $atts, $size );
+	$image = new Edge_Images\Cloudflare_Image( $id, $atts, $size );
 
 	if ( ! $image ) {
 		return false;

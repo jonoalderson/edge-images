@@ -1,9 +1,9 @@
 <?php
 
-namespace Yoast_CF_Images;
+namespace Edge_Images;
 
-use Yoast_CF_Images\Helpers;
-use Yoast_CF_Images\Cloudflare_Image;
+use Edge_Images\Helpers;
+use Edge_Images\Cloudflare_Image;
 
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.
@@ -38,7 +38,7 @@ class Handler {
 	 * @return void
 	 */
 	public function enqueue_css() : void {
-		wp_enqueue_style( 'yoast-cf-images-image', Helpers::STYLES_URL . '/images.css', array(), YOAST_CF_IMAGES_VERSION );
+		wp_enqueue_style( 'yoast-cf-images-image', Helpers::STYLES_URL . '/images.css', array(), EDGE_IMAGES_VERSION );
 	}
 
 	/**

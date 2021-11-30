@@ -1,7 +1,7 @@
 <?php
-namespace Yoast_CF_Images;
+namespace Edge_Images;
 
-use Yoast_CF_Images\{Helpers, Handler};
+use Edge_Images\{Helpers, Handler};
 
 /**
  * Generates and managers a Cloudflared image.

@@ -1,8 +1,8 @@
 <?php
 
-namespace Yoast_CF_Images;
+namespace Edge_Images;
 
-use Yoast_CF_Images\Handler;
+use Edge_Images\Handler;
 
 /**
  * Provides helper methods.
@@ -14,7 +14,7 @@ class Helpers {
 	 *
 	 * @var string
 	 */
-	public const STYLES_URL = YOAST_CF_IMAGES_PLUGIN_PLUGIN_URL . 'assets/css';
+	public const STYLES_URL = EDGE_IMAGES_PLUGIN_URL . 'assets/css';
 
 	/**
 	 * The content width in pixels
