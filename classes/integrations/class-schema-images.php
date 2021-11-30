@@ -31,19 +31,6 @@ class Schema_Images {
 	public static function register() : void {
 		$instance = new self();
 		add_filter( 'wpseo_schema_imageobject', array( $instance, 'cloudflare_primary_image' ) );
-		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
-	}
-
-	/**
-	 * Adds our aspect ratio variable as a safe style
-	 *
-	 * @param  array $styles The safe styles.
-	 *
-	 * @return array         The filtered styles
-	 */
-	public function allow_picture_ratio_style( array $styles ) : array {
-		$styles[] = '--aspect-ratio';
-		return $styles;
 	}
 
 	/**
