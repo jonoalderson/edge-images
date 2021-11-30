@@ -1,8 +1,8 @@
 <?php
 
-namespace Yoast_CF_Images\Integrations;
+namespace Edge_Images\Integrations;
 
-use Yoast_CF_Images\Helpers;
+use Edge_Images\Helpers;
 
 /**
  * Configures XML sitemaps to use the CF rewriter.

@@ -1,9 +1,9 @@
 <?php
 
-namespace Yoast_CF_Images;
+namespace Edge_Images;
 
 use Edge_Images\Helpers;
-use Edge_Images\Image;
+use Edge_Images\Cloudflare_Image;
 
 /**
  * Filters wp_get_attachment_image and related functions to use Cloudflare.
@@ -30,7 +30,6 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 100, 5 );
-		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
 	}
 
 	/**
@@ -39,31 +38,7 @@ class Handler {
 	 * @return void
 	 */
 	public function enqueue_css() : void {
-		wp_enqueue_style( 'yoast-cf-images-image', Helpers::STYLES_URL . '/images.css', array(), YOAST_CF_IMAGES_VERSION );
-	}
-
-	/**
-	 * Adds our aspect ratio variable as a safe style
-	 *
-	 * @param  array $styles The safe styles.
-	 *
-	 * @return array         The filtered styles
-	 */
-	public function allow_picture_ratio_style( array $styles ) : array {
-		$styles[] = '--aspect-ratio';
-		return $styles;
-	}
-
-	/**
-	 * Adds our aspect ratio variable as a safe style
-	 *
-	 * @param  array $styles The safe styles.
-	 *
-	 * @return array         The filtered styles
-	 */
-	public function allow_picture_ratio_style( array $styles ) : array {
-		$styles[] = '--aspect-ratio';
-		return $styles;
+		wp_enqueue_style( 'yoast-cf-images-image', Helpers::STYLES_URL . '/images.css', array(), EDGE_IMAGES_VERSION );
 	}
 
 	/**
@@ -94,7 +69,7 @@ class Handler {
 
 		$attrs = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
 
-		$image = get_edge_image( $block['attrs']['id'], $attrs, 'content', false );
+		$image = get_cf_image( $block['attrs']['id'], $attrs, 'content', false );
 
 		return $image;
 	}
@@ -221,7 +196,7 @@ class Handler {
 		}
 
 		// Get the image object.
-		$image = new Image( $attachment->ID, $attrs, $size );
+		$image = new Cloudflare_Image( $attachment->ID, $attrs, $size );
 
 		// Flatten the array properties.
 		$image->flatten_array_properties();

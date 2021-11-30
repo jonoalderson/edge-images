@@ -1,8 +1,8 @@
 <?php
 
-namespace Yoast_CF_Images\Integrations;
+namespace Edge_Images\Integrations;
 
-use Edge_Images\{Helpers, Image};
+use Edge_Images\{Helpers, Cloudflare_Image};
 
 /**
  * Configures hero image preload headers (using the CF rewriter).
@@ -52,7 +52,7 @@ class Preloads {
 	 */
 	private function preload_image( int $id, $size ) : void {
 
-		$image = get_edge_image_object( $id, array(), $size );
+		$image = get_cf_image_object( $id, array(), $size );
 
 		// Bail if there's no image, or if it's malformed.
 		if ( ! $image || ! $this->is_valid( $image ) ) {
@@ -77,7 +77,7 @@ class Preloads {
 	private function is_valid( $image ) : bool {
 
 		// Bail if this isn't a Cloudflare Image.
-		if ( ! is_a( $image, 'Edge_Images\Image' ) ) {
+		if ( ! is_a( $image, 'Edge_Images\Cloudflare_Image' ) ) {
 			return false;
 		}
 

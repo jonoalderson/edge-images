@@ -1,6 +1,6 @@
 <?php
 
-namespace Yoast_CF_Images;
+namespace Edge_Images;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
