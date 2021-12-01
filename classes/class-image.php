@@ -286,6 +286,11 @@ class Image {
 			return;
 		}
 
+		// Bail if this is an SVG.
+		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
+			return;
+		}
+
 		$this->convert_src_to_edge();
 	}
 
@@ -311,6 +316,12 @@ class Image {
 	 */
 	private function init_srcset() : void {
 
+		// Bail if we shouldn't transform the src.
+		if ( ! Helpers::should_transform_image_src() ) {
+			return;
+		}
+
+		// Bail if this is an SVG.
 		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
 			return;
 		}
