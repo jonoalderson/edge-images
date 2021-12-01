@@ -2,23 +2,12 @@
 
 namespace Edge_Images\Providers;
 
-use Edge_Images\{Helpers, Image};
+use Edge_Images\{Provider, Helpers};
 
 /**
  * Describes the Cloudflare edge provider.
  */
-class Cloudflare {
-
-	/**
-	 * Create the provider
-	 *
-	 * @param string $path The path to the image.
-	 * @param array  $args The arguments.
-	 */
-	public function __construct( string $path, array $args = array() ) {
-		$this->path = $path;
-		$this->args = $args;
-	}
+class Cloudflare extends Provider {
 
 	/**
 	 * Get the properties
