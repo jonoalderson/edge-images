@@ -34,7 +34,7 @@ class Handler {
 	}
 
 	/**
-	 * Adds our aspect ratio variable as a safe style
+	 * Adds our aspect ratio variable(s) as a safe style
 	 *
 	 * @param  array $styles The safe styles.
 	 *
@@ -42,6 +42,7 @@ class Handler {
 	 */
 	public function allow_picture_ratio_style( array $styles ) : array {
 		$styles[] = '--aspect-ratio';
+		$styles[] = 'aspect-ratio';
 		return $styles;
 	}
 
@@ -145,8 +146,9 @@ class Handler {
 
 		// Construct the HTML.
 		$html = sprintf(
-			'<picture style="--aspect-ratio:%s" class="layout-%s %s">%s</picture>',
+			'<picture style="--aspect-ratio: %s; aspect-ratio: %s" class="layout-%s %s">%s</picture>',
 			isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1',
+			isset( $attr['ratio'] ) ? str_replace( '/', ' / ', $attr['ratio'] ) : '1 / 1',
 			isset( $attr['layout'] ) ? $attr['layout'] : 'unknown',
 			isset( $attr['picture-class'] ) ? Helpers::classes_array_to_string( $attr['picture-class'] ) : null,
 			$html

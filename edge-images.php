@@ -1,4 +1,7 @@
 <?php
+
+namespace Edge_Images;
+
 /**
  * Plugin Name: Edge Images
  * Version: 1.5.1
@@ -11,6 +14,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
@@ -38,15 +42,15 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 
 	// Load our core functionality.
-	Edge_Images\Handler::register();
+	Handler::register();
 
 	// Features.
-	Edge_Images\Features\Preloads::register();
+	Features\Preloads::register();
 
 	// Integrations.
-	Edge_Images\Integrations\Yoast_SEO\Social_Images::register();
-	Edge_Images\Integrations\Yoast_SEO\Schema_Images::register();
-	Edge_Images\Integrations\Yoast_SEO\XML_Sitemaps::register();
+	Integrations\Yoast_SEO\Social_Images::register();
+	Integrations\Yoast_SEO\Schema_Images::register();
+	Integrations\Yoast_SEO\XML_Sitemaps::register();
 
 } )();
 
@@ -112,13 +116,13 @@ if ( ! function_exists( 'get_edge_image_object' ) ) {
 		if (
 			! is_attachment( $id ) || // If this isn't a valid image ID.
 			! $id || // Maintain native failure conditions for missing/invalid IDs.
-			! Edge_Images\Helpers::should_transform_image( $id )
+			! Helpers::should_transform_image( $id )
 		) {
 			return false;
 		}
 
 		// Get the image.
-		$image = new Edge_Images\Image( $id, $atts, $size );
+		$image = new Image( $id, $atts, $size );
 
 		// Fail if we didn't get a valid image.
 		if ( ! $image ) {
