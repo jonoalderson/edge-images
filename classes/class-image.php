@@ -55,7 +55,7 @@ class Image {
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
 		// Get the edge image sizes array.
-		$edge_image_sizes = apply_filters( 'edge_image_sizes', Helpers::get_wp_image_sizes() );
+		$edge_image_sizes = apply_filters( 'edge_images_sizes', Helpers::get_wp_image_sizes() );
 
 		// Grab the attrs for the image size, or continue with defaults.
 		if ( array_key_exists( $size, $edge_image_sizes ) ) {
