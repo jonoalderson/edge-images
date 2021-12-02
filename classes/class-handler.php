@@ -74,9 +74,6 @@ class Handler {
 			return $block_content;
 		}
 
-		print_r( $block['attrs'] );
-		die;
-
 		// Bail if there's no image ID set.
 		if ( ! isset( $block['attrs']['id'] ) ) {
 			return $block_content;
