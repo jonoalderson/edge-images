@@ -42,15 +42,15 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 
 	// Load our core functionality.
-	Edge_Images\Handler::register();
+	Handler::register();
 
 	// Features.
-	Edge_Images\Features\Preloads::register();
+	Features\Preloads::register();
 
 	// Integrations.
-	Edge_Images\Integrations\Yoast_SEO\Social_Images::register();
-	Edge_Images\Integrations\Yoast_SEO\Schema_Images::register();
-	Edge_Images\Integrations\Yoast_SEO\XML_Sitemaps::register();
+	Integrations\Yoast_SEO\Social_Images::register();
+	Integrations\Yoast_SEO\Schema_Images::register();
+	Integrations\Yoast_SEO\XML_Sitemaps::register();
 
 } )();
 
