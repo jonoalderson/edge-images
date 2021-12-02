@@ -355,6 +355,11 @@ class Helpers {
 	 */
 	public static function should_transform_image_src() : bool {
 
+		$force_transform = apply_filters( 'edge_images_force_transform', false );
+		if ( $force_transform ) {
+			return true;
+		}
+
 		// Don't ever transform the src if this is a local or dev environment.
 		switch ( wp_get_environment_type() ) {
 			case 'local':
