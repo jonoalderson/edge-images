@@ -67,23 +67,29 @@ class Handler {
 	 * @return string                 The block's modified content
 	 */
 	public function alter_image_block_rendering( $block_content, $block ) : string {
+		// Bail if this isn't an image block.
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
 		}
 
+		// If there's no ID fall back.
 		if ( ! isset( $block['attrs']['id'] ) ) {
 			return $block_content;
 		}
 
+		// Get the height and width of our full-sized image.
 		$image = wp_get_attachment_image_src( $block['attrs']['id'], 'full' );
 		if ( ! $image ) {
 			return $block_content;
 		}
 
+		// Constrain our image to the maximum content width.
 		$attrs = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
 
+		// Get our transformed image.
 		$image = get_edge_image( $block['attrs']['id'], $attrs, 'content', false );
 
+		// Bail if we didn't get an image; fall back to the original block.
 		if ( ! $image ) {
 			return $block_content;
 		}
