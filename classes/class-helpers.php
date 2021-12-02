@@ -103,7 +103,7 @@ class Helpers {
 	}
 
 	/**
-	 * Normaize a size attribute to a string
+	 * Normalize a size attribute to a string
 	 *
 	 * @param  mixed $size The size.
 	 *
