@@ -84,6 +84,10 @@ class Handler {
 
 		$image = get_edge_image( $block['attrs']['id'], $attrs, 'content', false );
 
+		if ( ! $image ) {
+			return $block_content;
+		}
+
 		return $image;
 	}
 
