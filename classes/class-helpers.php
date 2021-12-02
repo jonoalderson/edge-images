@@ -454,4 +454,28 @@ class Helpers {
 		return $image_sizes;
 	}
 
+	/**
+	 * Constrain the width of the image to the max content width
+	 *
+	 * @param  int $w The width.
+	 * @param  int $h The height.
+	 *
+	 * @return array The width and height values
+	 */
+	public static function constrain_image_to_content_width( int $w, int $h ) : array {
+		$content_width = self::get_content_width();
+
+		// Calculate the ratio and constrain the width.
+		if ( $w > $content_width ) {
+			$ratio = $content_width / $w;
+			$w     = $content_width;
+			$h     = ceil( $h * $ratio );
+		}
+
+		return array(
+			'width'  => $w,
+			'height' => $h,
+		);
+	}
+
 }

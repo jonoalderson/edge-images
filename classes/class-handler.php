@@ -68,27 +68,18 @@ class Handler {
 	 * @return string                 The block's modified content
 	 */
 	public function alter_image_block_rendering( $block_content, $block ) : string {
+
 		// Bail if this isn't an image block.
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
 		}
 
-		// If there's no ID fall back.
+		// Bail if there's no image ID set.
 		if ( ! isset( $block['attrs']['id'] ) ) {
 			return $block_content;
 		}
 
-		// Get the height and width of our full-sized image.
-		$image = wp_get_attachment_image_src( $block['attrs']['id'], 'full' );
-		if ( ! $image ) {
-			return $block_content;
-		}
-
-		// Constrain our image to the maximum content width.
-		$attrs = $this->constrain_dimensions_to_content_width( $image[1], $image[2] );
-
-		// Get our transformed image.
-		$image = get_edge_image( $block['attrs']['id'], $attrs, 'content', false );
+		$image = $this->get_content_image( $block['attrs']['id'] );
 
 		// Bail if we didn't get an image; fall back to the original block.
 		if ( ! $image ) {
@@ -99,26 +90,30 @@ class Handler {
 	}
 
 	/**
-	 * Constrain the width of the image to the max content width
+	 * Gets an image sized for display in the_content.
 	 *
-	 * @param  int $w The width.
-	 * @param  int $h The height.
+	 * @param  int $id The attachment ID.
 	 *
-	 * @return array The attrs values
+	 * @return false|Image The Edge Image
 	 */
-	private function constrain_dimensions_to_content_width( int $w, int $h ) : array {
-		$attrs['width']  = $w;
-		$attrs['height'] = $h;
-		$content_width   = Helpers::get_content_width();
+	private function get_content_image( int $id ) {
 
-		// Calculate the ratio and constrain the width.
-		if ( $w > $content_width ) {
-			$ratio           = $content_width / $w;
-			$attrs['width']  = $content_width;
-			$attrs['height'] = ceil( $h * $ratio );
+		// Get the height and width of the full-sized image.
+		$image = wp_get_attachment_image_src( $id, 'full' );
+		if ( ! $image ) {
+			return false;
 		}
 
-		return $attrs;
+		// Constrain our image to the maximum content width, based on the ratio.
+		$attrs = Helpers::constrain_image_to_content_width( $image[1], $image[2] );
+
+		// Get our transformed image.
+		$image = get_edge_image( $id, $attrs, 'content', false );
+
+		// Bail if we didn't get an image.
+		if ( ! $image ) {
+			return false;
+		}
 	}
 
 	/**
