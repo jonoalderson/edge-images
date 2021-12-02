@@ -385,11 +385,7 @@ class Helpers {
 	 * @return string The domain
 	 */
 	public static function get_rewrite_domain() : string {
-		$domain = apply_filters( 'edge_images_domain', false );
-		if ( ! $domain ) {
-			$domain = get_site_url();
-		}
-		return $domain;
+		return apply_filters( 'edge_images_domain', get_site_url() );
 	}
 
 	/**

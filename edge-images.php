@@ -1,4 +1,7 @@
 <?php
+
+namespace Edge_Images;
+
 /**
  * Plugin Name: Edge Images
  * Version: 1.5.1
@@ -11,6 +14,7 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
