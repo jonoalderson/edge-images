@@ -116,13 +116,13 @@ if ( ! function_exists( 'get_edge_image_object' ) ) {
 		if (
 			! is_attachment( $id ) || // If this isn't a valid image ID.
 			! $id || // Maintain native failure conditions for missing/invalid IDs.
-			! Edge_Images\Helpers::should_transform_image( $id )
+			! Helpers::should_transform_image( $id )
 		) {
 			return false;
 		}
 
 		// Get the image.
-		$image = new Edge_Images\Image( $id, $atts, $size );
+		$image = new Image( $id, $atts, $size );
 
 		// Fail if we didn't get a valid image.
 		if ( ! $image ) {
