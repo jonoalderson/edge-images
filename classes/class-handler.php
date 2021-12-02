@@ -69,6 +69,11 @@ class Handler {
 	 */
 	public function alter_image_block_rendering( $block_content, $block ) : string {
 
+		// Bail if we're in the admin or doing a REST request.
+		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return false;
+		}
+
 		// Bail if this isn't an image block.
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
