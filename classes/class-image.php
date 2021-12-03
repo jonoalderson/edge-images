@@ -140,9 +140,9 @@ class Image {
 			return;
 		}
 
-		// If it's a string, go fetch the values.
+		// If it's a string, go fetch the values for that image size.
 		if ( is_string( $size ) ) {
-			$vals = Helpers::get_wp_size_vals( $size );
+			$vals = Helpers::get_wp_size_val( $size );
 			if ( ! $vals ) {
 				return;
 			}
@@ -152,6 +152,7 @@ class Image {
 			return;
 		}
 
+		// Fall back to a 4/3 ratio constrained by the content width.
 		$width                 = Helpers::get_content_width();
 		$this->attrs['width']  = $width;
 		$this->attrs['height'] = $width * 0.75;

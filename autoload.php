@@ -12,21 +12,26 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @param string $class_name The name of the requested class.
  *
- * @return bool Whether or not the requested class was found.
+ * @return bool              Whether or not the requested class was found.
  */
-function autoloader( $class_name ) {
+function autoloader( string $class_name ) : bool {
+
+	// Bail if the class isn't in our namespace.
 	if ( strpos( $class_name, __NAMESPACE__ ) !== 0 ) {
 		return false;
 	}
 
+	// Tidy up the class name.
 	$class_name = str_replace( array( __NAMESPACE__ . '\\' ), '', $class_name );
 	$class_name = str_replace( '_', '-', $class_name );
 	$class_name = explode( '\\', $class_name );
 
+	// Align to our syntax and directory structure.
 	$class_name[] = 'class-' . array_pop( $class_name );
 	$class_name   = implode( '/', $class_name );
 	$class_name   = strtolower( $class_name );
 
+	// Construct the path.
 	$path = sprintf(
 		'%1$s%2$s%3$s.php',
 		realpath( dirname( __FILE__ ) ),
@@ -34,12 +39,12 @@ function autoloader( $class_name ) {
 		$class_name
 	);
 
+	// Include the file if it exists.
 	if ( file_exists( $path ) ) {
 		include $path;
 		return true;
 	}
 
+	// Bail if the class wasn't found.
 	return false;
 }
-
-spl_autoload_register( __NAMESPACE__ . '\autoloader' );
