@@ -17,6 +17,13 @@ class Helpers {
 	public const STYLES_URL = EDGE_IMAGES_PLUGIN_URL . 'assets/css';
 
 	/**
+	 * The cache group to use
+	 *
+	 * @var string
+	 */
+	public const CACHE_GROUP = 'edge_images';
+
+	/**
 	 * The content width in pixels
 	 *
 	 * @var integer
@@ -431,8 +438,8 @@ class Helpers {
 	 */
 	public static function get_wp_image_sizes() : array {
 
-		$cache_key   = 'edge_images_sizes';
-		$image_sizes = wp_cache_get( $cache_key, 'edge_images' );
+		$cache_key   = 'image_sizes';
+		$image_sizes = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 		if ( ! $image_sizes ) {
 
@@ -457,7 +464,7 @@ class Helpers {
 				}
 			}
 
-			wp_cache_set( $cache_key, $image_sizes, 'edge_images' );
+			wp_cache_set( $cache_key, $image_sizes, self::CACHE_GROUP );
 
 		}
 
