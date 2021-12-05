@@ -145,11 +145,12 @@ class Handler {
 
 		// Construct the HTML.
 		$html = sprintf(
-			'<picture style="--aspect-ratio:%s;aspect-ratio:%s" class="layout-%s %s">%s</picture>',
+			'<picture style="--aspect-ratio:%s;aspect-ratio:%s" class="layout-%s %s %s">%s</picture>',
 			isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1',
 			isset( $attr['ratio'] ) ? str_replace( '/', ' / ', $attr['ratio'] ) : '1 / 1',
 			isset( $attr['layout'] ) ? $attr['layout'] : 'unknown',
 			isset( $attr['picture-class'] ) ? Helpers::classes_array_to_string( $attr['picture-class'] ) : null,
+			'id-' . $attachment_id,
 			$html
 		);
 
