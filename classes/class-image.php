@@ -317,11 +317,6 @@ class Image {
 	 */
 	private function init_srcset() : void {
 
-		// Bail if we shouldn't transform the src.
-		if ( ! Helpers::should_transform_image_src() ) {
-			return;
-		}
-
 		// Bail if this is an SVG.
 		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
 			return;
@@ -460,7 +455,9 @@ class Image {
 	public function construct_img_el( $wrap_in_picture = false ) : string {
 
 		// srcset attributes need special treatment to comma-separate values.
-		$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
+		if ( $this->attrs['srcset'] && ! empty( $this->attrs['srcset'] ) ) {
+			$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
+		}
 
 		// Build our HTML tag by running through all of our attrs.
 		$html = sprintf(

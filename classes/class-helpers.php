@@ -305,7 +305,6 @@ class Helpers {
 		}
 
 		if ( is_array( $srcset ) ) {
-			print_r( $srcset );
 			return implode( ', ', $srcset );
 		}
 
