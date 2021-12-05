@@ -55,11 +55,11 @@ class Image {
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
 		// Get the edge image sizes array.
-		$edge_image_sizes = apply_filters( 'edge_images_sizes', Helpers::get_wp_image_sizes() );
+		$sizes = apply_filters( 'edge_images_sizes', Helpers::get_wp_image_sizes() );
 
 		// Grab the attrs for the image size, or continue with defaults.
-		if ( array_key_exists( $size, $edge_image_sizes ) ) {
-			$this->attrs = wp_parse_args( $edge_image_sizes[ $size ], $this->attrs );
+		if ( array_key_exists( $size, $sizes ) ) {
+			$this->attrs = wp_parse_args( $sizes[ $size ], $this->attrs );
 		}
 
 		// Sort the params.
@@ -140,9 +140,9 @@ class Image {
 			return;
 		}
 
-		// If it's a string, go fetch the values.
+		// If it's a string, go fetch the values for that image size.
 		if ( is_string( $size ) ) {
-			$vals = Helpers::get_wp_size_vals( $size );
+			$vals = Helpers::get_wp_size_val( $size );
 			if ( ! $vals ) {
 				return;
 			}
@@ -152,6 +152,7 @@ class Image {
 			return;
 		}
 
+		// Fall back to a 4/3 ratio constrained by the content width.
 		$width                 = Helpers::get_content_width();
 		$this->attrs['width']  = $width;
 		$this->attrs['height'] = $width * 0.75;
