@@ -17,6 +17,13 @@ class Helpers {
 	public const STYLES_URL = EDGE_IMAGES_PLUGIN_URL . 'assets/css';
 
 	/**
+	 * The cache group to use
+	 *
+	 * @var string
+	 */
+	public const CACHE_GROUP = 'edge_images';
+
+	/**
 	 * The content width in pixels
 	 *
 	 * @var integer
@@ -430,28 +437,62 @@ class Helpers {
 	 * @return array The image sizes
 	 */
 	public static function get_wp_image_sizes() : array {
-		global $_wp_additional_image_sizes;
 
-		$default_image_sizes = get_intermediate_image_sizes();
+		$cache_key   = 'image_sizes';
+		$image_sizes = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
-		foreach ( $default_image_sizes as $size ) {
-			$image_sizes[ $size ]['width']  = intval( get_option( "{$size}_size_w" ) );
-			$image_sizes[ $size ]['height'] = intval( get_option( "{$size}_size_h" ) );
-		}
+		if ( ! $image_sizes ) {
 
-		if ( isset( $_wp_additional_image_sizes ) && count( $_wp_additional_image_sizes ) ) {
-			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
-		}
+			global $_wp_additional_image_sizes;
 
-		// Tidy up default WP nonsense.
-		foreach ( $image_sizes as &$size ) {
-			unset( $size['crop'] );
-			if ( $size['height'] === 9999 ) {
-				unset( $size['height'] );
+			$default_image_sizes = get_intermediate_image_sizes();
+
+			foreach ( $default_image_sizes as $size ) {
+				$image_sizes[ $size ]['width']  = intval( get_option( "{$size}_size_w" ) );
+				$image_sizes[ $size ]['height'] = intval( get_option( "{$size}_size_h" ) );
 			}
+
+			if ( isset( $_wp_additional_image_sizes ) && count( $_wp_additional_image_sizes ) ) {
+				$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
+			}
+
+			// Tidy up default WP nonsense.
+			foreach ( $image_sizes as &$size ) {
+				unset( $size['crop'] );
+				if ( $size['height'] === 9999 ) {
+					unset( $size['height'] );
+				}
+			}
+
+			wp_cache_set( $cache_key, $image_sizes, self::CACHE_GROUP );
+
 		}
 
 		return $image_sizes;
+	}
+
+	/**
+	 * Constrain the width of the image to the max content width
+	 *
+	 * @param  int $w The width.
+	 * @param  int $h The height.
+	 *
+	 * @return array The width and height values
+	 */
+	public static function constrain_image_to_content_width( int $w, int $h ) : array {
+		$content_width = self::get_content_width();
+
+		// Calculate the ratio and constrain the width.
+		if ( $w > $content_width ) {
+			$ratio = $content_width / $w;
+			$w     = $content_width;
+			$h     = ceil( $h * $ratio );
+		}
+
+		return array(
+			'width'  => $w,
+			'height' => $h,
+		);
 	}
 
 }
