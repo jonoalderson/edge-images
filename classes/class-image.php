@@ -142,7 +142,7 @@ class Image {
 
 		// If it's a string, go fetch the values for that image size.
 		if ( is_string( $size ) ) {
-			$vals = Helpers::get_wp_size_val( $size );
+			$vals = Helpers::get_wp_size_vals( $size );
 			if ( ! $vals ) {
 				return;
 			}
