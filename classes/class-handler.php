@@ -78,7 +78,6 @@ class Handler {
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
 		}
-
 		// Bail if there's no image ID set.
 		if ( ! isset( $block['attrs']['id'] ) ) {
 			return $block_content;
