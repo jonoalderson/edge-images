@@ -105,7 +105,8 @@ $sizes['card'] = array(
     ),
   ),
   'loading' => 'eager',
-  'picture-class' => 'pineapple pizza'
+  'picture-class' => array('pineapples', 'bananas'),
+  'class' => 'oranges'
 );
 
 ```
@@ -113,7 +114,7 @@ $sizes['card'] = array(
 # Example outputs
 
 ## Before
-Use WordPress' native `add_image_size` function to define a 'banner', and, output that image.
+Use WordPress' native `add_image_size` function to define a 'banner', and output that image.
 
 **PHP**
 ```
@@ -133,7 +134,7 @@ wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 ## After
-Use Edge Images `edge_images_sizes` filter to define a 'banner', and, output that image.
+Use Edge Images `edge_images_sizes` filter to define a 'banner', and output that image.
 
 
 **PHP**
