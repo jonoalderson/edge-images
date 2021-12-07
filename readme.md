@@ -47,7 +47,7 @@ These accept the following properties.
 - `picture-class` (`array`|`str`): Extends the `class` value(s) on the `<picture>` elem.
   - Always outputs `layout-%layout% picture-%size% edge-images-picture image-id-%id%` (where `%size%` is the sanitized image size name, `%layout%` is the `layout` value, and `%id%` is the attachment ID).
 
-## Examples:
+#### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
 ```
 $sizes['example_size_1'] = array(
@@ -107,12 +107,7 @@ $sizes['card'] = array(
 
 ```
 
-## Misc notes
-- SVG formats bypass `srcset` and generation, and have modified outputs.
-
-
-
-## Examples
+## Example outputs
 Using `wp_get_attachment_image( $image_id, 'banner' );`
 
 **Before**:
