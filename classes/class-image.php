@@ -511,7 +511,7 @@ class Image {
 			array(
 				'attachment-' . $size_class,
 				'size-' . $size_class,
-				'img-edge-transformed',
+				'edge-images-img',
 			)
 		);
 		$this->attrs['class'] = array_unique( $this->attrs['class'] );
@@ -521,6 +521,8 @@ class Image {
 			Helpers::normalize_attr_array( $this->get_attr( 'picture-class' ) ),
 			array(
 				'picture-' . $size_class,
+				'edge-images-picture',
+				isset( $this->attrs['layout'] ) ? $this->attrs['layout'] : null,
 			)
 		);
 		$this->attrs['picture-class'] = array_unique( $this->attrs['picture-class'] );
