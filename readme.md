@@ -47,7 +47,7 @@ These accept the following properties.
 - `picture-class` (`array`|`str`): Extends the `class` value(s) on the `<picture>` elem.
   - Always outputs `layout-%layout% picture-%size% edge-images-picture image-id-%id%` (where `%size%` is the sanitized image size name, `%layout%` is the `layout` value, and `%id%` is the attachment ID).
 
-#### Examples:
+## Examples:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
 ```
 $sizes['example_size_1'] = array(
