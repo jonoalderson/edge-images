@@ -5,6 +5,9 @@ Intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `ge
 - Uses named (or h/w array value) sizes as lookups for custom behaviour.
 - Wraps the `<img>` in a `<picture>` elem.
 
+The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
+However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
+
 # Filters
 
 ## Enabling/disabling
@@ -27,9 +30,8 @@ Intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `ge
 - `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
 - `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
 
-## Specifying image sizes
-The `edge_images_sizes` filter is used to define an associative array of named image sizes.
-These accept the following properties.
+## Using `edge_images_sizes` 
+The `edge_images_sizes` filter expects and returns an array of image definitions, each with a _name_ and a range of the following properties.
 
 ### Required
 - `height` (`int`): The height in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
@@ -109,9 +111,16 @@ $sizes['card'] = array(
 ```
 
 # Example outputs
-Using `wp_get_attachment_image( $image_id, 'banner' );`
 
-**Before**:
+## Before
+
+**PHP**
+```
+add_image_size( 'banner', 968, 580 );
+wp_get_attachment_image( $image_id, 'banner' );
+```
+
+**HTML output**
 ```
 <img
   width="1920"
@@ -122,10 +131,19 @@ Using `wp_get_attachment_image( $image_id, 'banner' );`
   loading="lazy">
 ```
 
-**After**:
+## After
 
-With the addition of the following filter:
+**PHP**
 ```
+add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+
+/**
+ * Register image sizes for Edge Images plugin
+ *
+ * @param  array $sizes The array of named sizes.
+ *
+ * @return array The modified array
+ */
 public function register_edge_image_sizes( array $sizes ) : array {
   $sizes['banner'] = array(
     'width'   => 968,
@@ -134,10 +152,11 @@ public function register_edge_image_sizes( array $sizes ) : array {
     'loading' => 'eager',
   );
 }
-add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
 
+wp_get_attachment_image( $image_id, 'banner' );
 ```
 
+**HTML output**
 ```
 <picture
   style="--aspect-ratio:968/500"
