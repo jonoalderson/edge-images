@@ -13,7 +13,7 @@ Intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `ge
 - `edge_images_force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
 
 ## General configuration
-- `edge_images_provider` (`str`): The name of the edge provider to use. Defaults to `Cloudflare`.
+- `edge_images_provider` (`str`): The name of the edge provider to use. Supports to `Cloudflare` or `Accelerated_Domains`.
 - `edge_images_domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
 - `edge_images_content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
 
