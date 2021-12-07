@@ -1,6 +1,6 @@
-Automatically converts image markup to use an edge transformer, and performance optimized layout + CSS logic.
+Automatically converts image markup to use an edge transformation service from a single 'full size' image, and applies performance optimizations to the HTML and CSS (inspired by [this approach](https://css-tricks.com/aspect-ratio-boxes/#using-custom-properties)).
 
-Intercepts various flavors of WordPress' native `wp_get_attachment_image()` and similar, and:
+Intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
 - Uses named (or h/w array value) sizes as lookups for custom behaviour.
 - Wraps the `<img>` in a `<picture>` elem.
 
