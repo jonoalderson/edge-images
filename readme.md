@@ -15,27 +15,28 @@ Specifically, it intercepts various flavors of WordPress' native `wp_get_attachm
   - _Cloudflare_, with the 'Image resizing' feature enabled; requires a _Business_ or _Enterprise_ account.
   - _Accelerated Domains_, with the 'Image resizing' feature enabled.
 
-# Customization & filters
+# Customization
 The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
 However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
 
-## Enabling/disabling
+## Filters
+### Enabling/disabling
 - `edge_images_disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
 - `edge_images_exclude` (`array`): An array of images to exclude from transformation.
 - `edge_images_force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
 - `edge_images_disable_wrap_in_picture` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
 
-## General configuration
+### General configuration
 - `edge_images_provider` (`str`): The name of the edge provider to use. Supports to `Cloudflare` or `Accelerated_Domains`.
 - `edge_images_domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
 - `edge_images_content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
 
-## Image quality settings
+### Image quality settings
 - `edge_images_quality_low` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `65`.
 - `edge_images_quality_medium` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `75`.
 - `edge_images_quality_high` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `85`.
 
-## `srcset` generation settings
+### `srcset` generation settings
 - `edge_images_step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
 - `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
 - `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
