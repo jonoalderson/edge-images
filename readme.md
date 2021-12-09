@@ -1,6 +1,6 @@
-# Introduction
-
 **This plugin is in early alpha testing. Prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below.**
+
+# Introduction
 
 Automatically converts image markup to use an edge transformation service from a single 'full size' image, and applies performance optimizations to the HTML and CSS (inspired by [this approach](https://css-tricks.com/aspect-ratio-boxes/#using-custom-properties)).
 
@@ -17,6 +17,7 @@ However, more fine-grained control can be achieved by registering custom sizes a
 - `edge_images_disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
 - `edge_images_exclude` (`array`): An array of images to exclude from transformation.
 - `edge_images_force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
+- `edge_images_disable_wrap_in_picture` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
 
 ## General configuration
 - `edge_images_provider` (`str`): The name of the edge provider to use. Supports to `Cloudflare` or `Accelerated_Domains`.
@@ -33,7 +34,7 @@ However, more fine-grained control can be achieved by registering custom sizes a
 - `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
 - `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
 
-## Using `edge_images_sizes` 
+## Using `edge_images_sizes`
 The `edge_images_sizes` filter expects and returns an array of image definitions, each with a _name_ and a range of the following properties.
 
 ### Required
