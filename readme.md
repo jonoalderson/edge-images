@@ -1,4 +1,4 @@
-**This plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below fore more information.**
+**This plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below for more information.**
 
 # Description
 
