@@ -4,7 +4,7 @@ namespace Edge_Images;
 
 /**
  * Plugin Name: Edge Images
- * Version: 1.6.6
+ * Version: 1.6.7
  * Description: Provides support for Cloudflare's images transformation service.
  * Author: Jono Alderson
  * Text Domain: edge-images
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '1.6.6' );
+	define( 'EDGE_IMAGES_VERSION', '1.6.7' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {

@@ -151,7 +151,7 @@ class Handler {
 
 		// Bail if images shouldn't wrap in a picture.
 		$disable = apply_filters( 'edge_images_disable_wrap_in_picture', false );
-		if ( ! $disable ) {
+		if ( $disable ) {
 			return $html;
 		}
 
