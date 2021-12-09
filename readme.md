@@ -1,6 +1,6 @@
-**This plugin is in early alpha testing. Prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below.**
+**This plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below fore more information.**
 
-# Introduction
+# Description
 
 Automatically converts image markup to use an edge transformation service from a single 'full size' image, and applies performance optimizations to the HTML and CSS (inspired by [this approach](https://css-tricks.com/aspect-ratio-boxes/#using-custom-properties)).
 
@@ -10,6 +10,12 @@ Intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `ge
 
 The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
 However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
+
+# Requirements
+- Domain must be served through a supported edge provider, with image resizing features available and enabled.
+- Supported edge providers are:
+  - _Cloudflare_, with the 'Image resizing' feature enabled; requires a _Business_ or _Enterprise_ account.
+  - _Accelerated Domains_, with the 'Image resizing' feature enabled.
 
 # Filters
 
