@@ -2,14 +2,12 @@
 
 # Description
 
-Automatically converts image markup to use an edge transformation service from a single 'full size' image, and applies performance optimizations to the HTML and CSS (inspired by [this approach](https://css-tricks.com/aspect-ratio-boxes/#using-custom-properties)).
+Automatically converts image markup to use an edge transformation service from a single 'full size' image, and applies performance optimizations to the HTML and CSS.
 
-Intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
-- Uses named (or h/w array value) sizes as lookups for custom behaviour.
-- Wraps the `<img>` in a `<picture>` elem.
-
-The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
-However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
+Specifically, it intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
+  - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
+  - Generates optimal `srcset`, `sizes` and other image properties.
+  - Wraps the `<img>` in a `<picture>` elem (_optional_).
 
 # Requirements
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
@@ -17,7 +15,9 @@ However, more fine-grained control can be achieved by registering custom sizes a
   - _Cloudflare_, with the 'Image resizing' feature enabled; requires a _Business_ or _Enterprise_ account.
   - _Accelerated Domains_, with the 'Image resizing' feature enabled.
 
-# Filters
+# Customization & filters
+The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
+However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
 
 ## Enabling/disabling
 - `edge_images_disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
