@@ -51,6 +51,13 @@ class Handler {
 	 * @return void
 	 */
 	public function enqueue_css() : void {
+
+		// Bail if images shouldn't wrap in a picture.
+		$disable = apply_filters( 'edge_images_disable_wrap_in_picture', false );
+		if ( $disable ) {
+			return;
+		}
+
 		wp_enqueue_style( 'edge-images', Helpers::STYLES_URL . '/images.css', array(), EDGE_IMAGES_VERSION );
 	}
 
@@ -132,14 +139,20 @@ class Handler {
 	 */
 	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
+		// Bail if the HTML is missing or empty.
+		if ( ! $html || $html === '' ) {
+			return '';
+		}
+
 		// Bail if this image has been excluded via a filter.
 		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
 			return $html;
 		}
 
-		// Bail if the HTML is missing or empty.
-		if ( ! $html || $html === '' ) {
-			return '';
+		// Bail if images shouldn't wrap in a picture.
+		$disable = apply_filters( 'edge_images_disable_wrap_in_picture', false );
+		if ( ! $disable ) {
+			return $html;
 		}
 
 		// Construct the HTML.
