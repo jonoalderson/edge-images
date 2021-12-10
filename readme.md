@@ -15,9 +15,6 @@ Specifically, it intercepts various flavors of WordPress' native `wp_get_attachm
   - _Cloudflare_, with the 'Image resizing' feature enabled; requires a _Business_ or _Enterprise_ account.
   - _Accelerated Domains_, with the 'Image resizing' feature enabled.
 
-# Integrations
-- **Yoast SEO**: Automatically transforms images in meta tags (e.g., `og:image` and similar), schema.org JSON-LD output (currently for the 'primary image of page' property only), and XML sitemaps.
-
 # Customization
 The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
 However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
@@ -204,6 +201,15 @@ wp_get_attachment_image( $image_id, 'banner' );
 	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=250%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=484/path-to-image.jpg 484w">
 </picture>
 ```
+
+# Integrations
+The plugin automatically integrates with the following systems and plugins.
+
+## Yoast SEP
+Automatically transforms images in:
+- Meta tags (e.g., `og:image` and similar)
+- Schema.org JSON-LD output (currently for the 'primary image of page' property only)
+- XML sitemaps
 
 # Roadmap & known issues
 
