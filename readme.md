@@ -205,7 +205,7 @@ wp_get_attachment_image( $image_id, 'banner' );
 # Integrations
 The plugin automatically integrates with the following systems and plugins.
 
-## Yoast SEP
+## Yoast SEO
 Automatically transforms images in:
 - Meta tags (e.g., `og:image` and similar)
 - Schema.org JSON-LD output (currently for the 'primary image of page' property only)
