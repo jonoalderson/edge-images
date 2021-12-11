@@ -137,11 +137,16 @@ class Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function wrap_in_picture( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+	public static function wrap_in_picture( $html, $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
-		// Bail if the HTML is missing or empty.
+		// Bail if there's no HTML.
 		if ( ! $html || $html === '' ) {
 			return '';
+		}
+
+		// Bail if there's no attachment ID.
+		if ( ! $attachment_id ) {
+			return $html;
 		}
 
 		// Bail if this image has been excluded via a filter.
@@ -192,7 +197,7 @@ class Handler {
 	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
-		if ( ! $html ) {
+		if ( ! $html || $html === '' ) {
 			return '';
 		}
 
