@@ -189,7 +189,17 @@ class Handler {
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_dimension_attributes( string $html, int $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
+
+		// Bail if there's no HTML.
+		if ( ! $html ) {
+			return '';
+		}
+
+		// Bail if there's no attachment ID.
+		if ( ! $attachment_id ) {
+			return $html;
+		}
 
 		// Bail if this image has been excluded via a filter.
 		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
