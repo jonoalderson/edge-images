@@ -55,7 +55,7 @@ The `edge_images_sizes` filter expects and returns an associative array of image
 #### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
 ```
-add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 function my_example_sizes($sizes) {
   $sizes['example_size_1'] = array(
     'width'   => 173,
@@ -74,7 +74,7 @@ function my_example_sizes($sizes) {
 
 A simple small image.
 ```
-add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 function my_example_sizes($sizes) {
   $sizes['small_logo'] = array(
     'width'  => 70,
@@ -87,7 +87,7 @@ function my_example_sizes($sizes) {
 
 A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
 ```
-add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 function my_example_sizes($sizes) {
   $sizes['32x32'] = array(
     'width'  => 32,
@@ -100,7 +100,7 @@ function my_example_sizes($sizes) {
 
 A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
 ```
-add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 function my_example_sizes($sizes) {
   $sizes['card'] = array(
     'width'  => 195,
