@@ -54,8 +54,9 @@ The `edge_images_sizes` filter expects and returns an associative array of image
 
 #### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
-```
+```php
 add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+
 function my_example_sizes($sizes) {
   $sizes['example_size_1'] = array(
     'width'   => 173,
@@ -73,8 +74,9 @@ function my_example_sizes($sizes) {
 ```
 
 A simple small image.
-```
+```php
 add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+
 function my_example_sizes($sizes) {
   $sizes['small_logo'] = array(
     'width'  => 70,
@@ -86,8 +88,9 @@ function my_example_sizes($sizes) {
 ```
 
 A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
-```
+```php
 add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+
 function my_example_sizes($sizes) {
   $sizes['32x32'] = array(
     'width'  => 32,
@@ -99,8 +102,9 @@ function my_example_sizes($sizes) {
 ```
 
 A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
-```
+```php
 add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+
 function my_example_sizes($sizes) {
   $sizes['card'] = array(
     'width'  => 195,
@@ -150,19 +154,19 @@ function my_example_sizes($sizes) {
 - `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
 - `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
 
-## Example output
+## Examples
 
 ### Before
 Use WordPress' native `add_image_size` function to define a 'banner', and output that image.
 
 **PHP**
-```
+```php
 add_image_size( 'banner', 968, 580 );
 wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 **HTML output**
-```
+```html
 <img
   width="1920"
   height="580"
@@ -176,7 +180,7 @@ wp_get_attachment_image( $image_id, 'banner' );
 Use Edge Images `edge_images_sizes` filter to define a 'banner', and output that image.
 
 **PHP**
-```
+```php
 add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
 
 /**
@@ -199,7 +203,7 @@ wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 **HTML output**
-```
+```html
 <picture
   style="--aspect-ratio:968/500"
   class="picture-banner edge-images-picture responsive image-id-34376">
