@@ -460,8 +460,6 @@ class Image {
 			$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
 		}
 
-		print_r( $this );
-
 		// Build our HTML tag by running through all of our attrs.
 		$html = sprintf(
 			'<img %s>',
