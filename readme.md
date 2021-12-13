@@ -55,62 +55,77 @@ The `edge_images_sizes` filter expects and returns an associative array of image
 #### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
 ```
-$sizes['example_size_1'] = array(
-  'width'   => 173,
-  'height'  => 229,
-  'sizes'   => '(max-width: 768px) 256px, 173px',
-  'srcset'  => array(
-    array(
-      'width'  => 256,
-      'height' => 229,
+add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+function my_example_sizes($sizes) {
+  $sizes['example_size_1'] = array(
+    'width'   => 173,
+    'height'  => 229,
+    'sizes'   => '(max-width: 768px) 256px, 173px',
+    'srcset'  => array(
+      array(
+        'width'  => 256,
+        'height' => 229,
+      )
     )
-  )
-);
+  );
+  return $sizes;
+}
 ```
 
 A simple small image.
 ```
-$sizes['small_logo'] = array(
-  'width'  => 70,
-  'height' => 20,
-  'sizes'  => '70px'
-);
+add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+function my_example_sizes($sizes) {
+  $sizes['small_logo'] = array(
+    'width'  => 70,
+    'height' => 20,
+    'sizes'  => '70px'
+  );
+  return $sizes;
+}
 ```
 
 A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
 ```
-$sizes['32x32'] = array(
-  'width'  => 32,
-  'height' => 32,
-  'sizes'  => '32px'
-);
+add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+function my_example_sizes($sizes) {
+  $sizes['32x32'] = array(
+    'width'  => 32,
+    'height' => 32,
+    'sizes'  => '32px'
+  );
+  return $sizes;
+}
 ```
 
 A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
 ```
-$sizes['card'] = array(
-  'width'  => 195,
-  'height' => 195,
-  'sizes'  => '(max-width: 1120px) 25vw, (min-width: 1121px) and (max-width: 1440px) 150px, 195px',
-  'srcset' => array(
-    array(
-      'width'  => 150,
-      'height' => 150,
+add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+function my_example_sizes($sizes) {
+  $sizes['card'] = array(
+    'width'  => 195,
+    'height' => 195,
+    'sizes'  => '(max-width: 1120px) 25vw, (min-width: 1121px) and (max-width: 1440px) 150px, 195px',
+    'srcset' => array(
+      array(
+        'width'  => 150,
+        'height' => 150,
+      ),
+      array(
+        'width'  => 125,
+        'height' => 125,
+      ),
+      array(
+        'width'  => 100,
+        'height' => 100,
+      ),
     ),
-    array(
-      'width'  => 125,
-      'height' => 125,
-    ),
-    array(
-      'width'  => 100,
-      'height' => 100,
-    ),
-  ),
-  'loading' => 'eager',
-  'picture-class' => array('pineapples', 'bananas'),
-  'class' => 'oranges'
-);
-
+    'loading' => 'eager',
+    'picture-class' => array('pineapples', 'bananas'),
+    'class' => 'oranges'
+  );
+  return $sizes;
+}
 ```
 
 ### Other filters
