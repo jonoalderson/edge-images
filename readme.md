@@ -22,24 +22,24 @@ This plugin solves these problems, by:
 - Allowing users/developers to specify more sophsiticated `sizes` and `srcset` logic for each image, based on its optimal template behaviour, and;
 - Providing a large number of 'interstitial' `srcset` values (generated via an edge provider, in order to avoid storage/generation overheads).
 
-# Requirements
+## Requirements
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
 - Supported edge providers are:
   - _Cloudflare_, with the 'Image resizing' feature enabled; requires a _Business_ or _Enterprise_ account.
   - _Accelerated Domains_, with the 'Image resizing' feature enabled.
 
-# Customization
+## Customization
 The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
 However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
 
-## Using `edge_images_sizes`
+### Using `edge_images_sizes`
 The `edge_images_sizes` filter expects and returns an associative array of image definitions; where they key is the _name_ of the size, and the value is an array constructed with the following properties.
 
-### Required
+#### Required
 - `height` (`int`): The height in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
 - `width` (`int`): The `width` in pixels of the image of the smallest/mobile/default size. Sets the `width` attribute on the `<img>` elem.
 
-### Optional
+#### Optional
 - `sizes` (`str`):  The `sizes` attribute to be used on the `<img>` elem.
 - `srcset` (`arr`): An array of `width`/`height` arrays. Used to generate the `srcset` attribute (and stepped variations) on the `<img>` elem.
 - `fit` (`str`): Sets the `fit` attribute on the `<img>` elem. Defaults to `cover`.
@@ -52,7 +52,7 @@ The `edge_images_sizes` filter expects and returns an associative array of image
 - `picture-class` (`array`|`str`): Extends the `class` value(s) on the `<picture>` elem.
   - Always outputs `layout-%layout% picture-%size% edge-images-picture image-id-%id%` (where `%size%` is the sanitized image size name, `%layout%` is the `layout` value, and `%id%` is the attachment ID).
 
-### Example configurations:
+#### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
 ```
 $sizes['example_size_1'] = array(
@@ -113,33 +113,31 @@ $sizes['card'] = array(
 
 ```
 
-## Other filters
-### Enabling/disabling
+### Other filters
+#### Enabling/disabling
 - `edge_images_disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
 - `edge_images_exclude` (`array`): An array of images to exclude from transformation.
 - `edge_images_force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
 - `edge_images_disable_wrap_in_picture` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
 
-### General configuration
+#### General configuration
 - `edge_images_provider` (`str`): The name of the edge provider to use. Supports to `Cloudflare` or `Accelerated_Domains`.
 - `edge_images_domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
 - `edge_images_content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
 
-### Image quality settings
+#### Image quality settings
 - `edge_images_quality_low` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `65`.
 - `edge_images_quality_medium` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `75`.
 - `edge_images_quality_high` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `85`.
 
-### `srcset` generation settings
+#### `srcset` generation settings
 - `edge_images_step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
 - `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
 - `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
 
+## Example output
 
-
-# Example outputs
-
-## Before
+### Before
 Use WordPress' native `add_image_size` function to define a 'banner', and output that image.
 
 **PHP**
@@ -159,9 +157,8 @@ wp_get_attachment_image( $image_id, 'banner' );
   loading="lazy">
 ```
 
-## After
+### After
 Use Edge Images `edge_images_sizes` filter to define a 'banner', and output that image.
-
 
 **PHP**
 ```
@@ -217,17 +214,16 @@ wp_get_attachment_image( $image_id, 'banner' );
 </picture>
 ```
 
-# Integrations
+## Integrations
 The plugin automatically integrates with the following systems and plugins.
 
-## Yoast SEO
+### Yoast SEO
 Automatically transforms images in:
 - Meta tags (e.g., `og:image` and similar)
 - Schema.org JSON-LD output (currently for the 'primary image of page' property only)
 - XML sitemaps
 
-# Roadmap & known issues
-
+## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
 - Linked images (e.g., `<a href="page.html"><img src="image.jpg" /></a>`; links are removed)
 - Images with captions (captions are removed)
