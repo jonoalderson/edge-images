@@ -325,7 +325,7 @@ class Helpers {
 
 		// Bail if the functionality has been disabled via a filter.
 		$disabled = apply_filters( 'edge_images_disable', false );
-		if ( $disabled === false ) {
+		if ( $disabled === true ) {
 			return false;
 		}
 
