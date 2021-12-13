@@ -162,7 +162,7 @@ Use WordPress' native `add_image_size` function to define a 'banner', and output
 **PHP**
 ```php
 add_image_size( 'banner', 968, 580 );
-wp_get_attachment_image( $image_id, 'banner' );
+echo wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 **HTML output**
@@ -199,7 +199,7 @@ public function register_edge_image_sizes( array $sizes ) : array {
   );
 }
 
-wp_get_attachment_image( $image_id, 'banner' );
+echo wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 **HTML output**
