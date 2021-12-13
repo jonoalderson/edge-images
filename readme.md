@@ -9,6 +9,19 @@ Specifically, it intercepts various flavors of WordPress' native `wp_get_attachm
   - Generates optimal `srcset`, `sizes` and other image properties.
   - Wraps the `<img>` in a `<picture>` elem (_optional_).
 
+## What problem does this solve?
+WordPress ships with a concept of "image sizes", each of which has a _height_, _width_ and _crop_ option. It provides some defaults like 'large', 'medium' and 'thumbnail', and provides ways for developers to customize or extend these options. When a user adds images to content, or includes them in templates, they must select the most optimal size from the options available.
+
+This is often imprecise. Images are often loaded at 'roughly the right size', then shunk or stretched by the browser; by varying degrees of inaccuracy based on the user's viewport. This is inefficient, and 'expensive' from a performance perspective.
+
+WordPress attempts to mitigate this by generating `srcset` and `sizes` values in image markup. However, this isn't sophisticated enough to consider the _context_ of _where_ an image is output, and how the optimal sizes and behaviour should adapt based on the viewport (and other variables like screen density, theme boundaries/padding, storage overheads, emerging standards, etc).
+
+In an ideal world, the user would always load an appropriately sized image, based on a combination of the _context_ of that image, and the user's viewport. That's far more flexibility than WordPress currently supports.
+
+This plugin solves these problems, by:
+- Allowing users/developers to specify more sophsiticated `sizes` and `srcset` logic for each image, based on its optimal template behaviour
+- Providing a large number of 'interstitial' `srcset` values (generated via an edge provider, to avoid storage/generation overheads)
+
 # Requirements
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
 - Supported edge providers are:
