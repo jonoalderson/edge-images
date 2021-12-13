@@ -2,11 +2,11 @@
 
 **This plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below for more information.**
 
-Automatically converts image markup to use an edge transformation service from a single 'full size' image, and applies performance optimizations to the HTML and CSS.
+Automatically use an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)), to apply performance optimizations to `<img>` markup in WordPress.
 
 Specifically, it intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
   - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
-  - Generates optimal `srcset`, `sizes` and other image properties.
+  - Generates osophisticated `srcset`, `sizes` and other image properties.
   - Wraps the `<img>` in a `<picture>` elem (_optional_).
 
 ## What problem does this solve?
@@ -25,8 +25,8 @@ This plugin solves these problems, by:
 ## Requirements
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
 - Supported edge providers are:
-  - _Cloudflare_, with the 'Image resizing' feature enabled; requires a _Business_ or _Enterprise_ account.
-  - _Accelerated Domains_, with the 'Image resizing' feature enabled.
+  - [Cloudflare](https://www.cloudflare.com/), with the 'Image resizing' feature enabled (requires a _Pro_ account or higher).
+  - [Accelerated Domains](https://accelerateddomains.com/), with the 'Image resizing' feature enabled.
 
 ## Customization
 The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
@@ -54,63 +54,82 @@ The `edge_images_sizes` filter expects and returns an associative array of image
 
 #### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
-```
-$sizes['example_size_1'] = array(
-  'width'   => 173,
-  'height'  => 229,
-  'sizes'   => '(max-width: 768px) 256px, 173px',
-  'srcset'  => array(
-    array(
-      'width'  => 256,
-      'height' => 229,
+```php
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+
+function my_example_sizes($sizes) {
+  $sizes['example_size_1'] = array(
+    'width'   => 173,
+    'height'  => 229,
+    'sizes'   => '(max-width: 768px) 256px, 173px',
+    'srcset'  => array(
+      array(
+        'width'  => 256,
+        'height' => 229,
+      )
     )
-  )
-);
+  );
+  return $sizes;
+}
 ```
 
 A simple small image.
-```
-$sizes['small_logo'] = array(
-  'width'  => 70,
-  'height' => 20,
-  'sizes'  => '70px'
-);
+```php
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+
+function my_example_sizes($sizes) {
+  $sizes['small_logo'] = array(
+    'width'  => 70,
+    'height' => 20,
+    'sizes'  => '70px'
+  );
+  return $sizes;
+}
 ```
 
 A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
-```
-$sizes['32x32'] = array(
-  'width'  => 32,
-  'height' => 32,
-  'sizes'  => '32px'
-);
+```php
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+
+function my_example_sizes($sizes) {
+  $sizes['32x32'] = array(
+    'width'  => 32,
+    'height' => 32,
+    'sizes'  => '32px'
+  );
+  return $sizes;
+}
 ```
 
 A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
-```
-$sizes['card'] = array(
-  'width'  => 195,
-  'height' => 195,
-  'sizes'  => '(max-width: 1120px) 25vw, (min-width: 1121px) and (max-width: 1440px) 150px, 195px',
-  'srcset' => array(
-    array(
-      'width'  => 150,
-      'height' => 150,
-    ),
-    array(
-      'width'  => 125,
-      'height' => 125,
-    ),
-    array(
-      'width'  => 100,
-      'height' => 100,
-    ),
-  ),
-  'loading' => 'eager',
-  'picture-class' => array('pineapples', 'bananas'),
-  'class' => 'oranges'
-);
+```php
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 
+function my_example_sizes($sizes) {
+  $sizes['card'] = array(
+    'width'  => 195,
+    'height' => 195,
+    'sizes'  => '(max-width: 1120px) 25vw, (min-width: 1121px) and (max-width: 1440px) 150px, 195px',
+    'srcset' => array(
+      array(
+        'width'  => 150,
+        'height' => 150,
+      ),
+      array(
+        'width'  => 125,
+        'height' => 125,
+      ),
+      array(
+        'width'  => 100,
+        'height' => 100,
+      ),
+    ),
+    'loading' => 'eager',
+    'picture-class' => array('pineapples', 'bananas'),
+    'class' => 'oranges'
+  );
+  return $sizes;
+}
 ```
 
 ### Other filters
@@ -121,7 +140,7 @@ $sizes['card'] = array(
 - `edge_images_disable_wrap_in_picture` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
 
 #### General configuration
-- `edge_images_provider` (`str`): The name of the edge provider to use. Supports to `Cloudflare` or `Accelerated_Domains`.
+- `edge_images_provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
 - `edge_images_domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
 - `edge_images_content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
 
@@ -135,19 +154,19 @@ $sizes['card'] = array(
 - `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
 - `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
 
-## Example output
+## Examples
 
 ### Before
 Use WordPress' native `add_image_size` function to define a 'banner', and output that image.
 
 **PHP**
-```
+```php
 add_image_size( 'banner', 968, 580 );
-wp_get_attachment_image( $image_id, 'banner' );
+echo wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 **HTML output**
-```
+```html
 <img
   width="1920"
   height="580"
@@ -161,7 +180,7 @@ wp_get_attachment_image( $image_id, 'banner' );
 Use Edge Images `edge_images_sizes` filter to define a 'banner', and output that image.
 
 **PHP**
-```
+```php
 add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
 
 /**
@@ -180,11 +199,11 @@ public function register_edge_image_sizes( array $sizes ) : array {
   );
 }
 
-wp_get_attachment_image( $image_id, 'banner' );
+echo wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 **HTML output**
-```
+```html
 <picture
   style="--aspect-ratio:968/500"
   class="picture-banner edge-images-picture responsive image-id-34376">
