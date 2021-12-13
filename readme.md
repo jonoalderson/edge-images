@@ -25,7 +25,7 @@ This plugin solves these problems, by:
 ## Requirements
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
 - Supported edge providers are:
-  - _Cloudflare_, with the 'Image resizing' feature enabled; requires a _Business_ or _Enterprise_ account.
+  - _Cloudflare_, with the 'Image resizing' feature enabled (requires a _Pro_ account or higher).
   - _Accelerated Domains_, with the 'Image resizing' feature enabled.
 
 ## Customization
