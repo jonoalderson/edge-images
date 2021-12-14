@@ -52,7 +52,7 @@ class Preloads {
 	 */
 	private function preload_image( int $id, $size ) : void {
 
-		$image = get_edge_image_object( $id, array(), $size );
+		$image = \get_edge_image_object( $id, array(), $size );
 
 		print_r( $image );
 		die;
