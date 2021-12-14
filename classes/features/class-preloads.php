@@ -54,6 +54,9 @@ class Preloads {
 
 		$image = \Edge_Images\get_edge_image_object( $id, array(), $size );
 
+		// print_r( $image );
+		// die;
+
 		// Bail if there's no image, or if it's malformed.
 		if ( ! $image || ! $this->is_valid( $image ) ) {
 			return;
