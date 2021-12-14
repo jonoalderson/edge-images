@@ -89,7 +89,7 @@ function my_example_sizes($sizes) {
 
 A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
 ```php
-add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
 
 function my_example_sizes($sizes) {
   $sizes['32x32'] = array(
@@ -103,7 +103,7 @@ function my_example_sizes($sizes) {
 
 A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
 ```php
-add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
+add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
 
 function my_example_sizes($sizes) {
   $sizes['card'] = array(
@@ -180,7 +180,7 @@ echo wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 ### After
-Use Edge Images `edge_images_sizes` filter to define a 'banner', and output that image.
+Use Edge Images `Edge_Images\sizes` filter to define a 'banner', and output that image.
 
 **PHP**
 ```php
