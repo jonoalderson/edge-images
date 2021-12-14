@@ -6,7 +6,7 @@ Automatically use an edge transformation service (e.g., [Cloudflare](https://www
 
 Specifically, it intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
   - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
-  - Generates comprehensive `srcset`, `sizes` and other image properties.
+  - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
   - Wraps the `<img>` in a `<picture>` elem (_optional_).
 
 ## What problem does this solve?
