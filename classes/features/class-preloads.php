@@ -27,9 +27,6 @@ class Preloads {
 	public function preload_filtered_images() : void {
 		$images = apply_filters( 'Edge_Images\preloads', array() );
 
-			print_r( $images );
-		die;
-
 		// Bail if there aren't any images.
 		if ( empty( $images ) ) {
 			return;
