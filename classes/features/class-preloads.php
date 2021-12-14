@@ -27,10 +27,6 @@ class Preloads {
 	public function preload_filtered_images() : void {
 		$images = apply_filters( 'Edge_Images\preloads', array() );
 
-		echo 'images:;';
-		print_r( $images );
-		die;
-
 		// Bail if there aren't any images.
 		if ( empty( $images ) ) {
 			return;
@@ -57,6 +53,9 @@ class Preloads {
 	private function preload_image( int $id, $size ) : void {
 
 		$image = \Edge_Images\get_edge_image_object( $id, array(), $size );
+
+		print_r( $image );
+		die;
 
 		// Bail if there's no image, or if it's malformed.
 		if ( ! $image || ! $this->is_valid( $image ) ) {
