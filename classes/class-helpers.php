@@ -88,7 +88,7 @@ class Helpers {
 		}
 
 		// Get the provider class (default to Cloudflare).
-		$provider       = apply_filters( 'edge_images_provider', 'cloudflare' );
+		$provider       = apply_filters( 'Edge_Images\provider', 'cloudflare' );
 		$provider_class = 'Edge_Images\Providers\\' . ucfirst( $provider );
 
 		// Bail if we can't find one.
@@ -149,7 +149,7 @@ class Helpers {
 	 */
 	public static function get_content_width() : int {
 		// See if there's a filtered width.
-		$filtered_width = apply_filters( 'edge_images_content_width', 0 );
+		$filtered_width = apply_filters( 'Edge_Images\content_width', 0 );
 		if ( $filtered_width ) {
 			return $filtered_width;
 		}
@@ -168,7 +168,7 @@ class Helpers {
 	 * @return int The image quality value
 	 */
 	public static function get_image_quality_low() : int {
-		return apply_filters( 'edge_images_quality_low', self::IMAGE_QUALITY_LOW );
+		return apply_filters( 'Edge_Images\quality_low', self::IMAGE_QUALITY_LOW );
 	}
 
 	/**
@@ -177,9 +177,17 @@ class Helpers {
 	 * @return int The image quality value
 	 */
 	public static function get_image_quality_medium() : int {
-		return apply_filters( 'edge_images_quality_medium', self::IMAGE_QUALITY_MEDIUM );
+		return apply_filters( 'Edge_Images\quality_medium', self::IMAGE_QUALITY_MEDIUM );
 	}
 
+	/**
+	 * Get the High image quality value
+	 *
+	 * @return int The image quality value
+	 */
+	public static function get_image_quality_high() : int {
+		return apply_filters( 'Edge_Images\quality_high', self::IMAGE_QUALITY_HIGH );
+	}
 
 	/**
 	 * Get the image step value
@@ -187,7 +195,7 @@ class Helpers {
 	 * @return int The image step value
 	 */
 	public static function get_width_step() : int {
-		return apply_filters( 'edge_images_step_value', self::WIDTH_STEP );
+		return apply_filters( 'Edge_Images\step_value', self::WIDTH_STEP );
 	}
 
 	/**
@@ -196,7 +204,7 @@ class Helpers {
 	 * @return int The image min width value
 	 */
 	public static function get_image_min_width() : int {
-		return apply_filters( 'edge_images_min_width', self::WIDTH_MIN );
+		return apply_filters( 'Edge_Images\min_width', self::WIDTH_MIN );
 	}
 
 	/**
@@ -205,16 +213,7 @@ class Helpers {
 	 * @return int The image max width value
 	 */
 	public static function get_image_max_width() : int {
-		return apply_filters( 'edge_images_max_width', self::WIDTH_MAX );
-	}
-
-	/**
-	 * Get the low image quality value
-	 *
-	 * @return int The image quality value
-	 */
-	public static function get_image_quality_high() : int {
-		return apply_filters( 'edge_images_quality_high', self::IMAGE_QUALITY_HIGH );
+		return apply_filters( 'Edge_Images\max_width', self::WIDTH_MAX );
 	}
 
 	/**
@@ -324,7 +323,7 @@ class Helpers {
 		}
 
 		// Bail if the functionality has been disabled via a filter.
-		$disabled = apply_filters( 'edge_images_disable', false );
+		$disabled = apply_filters( 'Edge_Images\disable', false );
 		if ( $disabled === true ) {
 			return false;
 		}
@@ -347,7 +346,7 @@ class Helpers {
 		}
 
 		// Bail if this image ID has been filtered.
-		$excluded_images = apply_filters( 'edge_images_exclude', array() );
+		$excluded_images = apply_filters( 'Edge_Images\exclude', array() );
 		if ( $id && in_array( $id, $excluded_images, true ) ) {
 			return false;
 		}
@@ -362,7 +361,7 @@ class Helpers {
 	 */
 	public static function should_transform_image_src() : bool {
 
-		$force_transform = apply_filters( 'edge_images_force_transform', false );
+		$force_transform = apply_filters( 'Edge_Images\force_transform', false );
 		if ( $force_transform ) {
 			return true;
 		}
@@ -397,7 +396,7 @@ class Helpers {
 	 * @return string The domain
 	 */
 	public static function get_rewrite_domain() : string {
-		return apply_filters( 'edge_images_domain', get_site_url() );
+		return apply_filters( 'Edge_Images\domain', get_site_url() );
 	}
 
 	/**
