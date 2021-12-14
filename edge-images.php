@@ -110,7 +110,6 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 
 	// Fall back to a normal image if we don't have everything we need.
 	if (
-		! is_attachment( $id ) || // If this isn't a valid image ID.
 		! $id || // Maintain native failure conditions for missing/invalid IDs.
 		! Helpers::should_transform_image( $id )
 	) {
