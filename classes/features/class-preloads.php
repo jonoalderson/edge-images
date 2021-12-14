@@ -52,7 +52,7 @@ class Preloads {
 	 */
 	private function preload_image( int $id, $size ) : void {
 
-		$image = get_edge_image_object( $id, array(), $size );
+		$image = \get_edge_image_object( $id, array(), $size );
 
 		// Bail if there's no image, or if it's malformed.
 		if ( ! $image || ! $this->is_valid( $image ) ) {
