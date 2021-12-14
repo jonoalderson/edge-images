@@ -53,7 +53,7 @@ class Handler {
 	public function enqueue_css() : void {
 
 		// Bail if images shouldn't wrap in a picture.
-		$disable = apply_filters( 'edge_images_disable_wrap_in_picture', false );
+		$disable = apply_filters( 'Edge_Images\disable_picture_wrap', false );
 		if ( $disable ) {
 			return;
 		}
@@ -155,7 +155,7 @@ class Handler {
 		}
 
 		// Bail if images shouldn't wrap in a picture.
-		$disable = apply_filters( 'edge_images_disable_wrap_in_picture', false );
+		$disable = apply_filters( 'Edge_Images\disable_picture_wrap', false );
 		if ( $disable ) {
 			return $html;
 		}
