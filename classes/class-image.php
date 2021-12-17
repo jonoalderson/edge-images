@@ -73,6 +73,29 @@ class Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
+
+		// Preload if set.
+		if ( $this->attrs['preload'] === true ) {
+			$this->add_preload( $this->id, $size );
+		}
+	}
+
+	/**
+	 * Add the image to the preload filter
+	 *
+	 * @param int   $id      The image ID.
+	 * @param mixed $size  The image size.
+	 */
+	private function add_preload( int $id, $size ) : void {
+		add_filter(
+			'Edge_Images\preloads',
+			function( $sizes ) use ( $id, $size ) {
+				$images[] = array(
+					'id'   => $id,
+					'size' => $size,
+				);
+			}
+		);
 	}
 
 	/**
