@@ -98,6 +98,10 @@ class Image {
 	 * @param mixed $size  The image size.
 	 */
 	private function add_preload( int $id, $size ) : void {
+
+		echo $id;
+		echo $size;
+		die;
 		add_filter(
 			'Edge_Images\preloads',
 			function( $sizes ) use ( $id, $size ) {
