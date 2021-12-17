@@ -73,46 +73,6 @@ class Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
-
-		// Post-init.
-		$this->maybe_preload();
-	}
-
-	/**
-	 * Maybe add the image to the preload filter.
-	 *
-	 * @return void
-	 */
-	private function maybe_preload() : void {
-		if ( ! isset( $this->attrs['preload'] ) || $this->attrs['preload'] !== true ) {
-			return;
-		}
-		$size = Helpers::normalize_size_attr( $this->get_size() );
-		$this->add_preload( $this->get_id(), $size );
-	}
-
-	/**
-	 * Add the image to the preload filter
-	 *
-	 * @param int   $id      The image ID.
-	 * @param mixed $size  The image size.
-	 */
-	private function add_preload( int $id, $size ) : void {
-
-		echo $id;
-		echo $size;
-		die;
-		add_filter(
-			'Edge_Images\preloads',
-			function( $sizes ) use ( $id, $size ) {
-				$images[] = array(
-					'id'   => $id,
-					'size' => $size,
-				);
-			},
-			1,
-			1
-		);
 	}
 
 	/**
