@@ -105,7 +105,9 @@ class Image {
 					'id'   => $id,
 					'size' => $size,
 				);
-			}
+			},
+			1,
+			1
 		);
 	}
 
