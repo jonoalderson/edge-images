@@ -74,10 +74,21 @@ class Image {
 		$this->init_sizes();
 		$this->init_classes();
 
-		// Preload if set.
-		if ( $this->attrs['preload'] === true ) {
-			$this->add_preload( $this->id, $size );
+		// Post-init.
+		$this->maybe_preload();
+	}
+
+	/**
+	 * Maybe add the image to the preload filter.
+	 *
+	 * @return void
+	 */
+	private function maybe_preload() : void {
+		if ( ! isset( $this->attrs['preload'] ) || $this->attrs['preload'] !== true ) {
+			return;
 		}
+		$size = Helpers::normalize_size_attr( $this->get_size() );
+		$this->add_preload( $this->get_id(), $size );
 	}
 
 	/**
