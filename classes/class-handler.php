@@ -40,7 +40,13 @@ class Handler {
 	 *
 	 * @return array         The filtered styles
 	 */
-	public function allow_picture_ratio_style( array $styles ) : array {
+	public function allow_picture_ratio_style( $styles ) : array {
+
+		// Bail if $styles isn't an array.
+		if ( ! is_array( $styles ) ) {
+			return $styles;
+		}
+
 		$styles[] = '--aspect-ratio';
 		return $styles;
 	}
