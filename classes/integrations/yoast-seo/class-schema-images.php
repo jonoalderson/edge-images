@@ -40,7 +40,13 @@ class Schema_Images {
 	 *
 	 * @return array       The modified properties
 	 */
-	public function edge_primary_image( array $data ) : array {
+	public function edge_primary_image( $data ) : array {
+
+		// Bail if $data isn't an array.
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
+
 		if ( ! \strpos( $data['@id'], '#primaryimage' ) ) {
 			return $data; // Bail if this isn't the primary image.
 		}

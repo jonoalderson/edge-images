@@ -2,6 +2,7 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
+use Yoast\WP\SEO\Presenters\Open_Graph\Image_Presenter;
 use Edge_Images\Helpers;
 
 /**
@@ -72,12 +73,22 @@ class Social_Images {
 	/**
 	 * Sets the og:image to the max size
 	 *
-	 * @param string $output    The tag value.
-	 * @param object $presenter The presenter.
+	 * @param string          $output    The tag value.
+	 * @param Image_Presenter $presenter The presenter.
 	 *
 	 * @return string The modified string
 	 */
-	public function route_image_through_edge( string $output, object $presenter ) : string {
+	public function route_image_through_edge( $output, $presenter ) : string {
+
+		// Bail if $output isn't a string.
+		if ( ! is_string( $output ) ) {
+			return $output;
+		}
+
+		// Baul if $presenter isn't an Image_Presenter.
+		if ( ! is_a( $presenter, 'Image_Presenter' ) ) {
+			return $output;
+		}
 
 		// Get the image ID.
 		$image_id = $presenter->model->open_graph_image_id;

@@ -84,6 +84,7 @@ class Handler {
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
 		}
+
 		// Bail if there's no image ID set.
 		if ( ! isset( $block['attrs']['id'] ) ) {
 			return $block_content;
@@ -137,10 +138,10 @@ class Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function wrap_in_picture( $html, $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+	public static function wrap_in_picture( $html = '', $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
-		if ( ! $html || $html === '' ) {
+		if ( ! $html ) {
 			return '';
 		}
 
@@ -194,10 +195,10 @@ class Handler {
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
+	public function remove_dimension_attributes( $html = '', $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
-		if ( ! $html || $html === '' ) {
+		if ( ! $html ) {
 			return '';
 		}
 
@@ -240,12 +241,28 @@ class Handler {
 	 * Alter an image to use the edge
 	 *
 	 * @param array        $attrs      The attachment attributes.
-	 * @param object       $attachment The attachment.
+	 * @param \WP_Post     $attachment The attachment.
 	 * @param string|array $size The attachment size.
 	 *
 	 * @return array             The modified image attributes
 	 */
-	public function route_images_through_edge( array $attrs, object $attachment, $size ) : array {
+	public function route_images_through_edge( $attrs, $attachment, $size ) : array {
+
+		// Bail if $attrs isn't an array.
+		if ( ! is_array( $attrs ) ) {
+			return $attrs;
+		}
+
+		// Bail if $attachment isn't a WP_POST.
+		if ( ! is_a( $attachment, '\WP_POST' ) ) {
+			return $attrs;
+		}
+
+		// Bail if $size isn't a string or an array.
+		if ( ! ( is_string( $size ) || is_array( $size ) ) ) {
+			return $attrs;
+		}
+
 		if ( ! $this->image_should_use_edge( $attachment->ID, $attrs ) ) {
 			return $attrs;
 		}
