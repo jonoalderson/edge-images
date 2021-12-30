@@ -31,6 +31,35 @@ class Handler {
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 100, 5 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
+		add_filter( 'wp_get_attachment_image_src', array( $instance, 'fix_wp_get_attachment_image_svg' ), 1, 4 );
+	}
+
+	/**
+	 * Fixes WP not retrieving the right values for SVGs.
+	 *
+	 * @param  array|false  $image         The image.
+	 * @param  int          $attachment_id The attachment ID.
+	 * @param  string|int[] $size          The size.
+	 * @param  bool         $icon          Whether to use an icon.
+	 *
+	 * @return array                       The modified image
+	 */
+	public function fix_wp_get_attachment_image_svg( $image, $attachment_id, $size, $icon ) : array {
+		if ( is_array( $image ) && preg_match( '/\.svg$/i', $image[0] ) && $image[1] <= 1 ) {
+			if ( is_array( $size ) ) {
+				$image[1] = $size[0];
+				$image[2] = $size[1];
+			} elseif ( ( $xml = simplexml_load_file( $image[0] ) ) !== false ) {
+				$attr     = $xml->attributes();
+				$viewbox  = explode( ' ', $attr->viewBox );
+				$image[1] = isset( $attr->width ) && preg_match( '/\d+/', $attr->width, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[2] : null );
+				$image[2] = isset( $attr->height ) && preg_match( '/\d+/', $attr->height, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[3] : null );
+			} else {
+				$image[1] = null;
+				$image[2] = null;
+			}
+		}
+		return $image;
 	}
 
 	/**
