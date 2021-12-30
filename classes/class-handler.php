@@ -35,6 +35,7 @@ class Handler {
 	}
 
 	/**
+	 * @param  int          $attachment_id The attachment ID.
 	 * Fixes WP not retrieving the right values for SVGs.
 	 *
 	 * @param  array|false  $image         The image.
@@ -45,11 +46,19 @@ class Handler {
 	 * @return array                       The modified image
 	 */
 	public function fix_wp_get_attachment_image_svg( $image, $attachment_id, $size, $icon ) : array {
+
+		// Bail if the image isn't valid.
+		if ( ! $image || ! isset( $image[0] ) || ! isset( $image[1] ) || ! isset( $image[2] ) ) {
+			return array();
+		}
+
+		// Check if this is an SVG.
 		if ( is_array( $image ) && preg_match( '/\.svg$/i', $image[0] ) && $image[1] <= 1 ) {
 			if ( is_array( $size ) ) {
 				$image[1] = $size[0];
 				$image[2] = $size[1];
 			} elseif ( ( $xml = simplexml_load_file( $image[0] ) ) !== false ) {
+				// Get the attributes from the SVG file.
 				$attr     = $xml->attributes();
 				$viewbox  = explode( ' ', $attr->viewBox );
 				$image[1] = isset( $attr->width ) && preg_match( '/\d+/', $attr->width, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[2] : null );
@@ -61,6 +70,7 @@ class Handler {
 		}
 		return $image;
 	}
+
 
 	/**
 	 * Adds our aspect ratio variable as a safe style
