@@ -35,7 +35,6 @@ class Handler {
 	}
 
 	/**
-	 * @param  int          $attachment_id The attachment ID.
 	 * Fixes WP not retrieving the right values for SVGs.
 	 *
 	 * @param  array|false  $image         The image.
