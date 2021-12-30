@@ -31,7 +31,45 @@ class Handler {
 		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 100, 5 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
+		add_filter( 'wp_get_attachment_image_src', array( $instance, 'fix_wp_get_attachment_image_svg' ), 1, 4 );
 	}
+
+	/**
+	 * Fixes WP not retrieving the right values for SVGs.
+	 *
+	 * @param  array|false  $image         The image.
+	 * @param  int          $attachment_id The attachment ID.
+	 * @param  string|int[] $size          The size.
+	 * @param  bool         $icon          Whether to use an icon.
+	 *
+	 * @return array                       The modified image
+	 */
+	public function fix_wp_get_attachment_image_svg( $image, $attachment_id, $size, $icon ) : array {
+
+		// Bail if the image isn't valid.
+		if ( ! $image || ! isset( $image[0] ) || ! isset( $image[1] ) || ! isset( $image[2] ) ) {
+			return array();
+		}
+
+		// Check if this is an SVG.
+		if ( is_array( $image ) && preg_match( '/\.svg$/i', $image[0] ) && $image[1] <= 1 ) {
+			if ( is_array( $size ) ) {
+				$image[1] = $size[0];
+				$image[2] = $size[1];
+			} elseif ( ( $xml = simplexml_load_file( $image[0] ) ) !== false ) {
+				// Get the attributes from the SVG file.
+				$attr     = $xml->attributes();
+				$viewbox  = explode( ' ', $attr->viewBox );
+				$image[1] = isset( $attr->width ) && preg_match( '/\d+/', $attr->width, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[2] : null );
+				$image[2] = isset( $attr->height ) && preg_match( '/\d+/', $attr->height, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[3] : null );
+			} else {
+				$image[1] = null;
+				$image[2] = null;
+			}
+		}
+		return $image;
+	}
+
 
 	/**
 	 * Adds our aspect ratio variable as a safe style
@@ -40,7 +78,13 @@ class Handler {
 	 *
 	 * @return array         The filtered styles
 	 */
-	public function allow_picture_ratio_style( array $styles ) : array {
+	public function allow_picture_ratio_style( $styles ) : array {
+
+		// Bail if $styles isn't an array.
+		if ( ! is_array( $styles ) ) {
+			return $styles;
+		}
+
 		$styles[] = '--aspect-ratio';
 		return $styles;
 	}
@@ -84,6 +128,7 @@ class Handler {
 		if ( 'core/image' !== $block['blockName'] ) {
 			return $block_content;
 		}
+
 		// Bail if there's no image ID set.
 		if ( ! isset( $block['attrs']['id'] ) ) {
 			return $block_content;
@@ -137,10 +182,10 @@ class Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function wrap_in_picture( $html, $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+	public static function wrap_in_picture( $html = '', $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
-		if ( ! $html || $html === '' ) {
+		if ( ! $html ) {
 			return '';
 		}
 
@@ -194,10 +239,10 @@ class Handler {
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
+	public function remove_dimension_attributes( $html = '', $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
-		if ( ! $html || $html === '' ) {
+		if ( ! $html ) {
 			return '';
 		}
 
@@ -240,12 +285,28 @@ class Handler {
 	 * Alter an image to use the edge
 	 *
 	 * @param array        $attrs      The attachment attributes.
-	 * @param object       $attachment The attachment.
+	 * @param \WP_Post     $attachment The attachment.
 	 * @param string|array $size The attachment size.
 	 *
 	 * @return array             The modified image attributes
 	 */
-	public function route_images_through_edge( array $attrs, object $attachment, $size ) : array {
+	public function route_images_through_edge( $attrs, $attachment, $size ) : array {
+
+		// Bail if $attrs isn't an array.
+		if ( ! is_array( $attrs ) ) {
+			return $attrs;
+		}
+
+		// Bail if $attachment isn't a WP_POST.
+		if ( ! is_a( $attachment, '\WP_POST' ) ) {
+			return $attrs;
+		}
+
+		// Bail if $size isn't a string or an array.
+		if ( ! ( is_string( $size ) || is_array( $size ) ) ) {
+			return $attrs;
+		}
+
 		if ( ! $this->image_should_use_edge( $attachment->ID, $attrs ) ) {
 			return $attrs;
 		}

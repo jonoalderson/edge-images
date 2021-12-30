@@ -6,6 +6,8 @@ use Edge_Images\Helpers;
 
 /**
  * Describes an edge provider.
+ *
+ * TODO: Provide methods for validating the various image properties / args.
  */
 class Provider {
 
@@ -18,10 +20,6 @@ class Provider {
 	public function __construct( string $path, array $args = array() ) {
 		$this->path = $path;
 		$this->args = $args;
-	}
-
-	public function valid_args() {
-
 	}
 
 }

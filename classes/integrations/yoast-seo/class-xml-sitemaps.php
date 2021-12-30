@@ -40,7 +40,13 @@ class XML_Sitemaps {
 	 *
 	 * @return string      The modified URI
 	 */
-	public function use_edge_src( string $uri ) : string {
+	public function use_edge_src( $uri ) : string {
+
+		// Bail if $uri isn't a string.
+		if ( ! is_string( $uri ) ) {
+			return $uri;
+		}
+
 		$args = array(
 			'width'  => self::IMAGE_WIDTH,
 			'height' => self::IMAGE_HEIGHT,
