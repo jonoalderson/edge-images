@@ -33,6 +33,10 @@ class Cloudflare extends Provider {
 		if ( isset( $this->args['blur'] ) ) {
 			$properties['blur'] = $this->args['blur'];
 		}
+		if ( isset( $this->args['sharpen'] ) ) {
+			$properties['sharpen'] = $this->args['sharpen'];
+		}
+
 
 		ksort( $properties );
 
