@@ -29,6 +29,10 @@ class Accelerated_Domains extends Provider {
 			$properties['height'] = $this->args['height'];
 		}
 
+		if ( isset( $this->args['sharpen'] ) ) {
+			$properties['sharpen'] = $this->args['sharpen'];
+		}
+
 		ksort( $properties );
 
 		return $properties;

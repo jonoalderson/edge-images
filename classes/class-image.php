@@ -355,7 +355,6 @@ class Image {
 		$srcset          = array();
 		$args            = $this->get_attrs();
 		$max_width       = min( 2 * $args['width'], Helpers::get_image_max_width() );
-		$args['quality'] = Helpers::get_image_quality_high();
 		$width_step      = Helpers::get_width_step();
 
 		for ( $w = Helpers::get_image_min_width(); $w <= $max_width; $w += $width_step ) {
@@ -384,13 +383,11 @@ class Image {
 		// 1.5x.
 		$args['width']   = ceil( $attrs['width'] * 1.5 );
 		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
-		$args['quality'] = Helpers::get_image_quality_medium();
 		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		// 2x.
 		$args['width']   = $attrs['width'] * 2;
 		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
-		$args['quality'] = Helpers::get_image_quality_low();
 		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		return $srcset;
@@ -603,7 +600,6 @@ class Image {
 			if ( ( $v['width'] * 2 ) <= Helpers::get_image_max_width() ) {
 				$args['width']   = $v['width'] * 2;
 				$args['height']  = $h * 2;
-				$args['quality'] = Helpers::get_image_quality_low();
 				$srcset[]        = Helpers::create_srcset_val( $src, $args );
 			}
 
@@ -611,7 +607,6 @@ class Image {
 			if ( ceil( $v['width'] / 2 ) > Helpers::get_image_min_width() ) {
 				$args['width']   = ceil( $v['width'] / 2 );
 				$args['height']  = ceil( $h / 2 );
-				$args['quality'] = Helpers::get_image_quality_high();
 				$srcset[]        = Helpers::create_srcset_val( $src, $args );
 			}
 		}
