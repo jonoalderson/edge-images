@@ -21,6 +21,7 @@ class Accelerated_Domains extends Provider {
 			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
 			'format'  => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
 			'quality' => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_high(),
+			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
 		);
 
 		// Optional properties.
