@@ -279,6 +279,7 @@ class Image {
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
 			return;
 		}
+		
 		$this->attrs['src']      = $full_image[0];
 		$this->attrs['full-src'] = $full_image[0];
 

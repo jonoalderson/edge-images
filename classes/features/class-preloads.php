@@ -66,8 +66,8 @@ class Preloads {
 
 		echo sprintf(
 			'<link rel="preload" as="image" imagesrcset="%s" imagesizes="%s">',
-			esc_attr( implode( ', ', $image->attrs['srcset'] ) ),
-			esc_attr( $image->attrs['sizes'] ),
+			implode( ', ', $image->attrs['srcset'] ),
+			$image->attrs['sizes'],
 		) . PHP_EOL;
 
 	}
