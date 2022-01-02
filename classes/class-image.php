@@ -280,9 +280,8 @@ class Image {
 			return;
 		}
 		
-		$normalized_src = urldecode(htmlspecialchars_decode($full_image[0]);
-		$this->attrs['src']      = $normalized_src;
-		$this->attrs['full-src'] = $normalized_src;
+		$this->attrs['src']      = $full_image[0];
+		$this->attrs['full-src'] = $full_image[0];
 
 		// Bail if we shouldn't transform the src.
 		if ( ! Helpers::should_transform_image_src() ) {
