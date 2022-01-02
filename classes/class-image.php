@@ -279,8 +279,10 @@ class Image {
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
 			return;
 		}
-		$this->attrs['src']      = $full_image[0];
-		$this->attrs['full-src'] = $full_image[0];
+		
+		$normalized_src = urldecode(htmlspecialchars_decode($full_image[0]);
+		$this->attrs['src']      = $normalized_src;
+		$this->attrs['full-src'] = $normalized_src;
 
 		// Bail if we shouldn't transform the src.
 		if ( ! Helpers::should_transform_image_src() ) {
