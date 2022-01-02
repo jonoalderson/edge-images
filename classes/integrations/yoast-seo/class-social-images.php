@@ -85,8 +85,8 @@ class Social_Images {
 			return $output;
 		}
 
-		// Baul if $presenter isn't an Image_Presenter.
-		if ( ! is_a( $presenter, 'Image_Presenter' ) ) {
+		// Baul if $presenter isn't a presenter.
+		if ( ! is_a( $presenter, 'Yoast\WP\SEO\Presentations\Indexable_Post_Type_Presentation' ) ) {
 			return $output;
 		}
 

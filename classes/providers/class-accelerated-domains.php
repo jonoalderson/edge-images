@@ -21,14 +21,15 @@ class Accelerated_Domains extends Provider {
 			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
 			'format'  => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
 			'quality' => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_high(),
-			'gravity' => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : 'auto',
 		);
 
 		// Optional properties.
 		if ( isset( $this->args['height'] ) ) {
 			$properties['height'] = $this->args['height'];
 		}
-
+		if ( isset( $this->args['gravity'] ) ) {
+			$properties['gravity'] = $this->args['gravity'];
+		}
 		if ( isset( $this->args['sharpen'] ) ) {
 			$properties['sharpen'] = $this->args['sharpen'];
 		}

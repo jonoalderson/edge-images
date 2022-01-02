@@ -155,7 +155,7 @@ function my_example_sizes($sizes) {
 - `Edge_Images\max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
 
 #### Additional optimizations
-- `Edge_Images\preloads` (`array`): An array of image IDs to automatically preload (via `<link>` tags in the `<head>`).
+- `Edge_Images\preloads` (`array`): An associative array of image IDs and sizes to automatically preload (via `<link>` tags in the `<head>`).
 
 ## Examples
 
@@ -234,6 +234,33 @@ echo wp_get_attachment_image( $image_id, 'banner' );
 	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=500%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=968/path-to-image.jpg 968w,
 	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=250%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=484/path-to-image.jpg 484w">
 </picture>
+```
+
+### Preloading
+
+```php
+add_filter( 'Edge_Images\preloads', 'preload_images', 1, 1 );
+
+/**
+ * Register images to preload
+ *
+ * @param  array $preloads The array of images (with IDs and sizes).
+ *
+ * @return array The modified array
+ */
+public function preload_images( array $preloads ) : array {
+  $preloads[] = array(
+    array(
+      'id' => 123,
+      'size' => 'large'
+    ),
+    array(
+      'id' => 456,
+      'size' => 'banner'
+    )
+  );
+  return $preloads;
+}
 ```
 
 ## Integrations

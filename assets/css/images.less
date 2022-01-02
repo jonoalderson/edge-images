@@ -1,15 +1,13 @@
-[style*="--aspect-ratio"] {
+.edge-images-picture {
 	display: block;
 	width: 100%;
 	max-height: 100%;
 	padding: 0;
 	overflow: hidden;
-	& > :first-child {
+	& > .edge-images-img {
 		width: 100%;
-	  	object-fit: cover;
-	}
-	& > img {
-	  height: auto;
+  	object-fit: cover;
+		height: auto;
 	}
 	@supports (--custom:property) {
 		position: relative;
@@ -18,7 +16,7 @@
 			display: block;
 			padding-bottom: calc(100% / (var(--aspect-ratio)));
 		}
-		& > :first-child {
+		& > .edge-images-img {
 			position: absolute;
 			top: 0;
 			left: 0;
