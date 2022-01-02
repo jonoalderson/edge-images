@@ -573,7 +573,12 @@ class Image {
 	 */
 	public function get_srcset_sizes_from_context( string $src ) : array {
 
-		$sizes = array();
+		$sizes = array(
+			array(
+				'width'  => $this->attrs['width'],
+				'height' => $this->attrs['height'],
+			),
+		);
 
 		// Start with any custom srcset values.
 		if ( $this->has_attr( 'srcset' ) ) {
