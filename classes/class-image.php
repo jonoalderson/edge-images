@@ -382,14 +382,12 @@ class Image {
 		$args  = $attrs;
 
 		// 1.5x.
-		$args['width']   = ceil( $attrs['width'] * 1.5 );
-		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
-		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+		$args['dpr'] = 1.5;
+		$srcset[]    = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		// 2x.
-		$args['width']   = $attrs['width'] * 2;
-		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
-		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+		$args['dpr'] = 2;
+		$srcset[]    = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		return $srcset;
 	}
