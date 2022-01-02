@@ -279,7 +279,7 @@ class Image {
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
 			return;
 		}
-		
+
 		$this->attrs['src']      = $full_image[0];
 		$this->attrs['full-src'] = $full_image[0];
 
@@ -382,9 +382,9 @@ class Image {
 		$args  = $attrs;
 
 		// 1.5x.
-		$args['width']   = ceil( $attrs['width'] * 1.5 );
-		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
-		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+		// $args['width']   = ceil( $attrs['width'] * 1.5 );
+		// $args['height']  = $this->calculate_height_from_ratio( $args['width'] );
+		// $srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		// 2x.
 		$args['width']   = $attrs['width'] * 2;
