@@ -38,7 +38,7 @@ class Preloads {
 		}
 
 		// Remove any duplicate entries.
-		$images = array_unique($array, SORT_REGULAR);
+		$images = array_unique($images, SORT_REGULAR);
 
 		// Iterate through the images.
 		foreach ( $images as $image ) {
