@@ -358,7 +358,7 @@ class Image {
 		$max_width       = min( 2 * $args['width'], Helpers::get_image_max_width() );
 		$width_step      = Helpers::get_width_step();
 
-		for ( $w = Helpers::get_image_min_width(); $w <= $max_width; $w += $width_step ) {
+		for ( $w = Helpers::get_image_min_width() + $width_step; $w <= $max_width; $w += $width_step ) {
 			$args['width']  = $w;
 			$args['height'] = $this->calculate_height_from_ratio( $w );
 			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
@@ -382,9 +382,9 @@ class Image {
 		$args  = $attrs;
 
 		// 1.5x.
-		// $args['width']   = ceil( $attrs['width'] * 1.5 );
-		// $args['height']  = $this->calculate_height_from_ratio( $args['width'] );
-		// $srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+		$args['width']   = ceil( $attrs['width'] * 1.5 );
+		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
+		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		// 2x.
 		$args['width']   = $attrs['width'] * 2;
