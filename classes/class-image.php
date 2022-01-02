@@ -597,16 +597,14 @@ class Image {
 
 			// Generate a 2x size if it's smaller than our max.
 			if ( ( $v['width'] * 2 ) <= Helpers::get_image_max_width() ) {
-				$args['width']   = $v['width'] * 2;
-				$args['height']  = $h * 2;
-				$srcset[]        = Helpers::create_srcset_val( $src, $args );
+				$args['dpr'] = 2;
+				$srcset[]    = Helpers::create_srcset_val( $src, $args );
 			}
 
 			// Generate a smaller size if it's larger than our min.
 			if ( ceil( $v['width'] / 2 ) > Helpers::get_image_min_width() ) {
-				$args['width']   = ceil( $v['width'] / 2 );
-				$args['height']  = ceil( $h / 2 );
-				$srcset[]        = Helpers::create_srcset_val( $src, $args );
+				$args['dpr'] = 0.5;
+				$srcset[]    = Helpers::create_srcset_val( $src, $args );
 			}
 		}
 
