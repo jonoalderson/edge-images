@@ -37,6 +37,9 @@ class Preloads {
 			return;
 		}
 
+		// Remove any duplicate entries.
+		$images = array_unique($array, SORT_REGULAR);
+
 		// Iterate through the images.
 		foreach ( $images as $image ) {
 			// Bail if we don't have an ID and a size.
