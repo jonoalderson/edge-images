@@ -54,7 +54,7 @@ class Accelerated_Domains extends Provider {
 			http_build_query(
 				$this->get_properties(),
 				'',
-				'%26'
+				'&'
 			)
 		);
 
