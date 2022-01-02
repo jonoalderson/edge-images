@@ -382,12 +382,14 @@ class Image {
 		$args  = $attrs;
 
 		// 1.5x.
-		$args['dpr'] = 1.5;
-		$srcset[]    = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+		$args['width']   = ceil( $attrs['width'] * 1.5 );
+		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
+		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		// 2x.
-		$args['dpr'] = 2;
-		$srcset[]    = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
+		$args['width']   = $attrs['width'] * 2;
+		$args['height']  = $this->calculate_height_from_ratio( $args['width'] );
+		$srcset[]        = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
 
 		return $srcset;
 	}
@@ -597,14 +599,16 @@ class Image {
 
 			// Generate a 2x size if it's smaller than our max.
 			if ( ( $v['width'] * 2 ) <= Helpers::get_image_max_width() ) {
-				$args['dpr'] = 2;
-				$srcset[]    = Helpers::create_srcset_val( $src, $args );
+				$args['width']   = $v['width'] * 2;
+				$args['height']  = $h * 2;
+				$srcset[]        = Helpers::create_srcset_val( $src, $args );
 			}
 
 			// Generate a smaller size if it's larger than our min.
 			if ( ceil( $v['width'] / 2 ) > Helpers::get_image_min_width() ) {
-				$args['dpr'] = 0.5;
-				$srcset[]    = Helpers::create_srcset_val( $src, $args );
+				$args['width']   = ceil( $v['width'] / 2 );
+				$args['height']  = ceil( $h / 2 );
+				$srcset[]        = Helpers::create_srcset_val( $src, $args );
 			}
 		}
 
