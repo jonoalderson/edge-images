@@ -358,7 +358,7 @@ class Image {
 		$max_width       = min( 2 * $args['width'], Helpers::get_image_max_width() );
 		$width_step      = Helpers::get_width_step();
 
-		for ( $w = Helpers::get_image_min_width() + $width_step; $w <= $max_width; $w += $width_step ) {
+		for ( $w = Helpers::get_image_min_width(); $w <= $max_width; $w += $width_step ) {
 			$args['width']  = $w;
 			$args['height'] = $this->calculate_height_from_ratio( $w );
 			$srcset[]       = Helpers::create_srcset_val( $this->attrs['full-src'], $args );
@@ -573,12 +573,7 @@ class Image {
 	 */
 	public function get_srcset_sizes_from_context( string $src ) : array {
 
-		$sizes = array(
-			array(
-				'width'  => $this->attrs['width'],
-				'height' => $this->attrs['height'],
-			),
-		);
+		$sizes = array();
 
 		// Start with any custom srcset values.
 		if ( $this->has_attr( 'srcset' ) ) {
