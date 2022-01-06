@@ -573,7 +573,7 @@ class Image {
 	 */
 	public function get_srcset_sizes_from_context( string $src ) : array {
 
-		$sizes = ();
+		$sizes = array();
 
 		// Start with any custom srcset values.
 		if ( $this->has_attr( 'srcset' ) ) {
