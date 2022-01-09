@@ -272,6 +272,12 @@ Automatically transforms images in:
 - Schema.org JSON-LD output (currently for the 'primary image of page' property only)
 - XML sitemaps
 
+Supports the following filters:
+- `Edge_Images\Yoast\disable` (`bool`): Disables the Yoast SEO integration. Defaults to `false`.
+- `Edge_Images\Yoast\disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
+- `Edge_Images\Yoast\disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
+- `Edge_Images\Yoast\disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
+
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
 - Linked images (e.g., `<a href="page.html"><img src="image.jpg" /></a>`; links are removed)

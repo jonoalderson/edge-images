@@ -30,11 +30,39 @@ class Social_Images {
 	 * @return void
 	 */
 	public static function register() : void {
+
+		// Bail if these filters shouldn't run.
+		if ( ! $this->should_filter() ) {
+			return;
+		}
+
 		$instance = new self();
 		add_filter( 'wpseo_opengraph_image_size', array( $instance, 'set_full_size_og_image' ) );
 		add_filter( 'wpseo_opengraph_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
 		add_filter( 'wpseo_twitter_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
 		add_filter( 'wpseo_frontend_presentation', array( $instance, 'set_image_dimensions' ), 30, 1 );
+	}
+
+	/**
+	 * Checks if these filters should run.
+	 *
+	 * @return bool
+	 */
+	private function should_filter() : bool {
+
+		// Bail if the Yoast SEO integration is disabled.
+		$disable_integration = apply_filters( 'Edge_Images\Yoast\disable', false );
+		if ( $disable_integration ) {
+			return false;
+		}
+
+		// Bail if schema image filtering is disabled.
+		$disable_feature = apply_filters( 'Edge_Images\Yoast\disable_social_images', false );
+		if ( $disable_feature ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

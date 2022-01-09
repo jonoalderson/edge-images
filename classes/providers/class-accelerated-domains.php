@@ -60,7 +60,7 @@ class Accelerated_Domains extends Provider {
 			)
 		);
 
-		return $edge_url;
+		return esc_attr( $edge_url );
 	}
 
 
