@@ -23,7 +23,7 @@ class Cloudflare extends Provider {
 			'q'        => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_high(),
 			'onerror'  => ( isset( $this->args['onerror'] ) ) ? $this->args['onerror'] : 'redirect',
 			'metadata' => ( isset( $this->args['metadata'] ) ) ? $this->args['metadata'] : 'none',
- 			'dpr'      => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
+			'dpr'      => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
 
 		);
 
@@ -61,7 +61,7 @@ class Cloudflare extends Provider {
 			'%2C'
 		);
 
-		return $edge_url . $this->path;
+		return esc_attr( $edge_url . $this->path );
 	}
 
 }

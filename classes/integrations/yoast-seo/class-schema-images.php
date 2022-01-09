@@ -29,8 +29,37 @@ class Schema_Images {
 	 * @return void
 	 */
 	public static function register() : void {
+
 		$instance = new self();
+
+		// Bail if these filters shouldn't run.
+		if ( ! $instance->should_filter() ) {
+			return;
+		}
+
 		add_filter( 'wpseo_schema_imageobject', array( $instance, 'edge_primary_image' ) );
+	}
+
+	/**
+	 * Checks if these filters should run.
+	 *
+	 * @return bool
+	 */
+	private function should_filter() : bool {
+
+		// Bail if the Yoast SEO integration is disabled.
+		$disable_integration = apply_filters( 'Edge_Images\Yoast\disable', false );
+		if ( $disable_integration ) {
+			return false;
+		}
+
+		// Bail if schema image filtering is disabled.
+		$disable_feature = apply_filters( 'Edge_Images\Yoast\disable_schema_images', false );
+		if ( $disable_feature ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

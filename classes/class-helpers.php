@@ -135,7 +135,7 @@ class Helpers {
 		return sprintf(
 			'%s %dw',
 			self::edge_src(
-				$src,
+				esc_attr( $src ),
 				$args
 			),
 			$args['width']
