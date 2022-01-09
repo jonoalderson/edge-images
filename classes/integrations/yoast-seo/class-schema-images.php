@@ -30,12 +30,13 @@ class Schema_Images {
 	 */
 	public static function register() : void {
 
+		$instance = new self();
+
 		// Bail if these filters shouldn't run.
-		if ( ! $this->should_filter() ) {
+		if ( ! $instance->should_filter() ) {
 			return;
 		}
 
-		$instance = new self();
 		add_filter( 'wpseo_schema_imageobject', array( $instance, 'edge_primary_image' ) );
 	}
 

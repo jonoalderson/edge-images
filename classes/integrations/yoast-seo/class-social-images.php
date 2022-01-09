@@ -31,12 +31,13 @@ class Social_Images {
 	 */
 	public static function register() : void {
 
+		$instance = new self();
+
 		// Bail if these filters shouldn't run.
-		if ( ! $this->should_filter() ) {
+		if ( ! $instance->should_filter() ) {
 			return;
 		}
 
-		$instance = new self();
 		add_filter( 'wpseo_opengraph_image_size', array( $instance, 'set_full_size_og_image' ) );
 		add_filter( 'wpseo_opengraph_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
 		add_filter( 'wpseo_twitter_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
