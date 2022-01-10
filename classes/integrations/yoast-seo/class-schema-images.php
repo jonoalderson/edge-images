@@ -83,6 +83,7 @@ class Schema_Images {
 		$args = array(
 			'width'  => self::SCHEMA_WIDTH,
 			'height' => self::SCHEMA_HEIGHT,
+			'fit'    => 'pad',
 		);
 
 		$edge_url = Helpers::edge_src( $data['url'], $args );

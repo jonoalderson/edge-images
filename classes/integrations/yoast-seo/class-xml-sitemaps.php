@@ -78,6 +78,7 @@ class XML_Sitemaps {
 		$args = array(
 			'width'  => self::IMAGE_WIDTH,
 			'height' => self::IMAGE_HEIGHT,
+			'fit'    => 'pad',
 		);
 		return Helpers::edge_src( $uri, $args );
 	}
