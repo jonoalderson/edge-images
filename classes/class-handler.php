@@ -236,9 +236,7 @@ class Handler {
 		$styles = array();
 
 		// Set the aspect ratio.
-		$styles[] = array(
-			'--aspect-ratio:' . isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1',
-		);
+		$styles[] = '--aspect-ratio:' . isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1';
 
 		// Add height and width inline styles if this is a fixed image.
 		if ( $attr['layout'] === 'fixed' ) {
