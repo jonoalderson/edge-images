@@ -207,7 +207,7 @@ class Handler {
 
 		// Construct the HTML.
 		$html = sprintf(
-			'<picture style="--aspect-ratio:%s" class="%s %s">%s</picture>',
+			'<picture style="%s" class="%s %s">%s</picture>',
 			self::get_picture_styles( $attr ),
 			isset( $attr['picture-class'] ) ? Helpers::classes_array_to_string( $attr['picture-class'] ) : null,
 			'image-id-' . $attachment_id,
