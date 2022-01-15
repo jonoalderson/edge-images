@@ -207,8 +207,8 @@ class Handler {
 
 		// Construct the HTML.
 		$html = sprintf(
-			'<picture style="--aspect-ratio:%s" class="%s %s">%s</picture>',
-			isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1',
+			'<picture style="%s" class="%s %s">%s</picture>',
+			self::get_picture_styles( $attr ),
 			isset( $attr['picture-class'] ) ? Helpers::classes_array_to_string( $attr['picture-class'] ) : null,
 			'image-id-' . $attachment_id,
 			$html
@@ -223,6 +223,34 @@ class Handler {
 		);
 
 		return $html;
+	}
+
+	/**
+	 * Get the inline styles for the picture tag
+	 *
+	 * @param  array $attr The image attributes.
+	 * @return string      The style attribute values
+	 */
+	private static function get_picture_styles( $attr ) : string {
+
+		$styles = array();
+
+		// Set the aspect ratio.
+		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1';
+		$styles[] = '--aspect-ratio:' . $ratio;
+
+		// Add height and width inline styles if this is a fixed image.
+		if ( $attr['layout'] === 'fixed' ) {
+			if ( $attr['width'] ) {
+				$styles[] = sprintf( 'width:%dpx', $attr['width'] );
+			}
+			if ( $attr['height'] ) {
+				$styles[] = sprintf( 'height:%dpx', $attr['height'] );
+			}
+		}
+
+		return implode( ';', $styles );
+
 	}
 
 	/**
