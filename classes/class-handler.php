@@ -245,7 +245,7 @@ class Handler {
 				$styles[] = sprintf( 'width:%dpx', $attr['width'] );
 			}
 			if ( $attr['height'] ) {
-				$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
+				$styles[] = sprintf( 'height:%dpx', $attr['height'] );
 			}
 		}
 
