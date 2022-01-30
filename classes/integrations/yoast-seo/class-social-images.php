@@ -25,7 +25,7 @@ class Social_Images {
 	const OG_HEIGHT = 675;
 
 	/**
-	 * Register the Integration
+	 * Register the integration
 	 *
 	 * @return void
 	 */

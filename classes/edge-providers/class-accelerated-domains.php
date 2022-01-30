@@ -1,13 +1,13 @@
 <?php
 
-namespace Edge_Images\Providers;
+namespace Edge_Images\Edge_Providers;
 
-use Edge_Images\{Provider, Helpers};
+use Edge_Images\{Edge_Provider, Helpers};
 
 /**
  * Describes the Accelerated Domains edge provider.
  */
-class Accelerated_Domains extends Provider {
+class Accelerated_Domains extends Edge_Provider {
 
 	/**
 	 * Get the properties

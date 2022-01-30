@@ -89,7 +89,7 @@ class Helpers {
 
 		// Get the provider class (default to Cloudflare).
 		$provider       = apply_filters( 'Edge_Images\provider', 'cloudflare' );
-		$provider_class = 'Edge_Images\Providers\\' . ucfirst( $provider );
+		$provider_class = 'Edge_Images\Edge_Providers\\' . ucfirst( $provider );
 
 		// Bail if we can't find one.
 		if ( ! class_exists( $provider_class ) ) {

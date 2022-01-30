@@ -49,7 +49,7 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	Handler::register();
 
 	// Load admin interface
-	Features\Preloads::register();
+	Admin::register();
 
 	// Load features
 	Features\Preloads::register();
