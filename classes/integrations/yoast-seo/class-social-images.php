@@ -11,20 +11,6 @@ use Edge_Images\Helpers;
 class Social_Images {
 
 	/**
-	 * The og:width value
-	 *
-	 * @var integer
-	 */
-	const OG_WIDTH = 1200;
-
-	/**
-	 * The og:height value
-	 *
-	 * @var integer
-	 */
-	const OG_HEIGHT = 675;
-
-	/**
 	 * Register the integration
 	 *
 	 * @return void
@@ -67,7 +53,7 @@ class Social_Images {
 	}
 
 	/**
-	 * Overwrite the og:image:width and og:image:height
+	 * Remove the og:image:width and og:image:height
 	 *
 	 * @param array $presentation The presentation.
 	 *
@@ -84,8 +70,8 @@ class Social_Images {
 			return $presentation; // Bail if there's no key.
 		}
 
-		$presentation->open_graph_images[ $key ]['width']  = self::OG_WIDTH;
-		$presentation->open_graph_images[ $key ]['height'] = self::OG_HEIGHT;
+		unset( $presentation->open_graph_images[ $key ]['width'] );
+		unset( $presentation->open_graph_images[ $key ]['height'] );
 
 		return $presentation;
 	}
