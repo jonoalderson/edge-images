@@ -84,8 +84,15 @@ class Social_Images {
 			return $presentation; // Bail if there's no key.
 		}
 
-		unset( $presentation->open_graph_images[ $key ]['width'] );
-		unset( $presentation->open_graph_images[ $key ]['height'] );
+		// Remove the width.
+		if ( isset( $presentation->open_graph_images[ $key ]['width'] ) ) {
+			unset( $presentation->open_graph_images[ $key ]['width'] );
+		}
+
+		// Remove the height.
+		if ( isset( $presentation->open_graph_images[ $key ]['height'] ) ) {
+			unset( $presentation->open_graph_images[ $key ]['height'] );
+		}
 
 		return $presentation;
 	}
