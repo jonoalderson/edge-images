@@ -11,6 +11,20 @@ use Edge_Images\Helpers;
 class Social_Images {
 
 	/**
+	 * The og:width value
+	 *
+	 * @var integer
+	 */
+	const OG_WIDTH = 1200;
+
+	/**
+	 * The og:height value
+	 *
+	 * @var integer
+	 */
+	const OG_HEIGHT = 675;
+
+	/**
 	 * Register the integration
 	 *
 	 * @return void
