@@ -415,6 +415,7 @@ class Helpers {
 			'decoding' => array(),
 			'class'    => array(),
 			'alt'      => array(),
+			'priority' => array(),
 		);
 	}
 
