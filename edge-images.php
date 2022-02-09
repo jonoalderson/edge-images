@@ -41,18 +41,41 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 	spl_autoload_register( __NAMESPACE__ . '\autoloader' );
 
-	// Load our core functionality.
+	// Register activation & deactivation functions
+	register_activation_hook( __NAMESPACE__, 'activate_plugin' );
+	register_deactivation_hook( __NAMESPACE__, 'deactivate_plugin' );
+
+	// Load our core functionality
 	Handler::register();
 
-	// Features.
+	// Load admin interface
+	Admin::register();
+
+	// Load features
 	Features\Preloads::register();
 
-	// Integrations.
+	// Load integrations
 	Integrations\Yoast_SEO\Social_Images::register();
 	Integrations\Yoast_SEO\Schema_Images::register();
 	Integrations\Yoast_SEO\XML_Sitemaps::register();
 
 } )();
+
+/**
+ * Runs our plugin activation routine
+ */
+function activate_plugin() : void {
+
+}
+
+/**
+ * Runs our plugin deactivation routine
+ */
+function deactivate_plugin() : void {
+
+}
+
+
 
 /**
  * Returns a Cloudflared image

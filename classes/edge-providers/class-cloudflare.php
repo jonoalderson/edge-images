@@ -1,13 +1,13 @@
 <?php
 
-namespace Edge_Images\Providers;
+namespace Edge_Images\Edge_Providers;
 
-use Edge_Images\{Provider, Helpers};
+use Edge_Images\{Edge_Provider, Helpers};
 
 /**
  * Describes the Cloudflare edge provider.
  */
-class Cloudflare extends Provider {
+class Cloudflare extends Edge_Provider {
 
 	/**
 	 * Get the properties

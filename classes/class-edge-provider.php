@@ -9,7 +9,7 @@ use Edge_Images\Helpers;
  *
  * TODO: Provide methods for validating the various image properties / args.
  */
-class Provider {
+class Edge_Provider {
 
 	/**
 	 * Create the provider

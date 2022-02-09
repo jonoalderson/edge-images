@@ -10,7 +10,7 @@ use Edge_Images\{Helpers, Image};
 class Preloads {
 
 	/**
-	 * Register the Integration
+	 * Register the integration
 	 *
 	 * @return void
 	 */

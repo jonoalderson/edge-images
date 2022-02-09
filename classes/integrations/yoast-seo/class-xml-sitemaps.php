@@ -24,7 +24,7 @@ class XML_Sitemaps {
 	const IMAGE_HEIGHT = 675;
 
 	/**
-	 * Register the Integration
+	 * Register the integration
 	 *
 	 * @return void
 	 */
@@ -39,6 +39,7 @@ class XML_Sitemaps {
 
 		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ), 100 );
 	}
+
 	/**
 	 * Checks if these filters should run.
 	 *
