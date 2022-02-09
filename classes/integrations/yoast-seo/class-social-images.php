@@ -67,7 +67,7 @@ class Social_Images {
 	}
 
 	/**
-	 * Overwrite the og:image:width and og:image:height
+	 * Remove the og:image:width and og:image:height
 	 *
 	 * @param array $presentation The presentation.
 	 *
@@ -84,8 +84,15 @@ class Social_Images {
 			return $presentation; // Bail if there's no key.
 		}
 
-		$presentation->open_graph_images[ $key ]['width']  = self::OG_WIDTH;
-		$presentation->open_graph_images[ $key ]['height'] = self::OG_HEIGHT;
+		// Remove the width.
+		if ( isset( $presentation->open_graph_images[ $key ]['width'] ) ) {
+			unset( $presentation->open_graph_images[ $key ]['width'] );
+		}
+
+		// Remove the height.
+		if ( isset( $presentation->open_graph_images[ $key ]['height'] ) ) {
+			unset( $presentation->open_graph_images[ $key ]['height'] );
+		}
 
 		return $presentation;
 	}
