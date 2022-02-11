@@ -75,13 +75,15 @@ class Social_Images {
 	 */
 	public function set_image_dimensions( $presentation ) {
 
+		// Bail if there's no open graph image info.
 		if ( ! $presentation->open_graph_images ) {
-			return $presentation; // Bail if there's nothing here.
+			return $presentation;
 		}
 
+		// Bail if there's no key.
 		$key = array_key_first( $presentation->open_graph_images );
 		if ( ! isset( $presentation->open_graph_images[ $key ] ) ) {
-			return $presentation; // Bail if there's no key.
+			return $presentation;
 		}
 
 		// Remove the width.
