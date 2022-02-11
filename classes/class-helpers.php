@@ -17,6 +17,13 @@ class Helpers {
 	public const STYLES_URL = EDGE_IMAGES_PLUGIN_URL . 'assets/css';
 
 	/**
+	 * The plugin styles path
+	 *
+	 * @var string
+	 */
+	public const STYLES_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/css';
+
+	/**
 	 * The cache group to use
 	 *
 	 * @var string

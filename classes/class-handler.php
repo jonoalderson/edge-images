@@ -28,7 +28,7 @@ class Handler {
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_edge' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
-		add_action( 'wp_head', array( $instance, 'enqueue_css' ), 2 );
+		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 0 );
 		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 100, 5 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
 		add_filter( 'wp_get_attachment_image_src', array( $instance, 'fix_wp_get_attachment_image_svg' ), 1, 4 );
@@ -102,7 +102,18 @@ class Handler {
 			return;
 		}
 
-		wp_enqueue_style( 'edge-images', Helpers::STYLES_URL . '/images.css', array(), EDGE_IMAGES_VERSION );
+		// Enqueue a dummy style
+		wp_register_style( 'edge-images', false );
+		wp_enqueue_style( 'edge-images' );
+
+		// Get our stylesheet
+		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
+		if ( ! file_exists( $stylesheet_path ) ) {
+			return;
+		}
+
+		$stylesheet = file_get_contents( $stylesheet_path );
+		wp_add_inline_style( 'edge-images', $stylesheet );
 	}
 
 	/**
