@@ -254,10 +254,10 @@ class Handler {
 		// Add height and width inline styles if this is a fixed image.
 		if ( $attr['layout'] === 'fixed' ) {
 			if ( $attr['width'] ) {
-				$styles[] = sprintf( 'max-width:%dpx', $attr['width'] );
+				$styles[] = sprintf( 'width:%dpx', $attr['width'] );
 			}
 			if ( $attr['height'] ) {
-				$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
+				$styles[] = sprintf( 'height:%dpx', $attr['height'] );
 			}
 		}
 
