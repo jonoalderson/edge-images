@@ -9,7 +9,10 @@
   	object-fit: cover;
 		height: auto;
 	}
-	@supports (--custom:property) {
+}
+
+@supports (--custom:property) {
+	.edge-images-picture {
 		position: relative;
 		&::before {
 			content: "";
