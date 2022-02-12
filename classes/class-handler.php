@@ -13,8 +13,6 @@ class Handler {
 	/**
 	 * Register the integration
 	 *
-	 * @TODO: Add a wp_calculate_image_sizes filter.
-	 *
 	 * @return void
 	 */
 	public static function register() : void {
@@ -46,27 +44,29 @@ class Handler {
 	 */
 	public function fix_wp_get_attachment_image_svg( $image, $attachment_id, $size, $icon ) : array {
 
-		// Bail if the image isn't valid.
 		if ( ! $image || ! isset( $image[0] ) || ! isset( $image[1] ) || ! isset( $image[2] ) ) {
-			return array();
+			return array(); // Bail if the image isn't valid.
 		}
 
 		// Check if this is an SVG.
 		if ( is_array( $image ) && preg_match( '/\.svg$/i', $image[0] ) && $image[1] <= 1 ) {
 			if ( is_array( $size ) ) {
+				// If $image is an array, we can use the H and W values.
 				$image[1] = $size[0];
 				$image[2] = $size[1];
 			} elseif ( ( $xml = simplexml_load_file( $image[0] ) ) !== false ) {
-				// Get the attributes from the SVG file.
+				// Otherwise, we should get the attributes from the SVG file.
 				$attr     = $xml->attributes();
 				$viewbox  = explode( ' ', $attr->viewBox );
 				$image[1] = isset( $attr->width ) && preg_match( '/\d+/', $attr->width, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[2] : null );
 				$image[2] = isset( $attr->height ) && preg_match( '/\d+/', $attr->height, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[3] : null );
 			} else {
+				// Or fall back to no values.
 				$image[1] = null;
 				$image[2] = null;
 			}
 		}
+
 		return $image;
 	}
 
@@ -102,16 +102,17 @@ class Handler {
 			return;
 		}
 
+		// Get our stylesheet
+		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
+		if ( ! file_exists( $stylesheet_path ) ) {
+			return; // Bail if we couldn't find it.
+		}
+
 		// Enqueue a dummy style
 		wp_register_style( 'edge-images', false );
 		wp_enqueue_style( 'edge-images' );
 
-		// Get our stylesheet
-		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
-		if ( ! file_exists( $stylesheet_path ) ) {
-			return;
-		}
-
+		// Output the stylesheet inline
 		$stylesheet = file_get_contents( $stylesheet_path );
 		wp_add_inline_style( 'edge-images', $stylesheet );
 	}
