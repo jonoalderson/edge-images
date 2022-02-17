@@ -90,7 +90,7 @@ function deactivate_plugin() : void {
 function get_edge_image( int $id, array $atts = array(), $size, bool $echo = true ) {
 
 	// Bail if this isn't a valid image ID.
-	if ( ! wp_attachment_is_image( $id ) ) {
+	if ( get_post_type( $id ) !== 'attachment' ) {
 		echo 'fail 1';
 		return;
 	}
