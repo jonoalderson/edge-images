@@ -95,7 +95,7 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
 	}
 
 	// Get the image object.
-	$image = get_edge_image_object( $id, $atts, $size, $echo );
+	$image = get_edge_image_object( $id, $atts, $size );
 
 	// Try to fall back to a normal WP image if we didn't get an image object.
 	if ( ! $image ) {
