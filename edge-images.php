@@ -156,5 +156,7 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 		return false;
 	}
 
+	echo 'no fail here';
+
 	return $image;
 }
