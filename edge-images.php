@@ -91,7 +91,6 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
 
 	// Bail if this isn't a valid image ID.
 	if ( get_post_type( $id ) !== 'attachment' ) {
-		echo 'fail 1';
 		return;
 	}
 
