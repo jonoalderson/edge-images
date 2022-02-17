@@ -109,6 +109,7 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
 
 			return;
 		}
+		echo 'fail 4';
 		return $image;
 	}
 
@@ -144,6 +145,7 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 		! $id || // Maintain native failure conditions for missing/invalid IDs.
 		! Helpers::should_transform_image( $id )
 	) {
+		echo 'fail 9';
 		return false;
 	}
 
@@ -152,6 +154,7 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 
 	// Fail if we didn't get a valid image.
 	if ( ! $image ) {
+		echo 'fail10';
 		return false;
 	}
 
