@@ -99,13 +99,10 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
 
 	// Try to fall back to a normal WP image if we didn't get an image object.
 	if ( ! $image ) {
-		echo 'fail 2';
 
 		$image = wp_get_attachment_image( $id, $size, false, $atts );
 		if ( $echo ) {
 			echo wp_kses( $image, array( 'img' ) );
-			echo 'fail 3';
-
 			return;
 		}
 		return $image;
@@ -143,7 +140,6 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 		! $id || // Maintain native failure conditions for missing/invalid IDs.
 		! Helpers::should_transform_image( $id )
 	) {
-		echo 'fail x';
 		return false;
 	}
 
@@ -152,11 +148,8 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 
 	// Fail if we didn't get a valid image.
 	if ( ! $image ) {
-		 echo 'fail y';
 		return false;
 	}
-
-	echo 'no fail here';
 
 	return $image;
 }
