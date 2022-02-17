@@ -118,8 +118,6 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
 		return;
 	}
 
-	echo 'success';
-
 	// Or just return the HTML.
 	return $html;
 }
