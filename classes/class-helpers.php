@@ -324,8 +324,9 @@ class Helpers {
 	 */
 	public static function should_transform_images() : bool {
 
-		// Bail if we're in the admin or doing a REST request.
-		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		// Bail if we're in the admin.
+		// if ( is_admin() && () defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		if ( is_admin() ) {
 			return false;
 		}
 
