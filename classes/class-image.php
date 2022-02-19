@@ -454,7 +454,7 @@ class Image {
 	public function construct_img_el( $wrap_in_picture = false ) : string {
 
 		// srcset attributes need special treatment to comma-separate values.
-		if ( $this->attrs['srcset'] && ! empty( $this->attrs['srcset'] ) ) {
+		if ( isset( $this->attrs['srcset'] ) && ! empty( $this->attrs['srcset'] ) ) {
 			$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
 		}
 

@@ -9,12 +9,15 @@
   	object-fit: cover;
 		height: auto;
 	}
-	@supports (--custom:property) {
+}
+
+@supports (--custom:property) {
+	.edge-images-picture {
 		position: relative;
 		&::before {
 			content: "";
 			display: block;
-			padding-bottom: calc(100% / ~'var(--aspect-ratio)');
+			padding-bottom: calc(100% / ~'(var(--aspect-ratio))');
 		}
 		& > .edge-images-img {
 			position: absolute;
