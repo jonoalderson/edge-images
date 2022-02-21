@@ -27,7 +27,7 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 0 );
-		add_filter( 'render_block', array( $instance, 'alter_image_block_rendering' ), 100, 5 );
+		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
 		add_filter( 'wp_get_attachment_image_src', array( $instance, 'fix_wp_get_attachment_image_svg' ), 1, 4 );
 	}
@@ -121,38 +121,37 @@ class Handler {
 	 * Alter block editor image rendering
 	 *
 	 * TODO: Account for when images are linked (via $block['attrs']['linkDestination']).
-	 * TODO: Account for gallery blocks.
 	 * TODO: Account for figure/figcaption.
 	 *
-	 * @param  string $block_content  The block's HTML content.
-	 * @param  array  $block           The block's properties.
+	 * @param string|null   $pre_render   The pre-rendered content.
+	 * @param array         $parsed_block The parsed block's properties.
+	 * @param WP_Block|null $parent_block The parent block
 	 *
-	 * @return string                 The block's modified content
+	 * @return array                      The HTML content to render.
 	 */
-	public function alter_image_block_rendering( $block_content, $block ) : string {
+	public function alter_image_block_rendering( $pre_render, $parsed_block, $parent_block ) {
 
 		// Bail if we're in the admin or doing a REST request.
 		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return false;
 		}
 
-		// Bail if this isn't an image block.
-		if ( 'core/image' !== $block['blockName'] ) {
-			return $block_content;
+		// Bail if this isn't an image block .
+		if ( $parsed_block['blockName'] !== 'core/image' ) {
+			return $pre_render;
 		}
 
 		// Bail if there's no image ID set.
-		if ( ! isset( $block['attrs']['id'] ) ) {
-			return $block_content;
+		if ( ! isset( $parsed_block['attrs']['id'] ) ) {
+			return $pre_render;
 		}
 
-		$image = $this->get_content_image( $block['attrs']['id'] );
+		$image = $this->get_content_image( $parsed_block['attrs']['id'] );
 
 		// Bail if we didn't get an image; fall back to the original block.
 		if ( ! $image ) {
-			return $block_content;
+			return $pre_render;
 		}
-
 		return $image;
 	}
 
@@ -181,6 +180,8 @@ class Handler {
 		if ( ! $image ) {
 			return false;
 		}
+
+		return $image;
 	}
 
 	/**
