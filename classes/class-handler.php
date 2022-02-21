@@ -27,7 +27,7 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 0 );
-		add_filter( 'render_block_data', array( $instance, 'alter_image_block_rendering' ), 1000, 3 );
+		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
 		add_filter( 'wp_get_attachment_image_src', array( $instance, 'fix_wp_get_attachment_image_svg' ), 1, 4 );
 	}
@@ -124,12 +124,13 @@ class Handler {
 	 * TODO: Account for gallery blocks.
 	 * TODO: Account for figure/figcaption.
 	 *
-	 * @param  string $block_content  The block's HTML content.
-	 * @param  array  $block           The block's properties.
+	 * @param string|null   $pre_render   The pre-rendered content.
+	 * @param array         $parsed_block The parsed block's properties.
+	 * @param WP_Block|null $parent_block The parent block
 	 *
-	 * @return array                 The block's modified content
+	 * @return array                      The HTML content to render.
 	 */
-	public function alter_image_block_rendering( $parsed_block, $source_block, $parent_block ) : array {
+	public function alter_image_block_rendering( $pre_render, $parsed_block, $parent_block ) {
 
 		// Bail if we're in the admin or doing a REST request.
 		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
@@ -138,25 +139,21 @@ class Handler {
 
 		// Bail if this isn't an image block .
 		if ( $parsed_block['blockName'] !== 'core/image' ) {
-			return $source_block;
+			return $pre_render;
 		}
 
 		// Bail if there's no image ID set.
 		if ( ! isset( $parsed_block['attrs']['id'] ) ) {
-			return $source_block;
+			return $pre_render;
 		}
 
 		$image = $this->get_content_image( $parsed_block['attrs']['id'] );
 
 		// Bail if we didn't get an image; fall back to the original block.
 		if ( ! $image ) {
-			return $source_block;
+			return $pre_render;
 		}
-
-		$parsed_block['innerHTML']       = $image;
-		$parsed_block['innerContent'][0] = $image;
-
-		return $parsed_block;
+		return $image;
 	}
 
 	/**
