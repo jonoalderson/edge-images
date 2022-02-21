@@ -181,6 +181,8 @@ class Handler {
 		if ( ! $image ) {
 			return false;
 		}
+
+		return $image;
 	}
 
 	/**
