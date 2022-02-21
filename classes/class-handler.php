@@ -133,8 +133,6 @@ class Handler {
 
 		// Bail if we're in the admin or doing a REST request.
 		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			echo 'nope!';
-			die;
 			return false;
 		}
 
