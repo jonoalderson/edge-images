@@ -121,7 +121,6 @@ class Handler {
 	 * Alter block editor image rendering
 	 *
 	 * TODO: Account for when images are linked (via $block['attrs']['linkDestination']).
-	 * TODO: Account for gallery blocks.
 	 * TODO: Account for figure/figcaption.
 	 *
 	 * @param string|null   $pre_render   The pre-rendered content.
