@@ -89,11 +89,6 @@ function deactivate_plugin() : void {
  */
 function get_edge_image( int $id, array $atts = array(), $size, bool $echo = true ) {
 
-	// Bail if this isn't a valid image ID.
-	if ( get_post_type( $id ) !== 'attachment' ) {
-		return;
-	}
-
 	// Get the image object.
 	$image = get_edge_image_object( $id, $atts, $size );
 
