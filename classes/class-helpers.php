@@ -503,4 +503,38 @@ class Helpers {
 		);
 	}
 
+	/**
+	 * Attempts to get an alt attribute from <img> element HTML
+	 *
+	 * @param  string $html The HTML containing the <img> element
+	 *
+	 * @return string        The alt attribute
+	 */
+	public static function get_alt_from_img_el( string $html ) : string {
+		$alt = '';
+		$re  = '/(alt)=("[^"]*")/';
+		preg_match_all( $re, $html, $matches );
+		if ( ! $matches || empty( $matches ) || ! $matches[2][0] ) {
+			return $alt;
+		}
+		return substr( $matches[2][0], 1, -1 );
+	}
+
+	/**
+	 * Attempts to get an href attribute from a linked <img> element HTML
+	 *
+	 * @param  string $html The HTML containing the <img> element
+	 *
+	 * @return string        The href value
+	 */
+	public static function get_link_from_img_el( string $html ) : string {
+		$alt = '';
+		$re  = '/(href)=("[^"]*")/';
+		preg_match_all( $re, $html, $matches );
+		if ( ! $matches || empty( $matches ) || ! $matches[2][0] ) {
+			return $alt;
+		}
+		return substr( $matches[2][0], 1, -1 );
+	}
+
 }

@@ -127,9 +127,9 @@ class Handler {
 	 * @param array         $parsed_block The parsed block's properties.
 	 * @param WP_Block|null $parent_block The parent block
 	 *
-	 * @return array                      The HTML content to render.
+	 * @return string|null                The HTML content to render.
 	 */
-	public function alter_image_block_rendering( $pre_render, $parsed_block, $parent_block ) {
+	public function alter_image_block_rendering( $pre_render, array $parsed_block, $parent_block ) {
 
 		// Bail if we're in the admin or doing a REST request.
 		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
@@ -146,13 +146,36 @@ class Handler {
 			return $pre_render;
 		}
 
-		$image = $this->get_content_image( $parsed_block['attrs']['id'] );
+		// Build our image.
+		$atts  = $this->get_image_atts( $parsed_block );
+		$image = $this->get_content_image( $parsed_block['attrs']['id'], $atts );
 
 		// Bail if we didn't get an image; fall back to the original block.
 		if ( ! $image ) {
 			return $pre_render;
 		}
+
 		return $image;
+	}
+
+	/**
+	 * Gets atts from the <img> to pass to the edge <img>
+	 *
+	 * @param  array $parsed_block The parsed block's properties.
+	 * @return array               The image atts array
+	 */
+	private function get_image_atts( array $parsed_block ) : array {
+		$atts = array();
+
+		// Get the alt attribute if it's set.
+		$atts['alt'] = Helpers::get_alt_from_img_el( $parsed_block['innerHTML'] );
+
+		// Get the link destination if it's set.
+		if ( isset( $parsed_block['attrs']['linkDestination'] ) && $parsed_block['attrs']['linkDestination'] !== 'none' ) {
+			$atts['href'] = Helpers::get_link_from_img_el( $parsed_block['innerHTML'] );
+		}
+
+		return $atts;
 	}
 
 	/**
@@ -162,7 +185,7 @@ class Handler {
 	 *
 	 * @return false|Image The Edge Image
 	 */
-	private function get_content_image( int $id ) {
+	private function get_content_image( int $id, array $atts = array() ) {
 
 		// Get the height and width of the full-sized image.
 		$image = wp_get_attachment_image_src( $id, 'full' );
@@ -174,7 +197,7 @@ class Handler {
 		$attrs = Helpers::constrain_image_to_content_width( $image[1], $image[2] );
 
 		// Get our transformed image.
-		$image = get_edge_image( $id, $attrs, 'content', false );
+		$image = get_edge_image( $id, $atts, 'content', false );
 
 		// Bail if we didn't get an image.
 		if ( ! $image ) {
@@ -227,11 +250,21 @@ class Handler {
 			$html
 		);
 
+		// Maybe wrap the picture in a link.
+		if ( isset( $attr['href'] ) ) {
+			$html = sprintf(
+				'<a href="%s">%s</a>',
+				$attr['href'],
+				$html
+			);
+		}
+
 		$html = wp_kses(
 			$html,
 			array(
 				'picture' => Helpers::allowed_picture_attrs(),
 				'img'     => Helpers::allowed_img_attrs(),
+				'a'       => array( 'href' => array() ),
 			)
 		);
 
