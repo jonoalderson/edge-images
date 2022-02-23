@@ -484,12 +484,21 @@ class Image {
 		);
 
 		if ( ! $wrap_in_picture ) {
+			if ( isset( $this->attrs['href'] ) ) {
+				$html = sprintf(
+					'<a href="%s">%s</a>',
+					$this->attrs['href'],
+					$html
+				);
+			}
 			return $html;
 		}
 
 		// Wrap the <img> in a <picture>.
 		return Handler::wrap_in_picture( $html, $this->id, $this->size, false, $this->attrs );
 	}
+
+
 
 	/**
 	 * Init the class attr.
