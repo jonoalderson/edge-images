@@ -235,20 +235,20 @@ class Handler {
 			return $html;
 		}
 
-		// Bail if images shouldn't wrap in a container.
-		$disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
-		if ( $disable ) {
-			return $html;
+		// Maybe wrap the image in a container.
+		$disable_container = apply_filters( 'Edge_Images\disable_container_wrap', false );
+		if ( ! $disable_container ) {
+			// Construct the HTML.
+			$html = sprintf(
+				'<%s style="%s" class="%s %s">%s</%s>',
+				$attr['container-type'],
+				self::get_container_styles( $attr ),
+				isset( $attr['container-class'] ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
+				'image-id-' . $attachment_id,
+				$html,
+				$attr['container-type']
+			);
 		}
-
-		// Construct the HTML.
-		$html = sprintf(
-			'<picture style="%s" class="%s %s">%s</picture>',
-			self::get_container_styles( $attr ),
-			isset( $attr['container-class'] ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
-			'image-id-' . $attachment_id,
-			$html
-		);
 
 		// Maybe wrap the picture in a link.
 		if ( isset( $attr['href'] ) ) {

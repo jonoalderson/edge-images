@@ -86,10 +86,10 @@ class Image {
 		$attrs  = array(
 			'class'           => array(),
 			'container-class' => array(),
-			'container-type'  => 'figure',
-			'fit'             => 'cover',
-			'loading'         => 'lazy',
-			'decoding'        => 'async',
+			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
+			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
+			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
+			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
 		);
 
 		return $attrs;
