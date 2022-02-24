@@ -84,11 +84,12 @@ class Image {
 		$width  = Helpers::get_content_width();
 		$height = $width * 0.75;
 		$attrs  = array(
-			'class'         => array(),
-			'picture-class' => array(),
-			'fit'           => 'cover',
-			'loading'       => 'lazy',
-			'decoding'      => 'async',
+			'class'           => array(),
+			'container-class' => array(),
+			'container-type'  => 'figure',
+			'fit'             => 'cover',
+			'loading'         => 'lazy',
+			'decoding'        => 'async',
 		);
 
 		return $attrs;
@@ -447,11 +448,11 @@ class Image {
 	/**
 	 * Parse the attr properties to construct an <img>
 	 *
-	 * @param bool $wrap_in_picture If the el should be wrapped in a <picture>.
+	 * @param bool $wrap_in_container If the el should be wrapped in a container.
 	 *
 	 * @return string The <img> el
 	 */
-	public function construct_img_el( $wrap_in_picture = false ) : string {
+	public function construct_img_el( $wrap_in_container = false ) : string {
 
 		// srcset attributes need special treatment to comma-separate values.
 		if ( isset( $this->attrs['srcset'] ) && ! empty( $this->attrs['srcset'] ) ) {
@@ -483,7 +484,7 @@ class Image {
 			)
 		);
 
-		if ( ! $wrap_in_picture ) {
+		if ( ! $wrap_in_container ) {
 			if ( isset( $this->attrs['href'] ) ) {
 				$html = sprintf(
 					'<a href="%s">%s</a>',
@@ -494,8 +495,8 @@ class Image {
 			return $html;
 		}
 
-		// Wrap the <img> in a <picture>.
-		return Handler::wrap_in_picture( $html, $this->id, $this->size, false, $this->attrs );
+		// Wrap the <img> in a container.
+		return Handler::wrap_in_container( $html, $this->id, $this->size, false, $this->attrs );
 	}
 
 
@@ -521,16 +522,16 @@ class Image {
 		);
 		$this->attrs['class'] = array_unique( $this->attrs['class'] );
 
-		// Get (and normalize) the picture class(es).
-		$this->attrs['picture-class'] = array_merge(
-			Helpers::normalize_attr_array( $this->get_attr( 'picture-class' ) ),
+		// Get (and normalize) the container class(es).
+		$this->attrs['container-class'] = array_merge(
+			Helpers::normalize_attr_array( $this->get_attr( 'container-class' ) ),
 			array(
-				'picture-' . $size_class,
-				'edge-images-picture',
+				'edge-images-container',
+				'edge-images-container-' . $size_class,
 				isset( $this->attrs['layout'] ) ? $this->attrs['layout'] : null,
 			)
 		);
-		$this->attrs['picture-class'] = array_unique( $this->attrs['picture-class'] );
+		$this->attrs['container-class'] = array_unique( $this->attrs['container-class'] );
 	}
 
 	/**
@@ -633,9 +634,9 @@ class Image {
 			$this->attrs['class'] = Helpers::classes_array_to_string( $this->attrs['class'] );
 		}
 
-		// Convert the picture class(es) to a string.
-		if ( $this->has_attr( 'picture-class' ) ) {
-			$this->attrs['picture-class'] = Helpers::classes_array_to_string( $this->attrs['picture-class'] );
+		// Convert the container class(es) to a string.
+		if ( $this->has_attr( 'container-class' ) ) {
+			$this->attrs['container-class'] = Helpers::classes_array_to_string( $this->attrs['container-class'] );
 		}
 
 		// Convert the srcset to a (comma-separated) string.

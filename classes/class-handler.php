@@ -25,10 +25,10 @@ class Handler {
 		$instance = new self();
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_edge' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_picture' ), 100, 5 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_container' ), 100, 5 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 0 );
 		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
-		add_filter( 'safe_style_css', array( $instance, 'allow_picture_ratio_style' ) );
+		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ) );
 		add_filter( 'wp_get_attachment_image_src', array( $instance, 'fix_wp_get_attachment_image_svg' ), 1, 4 );
 	}
 
@@ -78,7 +78,7 @@ class Handler {
 	 *
 	 * @return array         The filtered styles
 	 */
-	public function allow_picture_ratio_style( $styles ) : array {
+	public function allow_container_ratio_style( $styles ) : array {
 
 		// Bail if $styles isn't an array.
 		if ( ! is_array( $styles ) ) {
@@ -96,8 +96,8 @@ class Handler {
 	 */
 	public function enqueue_css() : void {
 
-		// Bail if images shouldn't wrap in a picture.
-		$disable = apply_filters( 'Edge_Images\disable_picture_wrap', false );
+		// Bail if images shouldn't wrap in a container.
+		$disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
 		if ( $disable ) {
 			return;
 		}
@@ -208,7 +208,7 @@ class Handler {
 	}
 
 	/**
-	 * Wrap our image tags in a <picture> to use the aspect ratio approach
+	 * Wrap our image tags in a container, to use the aspect ratio approach
 	 *
 	 * @param  string $html             The <img> HTML.
 	 * @param  int    $attachment_id    The attachment ID.
@@ -218,7 +218,7 @@ class Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function wrap_in_picture( $html = '', $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+	public static function wrap_in_container( $html = '', $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
 		if ( ! $html ) {
@@ -235,8 +235,8 @@ class Handler {
 			return $html;
 		}
 
-		// Bail if images shouldn't wrap in a picture.
-		$disable = apply_filters( 'Edge_Images\disable_picture_wrap', false );
+		// Bail if images shouldn't wrap in a container.
+		$disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
 		if ( $disable ) {
 			return $html;
 		}
@@ -244,8 +244,8 @@ class Handler {
 		// Construct the HTML.
 		$html = sprintf(
 			'<picture style="%s" class="%s %s">%s</picture>',
-			self::get_picture_styles( $attr ),
-			isset( $attr['picture-class'] ) ? Helpers::classes_array_to_string( $attr['picture-class'] ) : null,
+			self::get_container_styles( $attr ),
+			isset( $attr['container-class'] ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
 			'image-id-' . $attachment_id,
 			$html
 		);
@@ -262,7 +262,8 @@ class Handler {
 		$html = wp_kses(
 			$html,
 			array(
-				'picture' => Helpers::allowed_picture_attrs(),
+				'figure'  => Helpers::allowed_container_attrs(),
+				'picture' => Helpers::allowed_container_attrs(),
 				'img'     => Helpers::allowed_img_attrs(),
 				'a'       => array( 'href' => array() ),
 			)
@@ -272,12 +273,12 @@ class Handler {
 	}
 
 	/**
-	 * Get the inline styles for the picture tag
+	 * Get the inline styles for the container tag
 	 *
 	 * @param  array $attr The image attributes.
 	 * @return string      The style attribute values
 	 */
-	private static function get_picture_styles( $attr ) : string {
+	private static function get_container_styles( $attr ) : string {
 
 		$styles = array();
 

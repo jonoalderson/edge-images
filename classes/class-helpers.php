@@ -428,11 +428,11 @@ class Helpers {
 	}
 
 	/**
-	 * Get the permitted <picture> attributes
+	 * Get the permitted container attributes
 	 *
 	 * @return array The attributes
 	 */
-	public static function allowed_picture_attrs() : array {
+	public static function allowed_container_attrs() : array {
 		return array(
 			'style' => array(),
 			'class' => array(),
