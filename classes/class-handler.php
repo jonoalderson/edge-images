@@ -25,7 +25,7 @@ class Handler {
 		$instance = new self();
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_edge' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_in_container' ), 100, 5 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 0 );
 		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ) );
@@ -171,11 +171,45 @@ class Handler {
 		$atts['alt'] = Helpers::get_alt_from_img_el( $parsed_block['innerHTML'] );
 
 		// Get the link destination if it's set.
-		if ( isset( $parsed_block['attrs']['linkDestination'] ) && $parsed_block['attrs']['linkDestination'] !== 'none' ) {
-			$atts['href'] = Helpers::get_link_from_img_el( $parsed_block['innerHTML'] );
+		if ( isset( $parsed_block['attrs']['linkDestination'] ) ) {
+			$atts['href'] = $this->get_image_link( $parsed_block );
+		}
+
+		// Get the caption if there's one present.
+		$caption = Helpers::get_caption_from_img_el( $parsed_block['innerHTML'] );
+		if ( $caption && $caption !== '' ) {
+			$atts['caption'] = $caption;
 		}
 
 		return $atts;
+	}
+
+	/**
+	 * Get the image link
+	 *
+	 * @param  array $parsed_block The parsed block's properties.
+	 *
+	 * @return string              The image link
+	 */
+	private function get_image_link( array $parsed_block ) : string {
+		switch ( $parsed_block['attrs']['linkDestination'] ) {
+			case 'custom':
+				$href = Helpers::get_link_from_img_el( $parsed_block['innerHTML'] );
+				break;
+			case 'attachment':
+				$href = get_attachment_link( $parsed_block['attrs']['id'] );
+				break;
+			case 'media':
+				$image = get_edge_image_object( $parsed_block['attrs']['id'], array(), 'full' );
+				if ( ! $image ) {
+					break;
+				}
+				$href = $image->attrs['src'];
+				break;
+			default:
+				$href = '#';
+		}
+		return $href;
 	}
 
 	/**
@@ -196,6 +230,12 @@ class Handler {
 		// Constrain our image to the maximum content width, based on the ratio.
 		$attrs = Helpers::constrain_image_to_content_width( $image[1], $image[2] );
 
+		// Add WP's native block class(es).
+		if ( ! isset( $atts['container-class'] ) ) {
+			$atts['container-class'] = array();
+		}
+		$atts['container-class'][] = 'wp-block-image';
+
 		// Get our transformed image.
 		$image = get_edge_image( $id, $atts, 'content', false );
 
@@ -208,7 +248,7 @@ class Handler {
 	}
 
 	/**
-	 * Wrap our image tags in a container, to use the aspect ratio approach
+	 * Decorate our edge image with appropriate atts and markup
 	 *
 	 * @param  string $html             The <img> HTML.
 	 * @param  int    $attachment_id    The attachment ID.
@@ -218,7 +258,7 @@ class Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function wrap_in_container( $html = '', $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+	public static function decorate_edge_image( $html = '', $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
 		if ( ! $html ) {
@@ -235,23 +275,8 @@ class Handler {
 			return $html;
 		}
 
-		// Maybe wrap the image in a container.
-		$disable_container = apply_filters( 'Edge_Images\disable_container_wrap', false );
-		if ( ! $disable_container ) {
-			// Construct the HTML.
-			$html = sprintf(
-				'<%s style="%s" class="%s %s">%s</%s>',
-				$attr['container-type'],
-				self::get_container_styles( $attr ),
-				isset( $attr['container-class'] ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
-				'image-id-' . $attachment_id,
-				$html,
-				$attr['container-type']
-			);
-		}
-
 		// Maybe wrap the picture in a link.
-		if ( isset( $attr['href'] ) ) {
+		if ( isset( $attr['href'] ) && $attr['href'] ) {
 			$html = sprintf(
 				'<a href="%s">%s</a>',
 				$attr['href'],
@@ -259,13 +284,36 @@ class Handler {
 			);
 		}
 
+		// Maybe get a caption.
+		if ( isset( $attr['caption'] ) && $attr['caption'] ) {
+			$html = sprintf(
+				'%s<figcaption>%s</figcaption>',
+				$html,
+				$attr['caption']
+			);
+		}
+
+		// Maybe wrap the image in a container.
+		if ( apply_filters( 'Edge_Images\disable_container_wrap', false ) !== true ) {
+			$html = sprintf(
+				'<%s style="%s" class="%s %s">%s</%s>',
+				$attr['container-type'],
+				self::get_container_styles( $attr ),
+				Helpers::classes_array_to_string( $attr['container-class'] ),
+				'image-id-' . $attachment_id,
+				$html,
+				$attr['container-type']
+			);
+		}
+
 		$html = wp_kses(
 			$html,
 			array(
-				'figure'  => Helpers::allowed_container_attrs(),
-				'picture' => Helpers::allowed_container_attrs(),
-				'img'     => Helpers::allowed_img_attrs(),
-				'a'       => array( 'href' => array() ),
+				'figure'     => Helpers::allowed_container_attrs(),
+				'picture'    => Helpers::allowed_container_attrs(),
+				'img'        => Helpers::allowed_img_attrs(),
+				'a'          => array( 'href' => array() ),
+				'figcaption' => array(),
 			)
 		);
 

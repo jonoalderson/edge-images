@@ -90,6 +90,7 @@ class Image {
 			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
 			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
 			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
+			'caption'         => false,
 		);
 
 		return $attrs;
@@ -448,11 +449,11 @@ class Image {
 	/**
 	 * Parse the attr properties to construct an <img>
 	 *
-	 * @param bool $wrap_in_container If the el should be wrapped in a container.
+	 * @param bool $decorate If the el should be decorated.
 	 *
 	 * @return string The <img> el
 	 */
-	public function construct_img_el( $wrap_in_container = false ) : string {
+	public function construct_img_el( $decorate = false ) : string {
 
 		// srcset attributes need special treatment to comma-separate values.
 		if ( isset( $this->attrs['srcset'] ) && ! empty( $this->attrs['srcset'] ) ) {
@@ -484,19 +485,11 @@ class Image {
 			)
 		);
 
-		if ( ! $wrap_in_container ) {
-			if ( isset( $this->attrs['href'] ) ) {
-				$html = sprintf(
-					'<a href="%s">%s</a>',
-					$this->attrs['href'],
-					$html
-				);
-			}
-			return $html;
+		if ( $decorate ) {
+			$html = Handler::decorate_edge_image( $html, $this->id, $this->size, false, $this->attrs );
 		}
 
-		// Wrap the <img> in a container.
-		return Handler::wrap_in_container( $html, $this->id, $this->size, false, $this->attrs );
+		return $html;
 	}
 
 
