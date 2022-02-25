@@ -207,7 +207,7 @@ class Handler {
 				$href = $image->attrs['src'];
 				break;
 			default:
-				$href = '#';
+				$href = '';
 		}
 		return $href;
 	}
