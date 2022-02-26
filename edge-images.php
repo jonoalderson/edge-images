@@ -113,8 +113,7 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
 
 	if ( $echo ) {
 		// Echo the image.
-		echo wp_kses( $html, array( 'picture', 'img', 'a' ) );
-		echo 'echoing';
+		echo wp_kses( $html, array( 'picture', 'figure', 'img', 'a' ) );
 		return;
 	}
 

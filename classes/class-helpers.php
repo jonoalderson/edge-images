@@ -428,11 +428,11 @@ class Helpers {
 	}
 
 	/**
-	 * Get the permitted <picture> attributes
+	 * Get the permitted container attributes
 	 *
 	 * @return array The attributes
 	 */
-	public static function allowed_picture_attrs() : array {
+	public static function allowed_container_attrs() : array {
 		return array(
 			'style' => array(),
 			'class' => array(),
@@ -531,10 +531,27 @@ class Helpers {
 		$alt = '';
 		$re  = '/(href)=("[^"]*")/';
 		preg_match_all( $re, $html, $matches );
-		if ( ! $matches || empty( $matches ) || ! $matches[2][0] ) {
+		if ( ! $matches || empty( $matches ) || ! isset( $matches[2][0] ) ) {
 			return $alt;
 		}
 		return substr( $matches[2][0], 1, -1 );
+	}
+
+	/**
+	 * Attempts to get an href attribute from an <img> element HTML
+	 *
+	 * @param  string $html The HTML containing the <img> element
+	 *
+	 * @return string        The href value
+	 */
+	public static function get_caption_from_img_el( string $html ) : string {
+		$caption = '';
+		$re      = '/<figcaption>(.*?)<\/figcaption>/s';
+		preg_match_all( $re, $html, $matches );
+		if ( ! $matches || empty( $matches ) || ! isset( $matches[1][0] ) ) {
+			return $caption;
+		}
+		return $matches[1][0];
 	}
 
 }
