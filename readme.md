@@ -43,7 +43,6 @@ The `Edge_Images\sizes` filter expects and returns an associative array of image
 - `sizes` (`str`):  The `sizes` attribute to be used on the `<img>` elem.
 - `srcset` (`arr`): An array of `width`/`height` arrays. Used to generate the `srcset` attribute (and stepped variations) on the `<img>` elem.
 - `fit` (`str`): Sets the `fit` attribute on the `<img>` elem. Defaults to `cover`.
-  - Options differ by edge providers (see https://developers.cloudflare.com/images/image-resizing/url-format).
 - `layout` (`str`): Determines how `<img>` markup should be generated, based on whether the image is `responsive` or has `fixed` dimensions. Defaults to `responsive`.
 - `loading` (`str`): Sets the `loading` attribute on the `<img>` elem. Defaults to `lazy`.
 - `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
@@ -280,7 +279,4 @@ Supports the following filters:
 
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
-- Linked images (e.g., `<a href="page.html"><img src="image.jpg" /></a>`; links are removed)
-- Images with captions (captions are removed)
-- Non-native or complex image blocks like galleries, or images nested in other blocks
 - Inheriting additional/custom classes from the block editor's 'advanced' settings
