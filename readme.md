@@ -7,7 +7,7 @@ Automatically use an edge transformation service (e.g., [Cloudflare](https://www
 Specifically, it intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
   - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
-  - Wraps the `<img>` in a `<picture>` elem (_optional_).
+  - Wraps the `<img>` in a `<%container%>` elem (_optional_).
 
 ## What problem does this solve?
 WordPress ships with a concept of "image sizes", each of which has a _height_, _width_ and _crop_ option. It provides some defaults like 'large', 'medium' and 'thumbnail', and provides ways for developers to customize or extend these options. When a user adds images to content, or includes them in templates, they must select the most optimal size from the options available.
@@ -48,9 +48,8 @@ The `Edge_Images\sizes` filter expects and returns an associative array of image
 - `loading` (`str`): Sets the `loading` attribute on the `<img>` elem. Defaults to `lazy`.
 - `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
 - `class` (`array`|`str`): Extends the `class` value(s) on the `<img>` elem.
-  - Always outputs `attachment-%size% size-%size% edge-images-img` (where `%size%` is the sanitized image size name).
-- `picture-class` (`array`|`str`): Extends the `class` value(s) on the `<picture>` elem.
-  - Always outputs `layout-%layout% picture-%size% edge-images-picture image-id-%id%` (where `%size%` is the sanitized image size name, `%layout%` is the `layout` value, and `%id%` is the attachment ID).
+- `container-type` (`str`): Sets the `<%container%>` tag type. Defaults to `figure`.
+- `container-class` (`array`|`str`): Extends the `class` value(s) on the `<%container%>` elem.
 
 #### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
@@ -125,7 +124,7 @@ function my_example_sizes($sizes) {
       ),
     ),
     'loading' => 'eager',
-    'picture-class' => array('pineapples', 'bananas'),
+    'container-class' => array('pineapples', 'bananas'),
     'class' => 'oranges'
   );
   return $sizes;
@@ -137,7 +136,7 @@ function my_example_sizes($sizes) {
 - `Edge_Images\disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
 - `Edge_Images\exclude` (`array`): An array of images to exclude from transformation.
 - `Edge_Images\force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
-- `Edge_Images\disable_picture_wrap` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
+- `Edge_Images\disable_container_wrap` (`bool`): Disable wrapping images in a `<%container%>` element (and disable the associated CSS). Defaults to `false`.
 
 #### General configuration
 - `Edge_Images\provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
@@ -199,6 +198,7 @@ public function register_edge_image_sizes( array $sizes ) : array {
     'height'  => 500,
     'sizes'   => '(max-width: 968px) calc(100vw - 2.5em), 968px',
     'loading' => 'eager',
+    'container-type' => 'picture',
   );
 }
 
