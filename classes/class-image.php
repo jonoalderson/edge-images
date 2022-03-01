@@ -520,7 +520,7 @@ class Image {
 			Helpers::normalize_attr_array( $this->get_attr( 'container-class' ) ),
 			array(
 				'edge-images-container',
-				'edge-images-container-' . $size_class,
+				$this->attrs['container-type'] . '-' . $size_class,
 				isset( $this->attrs['layout'] ) ? $this->attrs['layout'] : null,
 			)
 		);
