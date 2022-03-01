@@ -16,10 +16,10 @@ This is often imprecise. Images are often loaded at 'roughly the right size', th
 
 WordPress attempts to mitigate this by generating `srcset` and `sizes` values in image markup. However, this isn't sophisticated enough to consider the _context_ of _where_ an image is output, and how the optimal sizes should be calculated based on theme layout/behaviour and user conditions.
 
-In an ideal world, the user would always recieve an appropriately sized image, based on a combination of the _template_ context the _user's_ context. That's far more flexibility than WordPress currently supports.
+In an ideal world, the user would always receive an appropriately sized image, based on a combination of the _template_ context the _user's_ context. That's far more flexibility than WordPress currently supports.
 
 This plugin solves these problems, by:
-- Allowing users/developers to specify more sophsiticated `sizes` and `srcset` logic for each image, based on its optimal template behaviour, and;
+- Allowing users/developers to specify more sophisticated `sizes` and `srcset` logic for each image, based on its optimal template behaviour, and;
 - Providing a large number of 'interstitial' `srcset` values (generated via an edge provider, in order to avoid storage/generation overheads).
 
 ## Requirements
@@ -29,7 +29,7 @@ This plugin solves these problems, by:
   - [Accelerated Domains](https://accelerateddomains.com/), with the 'Image resizing' feature enabled.
 
 ## Customization
-The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
+The plugin automatically converts WordPress' native image sizes, and any sizes registered via `add_image_size()`.
 However, more fine-grained control can be achieved by registering custom sizes and definitions using the `Edge_Images\sizes` filter.
 
 ### Using `Edge_Images\sizes`
