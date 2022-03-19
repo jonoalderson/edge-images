@@ -7,7 +7,7 @@ Automatically use an edge transformation service (e.g., [Cloudflare](https://www
 Specifically, it intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
   - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
-  - Wraps the `<img>` in a `<picture>` elem (_optional_).
+  - Wraps the `<img>` in a `<%container%>` elem (_optional_).
 
 ## What problem does this solve?
 WordPress ships with a concept of "image sizes", each of which has a _height_, _width_ and _crop_ option. It provides some defaults like 'large', 'medium' and 'thumbnail', and provides ways for developers to customize or extend these options. When a user adds images to content, or includes them in templates, they must select the most optimal size from the options available.
@@ -16,10 +16,10 @@ This is often imprecise. Images are often loaded at 'roughly the right size', th
 
 WordPress attempts to mitigate this by generating `srcset` and `sizes` values in image markup. However, this isn't sophisticated enough to consider the _context_ of _where_ an image is output, and how the optimal sizes should be calculated based on theme layout/behaviour and user conditions.
 
-In an ideal world, the user would always recieve an appropriately sized image, based on a combination of the _template_ context the _user's_ context. That's far more flexibility than WordPress currently supports.
+In an ideal world, the user would always receive an appropriately sized image, based on a combination of the _template_ context the _user's_ context. That's far more flexibility than WordPress currently supports.
 
 This plugin solves these problems, by:
-- Allowing users/developers to specify more sophsiticated `sizes` and `srcset` logic for each image, based on its optimal template behaviour, and;
+- Allowing users/developers to specify more sophisticated `sizes` and `srcset` logic for each image, based on its optimal template behaviour, and;
 - Providing a large number of 'interstitial' `srcset` values (generated via an edge provider, in order to avoid storage/generation overheads).
 
 ## Requirements
@@ -29,7 +29,7 @@ This plugin solves these problems, by:
   - [Accelerated Domains](https://accelerateddomains.com/), with the 'Image resizing' feature enabled.
 
 ## Customization
-The plugin automatically converts WordPress' native image sizes, and any sizes registerd via `add_image_size()`.
+The plugin automatically converts WordPress' native image sizes, and any sizes registered via `add_image_size()`.
 However, more fine-grained control can be achieved by registering custom sizes and definitions using the `Edge_Images\sizes` filter.
 
 ### Using `Edge_Images\sizes`
@@ -43,14 +43,12 @@ The `Edge_Images\sizes` filter expects and returns an associative array of image
 - `sizes` (`str`):  The `sizes` attribute to be used on the `<img>` elem.
 - `srcset` (`arr`): An array of `width`/`height` arrays. Used to generate the `srcset` attribute (and stepped variations) on the `<img>` elem.
 - `fit` (`str`): Sets the `fit` attribute on the `<img>` elem. Defaults to `cover`.
-  - Options differ by edge providers (see https://developers.cloudflare.com/images/image-resizing/url-format).
 - `layout` (`str`): Determines how `<img>` markup should be generated, based on whether the image is `responsive` or has `fixed` dimensions. Defaults to `responsive`.
 - `loading` (`str`): Sets the `loading` attribute on the `<img>` elem. Defaults to `lazy`.
 - `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
 - `class` (`array`|`str`): Extends the `class` value(s) on the `<img>` elem.
-  - Always outputs `attachment-%size% size-%size% edge-images-img` (where `%size%` is the sanitized image size name).
-- `picture-class` (`array`|`str`): Extends the `class` value(s) on the `<picture>` elem.
-  - Always outputs `layout-%layout% picture-%size% edge-images-picture image-id-%id%` (where `%size%` is the sanitized image size name, `%layout%` is the `layout` value, and `%id%` is the attachment ID).
+- `container-type` (`str`): Sets the `<%container%>` tag type. Defaults to `figure`.
+- `container-class` (`array`|`str`): Extends the `class` value(s) on the `<%container%>` elem.
 
 #### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
@@ -125,7 +123,7 @@ function my_example_sizes($sizes) {
       ),
     ),
     'loading' => 'eager',
-    'picture-class' => array('pineapples', 'bananas'),
+    'container-class' => array('pineapples', 'bananas'),
     'class' => 'oranges'
   );
   return $sizes;
@@ -137,7 +135,7 @@ function my_example_sizes($sizes) {
 - `Edge_Images\disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
 - `Edge_Images\exclude` (`array`): An array of images to exclude from transformation.
 - `Edge_Images\force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
-- `Edge_Images\disable_picture_wrap` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
+- `Edge_Images\disable_container_wrap` (`bool`): Disable wrapping images in a `<%container%>` element (and disable the associated CSS). Defaults to `false`.
 
 #### General configuration
 - `Edge_Images\provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
@@ -199,6 +197,7 @@ public function register_edge_image_sizes( array $sizes ) : array {
     'height'  => 500,
     'sizes'   => '(max-width: 968px) calc(100vw - 2.5em), 968px',
     'loading' => 'eager',
+    'container-type' => 'picture',
   );
 }
 
@@ -280,7 +279,4 @@ Supports the following filters:
 
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
-- Linked images (e.g., `<a href="page.html"><img src="image.jpg" /></a>`; links are removed)
-- Images with captions (captions are removed)
-- Non-native or complex image blocks like galleries, or images nested in other blocks
 - Inheriting additional/custom classes from the block editor's 'advanced' settings
