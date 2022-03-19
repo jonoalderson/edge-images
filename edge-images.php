@@ -150,3 +150,15 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 
 	return $image;
 }
+
+/**
+ * Replace a SRC string with an edge version
+ *
+ * @param  string $src  The src.
+ * @param  array  $args The args.
+ *
+ * @return string       The modified SRC attr.
+ */
+function convert_to_edge_image( string $src, array $args ) : string {
+	return Helpers::edge_src( $src, $args );
+}
