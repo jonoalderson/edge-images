@@ -320,6 +320,11 @@ class Image {
 	 */
 	private function init_srcset() : void {
 
+		// Bail if we're missing an SRC.
+		if ( ! isset( $this->attrs['src'] ) || ! $this->attrs['src'] ) {
+			return;
+		}
+
 		// Bail if this is an SVG.
 		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
 			unset( $this->attrs['srcset'] ); // SVGs don't need/support this.
