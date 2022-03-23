@@ -414,16 +414,16 @@ class Helpers {
 	 */
 	public static function allowed_img_attrs() : array {
 		return array(
-			'src'      => array(),
-			'width'    => array(),
-			'height'   => array(),
-			'srcset'   => array(),
-			'sizes'    => array(),
-			'loading'  => array(),
-			'decoding' => array(),
-			'class'    => array(),
-			'alt'      => array(),
-			'priority' => array(),
+			'src'           => array(),
+			'width'         => array(),
+			'height'        => array(),
+			'srcset'        => array(),
+			'sizes'         => array(),
+			'loading'       => array(),
+			'decoding'      => array(),
+			'class'         => array(),
+			'alt'           => array(),
+			'fetchpriority' => array(),
 		);
 	}
 
