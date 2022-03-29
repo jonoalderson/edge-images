@@ -37,7 +37,7 @@ class Image {
 	 * @param array  $attrs  The attachment attributes.
 	 * @param string $size The size.
 	 */
-	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
+	public function __construct( int $id, array $attrs = array(), $size = 'large' ) {
 		$this->id    = $id;
 		$this->attrs = wp_parse_args( $attrs, $this->get_default_attrs() );
 		$this->set_size( $size );

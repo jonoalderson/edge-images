@@ -75,8 +75,6 @@ function deactivate_plugin() : void {
 
 }
 
-
-
 /**
  * Returns a Cloudflared image
  *
@@ -87,7 +85,7 @@ function deactivate_plugin() : void {
  *
  * @return false|string  The image HTML
  */
-function get_edge_image( int $id, array $atts = array(), $size, bool $echo = true ) {
+function get_edge_image( int $id, array $atts = array(), $size = 'large', bool $echo = true ) {
 
 	// Bail if this isn't a valid image ID.
 	if ( get_post_type( $id ) !== 'attachment' ) {
@@ -130,7 +128,7 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
  *
  * @return false|object        The image object
  */
-function get_edge_image_object( int $id, array $atts = array(), $size ) {
+function get_edge_image_object( int $id, array $atts = array(), $size = 'large' ) {
 
 	// Fall back to a normal image if we don't have everything we need.
 	if (
@@ -154,11 +152,21 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 /**
  * Replace a SRC string with an edge version
  *
- * @param  string $src  The src.
- * @param  array  $args The args.
+ * @param  string       $src  The src.
+ * @param  string|array $size The image size.
+ * @param  array        $args The args.
  *
  * @return string       The modified SRC attr.
  */
-function convert_to_edge_image( string $src, array $args ) : string {
-	return Helpers::edge_src( $src, $args );
+function get_edge_image_from_src( string $src, $size = 'large', array $args = array() ) : string {
+
+	// Get the attachment ID from the string.
+	$attachment_id = attachment_url_to_postid( $src );
+	if ( ! $attachment_id ) {
+		// Do a direct replacement if we couldn't find one.
+		return Helpers::edge_src( $src, $args, $size );
+	}
+
+	$image = get_edge_image( $attachment_id, $args, $size, false );
+	return $image;
 }
