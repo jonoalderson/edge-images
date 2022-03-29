@@ -154,20 +154,30 @@ function get_edge_image_object( int $id, array $atts = array(), $size = 'large' 
  *
  * @param  string       $src  The src.
  * @param  string|array $size The image size.
- * @param  array        $args The args.
  *
  * @return string       The modified SRC attr.
  */
-function get_edge_image_from_src( string $src, $size = 'large', array $args = array() ) : string {
+function convert_src( string $src, $size = 'large' ) : string {
+	return Helpers::edge_src( $src, array(), $size );
+}
+
+/**
+ * Get an Edge Image from an attachment SRC
+ *
+ * @param  string       $src  The src.
+ * @param  string|array $size The image size.
+ * @param  array        $args The args.
+ *
+ * @return string|false       The image HTML, or FALSE if no attachment was found.
+ */
+function from_src( string $src, $size = 'large', array $args = array() ) {
 
 	// Get the attachment ID from the string.
 	$attachment_id = attachment_url_to_postid( $src );
 
 	if ( ! $attachment_id ) {
-		// Do a direct replacement if we couldn't find one.
-		return Helpers::edge_src( $src, $args, $size );
+		return false;
 	}
 
-	$image = get_edge_image( $attachment_id, $args, $size, false );
-	return $image;
+	return get_edge_image( $attachment_id, $args, $size, false );
 }
