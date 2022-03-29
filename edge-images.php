@@ -162,8 +162,7 @@ function get_edge_image_from_src( string $src, $size = 'large', array $args = ar
 
 	// Get the attachment ID from the string.
 	$attachment_id = attachment_url_to_postid( $src );
-	echo $attachment_id;
-	die;
+
 	if ( ! $attachment_id ) {
 		// Do a direct replacement if we couldn't find one.
 		return Helpers::edge_src( $src, $args, $size );
