@@ -158,7 +158,11 @@ function get_edge_image_object( int $id, array $atts = array(), $size = 'large' 
  * @return string       The modified SRC attr.
  */
 function convert_src( string $src, $size = 'large' ) : string {
-	return Helpers::edge_src( $src, array(), $size );
+	$sizes          = Helpers::get_sizes_from_size( $size );
+	$args['width']  = $sizes['width'];
+	$args['height'] = $sizes['height'];
+
+	return Helpers::edge_src( $src, $args );
 }
 
 /**
