@@ -562,12 +562,18 @@ class Helpers {
 	 * @return array       The width and height
 	 */
 	public static function get_sizes_from_size( $size ) {
+
+		// Set defaults based on a 4/3 ratio constrained by the content width.
+		$width           = self::get_content_width();
+		$sizes['width']  = $width;
+		$sizes['height'] = $width * 0.75;
+
 		switch ( true ) {
 			// If the $size is an array, just use the values provided.
 			case ( is_array( $size ) ):
 				$sizes['width']  = $size[0];
 				$sizes['height'] = $size[1];
-				return;
+				break;
 			// If it's a string, go fetch the values for that image size.
 			case ( is_string( $size ) ):
 				$vals = self::get_wp_size_vals( $size );
@@ -576,13 +582,8 @@ class Helpers {
 				}
 				$sizes['width']  = $vals['width'];
 				$sizes['height'] = $vals['height'];
-				return;
+				break;
 		}
-
-		// Fall back to a 4/3 ratio constrained by the content width.
-		$width           = self::get_content_width();
-		$sizes['width']  = $width;
-		$sizes['height'] = $width * 0.75;
 
 		return $sizes;
 	}
