@@ -564,9 +564,11 @@ class Helpers {
 	public static function get_sizes_from_size( $size ) {
 
 		// Set defaults based on a 4/3 ratio constrained by the content width.
-		$width           = self::get_content_width();
-		$sizes['width']  = $width;
-		$sizes['height'] = $width * 0.75;
+		$width = self::get_content_width();
+		$sizes = array(
+			'width'  => $width,
+			'height' => $width * 0.75,
+		);
 
 		switch ( true ) {
 			// If the $size is an array, just use the values provided.
