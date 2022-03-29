@@ -554,4 +554,37 @@ class Helpers {
 		return $matches[1][0];
 	}
 
+	/**
+	 * Convert a size value into a height and width array
+	 *
+	 * @param  string|array $size The size to use or convert.
+	 *
+	 * @return array       The width and height
+	 */
+	public static function get_sizes_from_size( $size ) {
+		switch ( true ) {
+			// If the $size is an array, just use the values provided.
+			case ( is_array( $size ) ):
+				$sizes['width']  = $size[0];
+				$sizes['height'] = $size[1];
+				return;
+			// If it's a string, go fetch the values for that image size.
+			case ( is_string( $size ) ):
+				$vals = self::get_wp_size_vals( $size );
+				if ( ! $vals ) {
+					break;
+				}
+				$sizes['width']  = $vals['width'];
+				$sizes['height'] = $vals['height'];
+				return;
+		}
+
+		// Fall back to a 4/3 ratio constrained by the content width.
+		$width           = self::get_content_width();
+		$sizes['width']  = $width;
+		$sizes['height'] = $width * 0.75;
+
+		return $sizes;
+	}
+
 }

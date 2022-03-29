@@ -133,32 +133,10 @@ class Image {
 			return;
 		}
 
-		$size = $this->get_size();
-
-		// If the $size is an array, just use the values provided.
-		if ( is_array( $size ) ) {
-			$this->attrs['width']  = $size[0];
-			$this->attrs['height'] = $size[1];
-			return;
-		}
-
-		// If it's a string, go fetch the values for that image size.
-		if ( is_string( $size ) ) {
-			$vals = Helpers::get_wp_size_vals( $size );
-			if ( ! $vals ) {
-				return;
-			}
-			$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
-			$this->attrs['width']  = $image[1];
-			$this->attrs['height'] = $image[2];
-			return;
-		}
-
-		// Fall back to a 4/3 ratio constrained by the content width.
-		$width                 = Helpers::get_content_width();
-		$this->attrs['width']  = $width;
-		$this->attrs['height'] = $width * 0.75;
-
+		$size                  = $this->get_size();
+		$sizes                 = Helpers::get_sizes_from_size( $size );
+		$this->attrs['width']  = $sizes['width'];
+		$this->attrs['height'] = $sizes['height'];
 	}
 
 	/**
