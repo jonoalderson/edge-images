@@ -276,9 +276,11 @@ class Handler {
 		}
 
 		// Merge defaults into $attr.
-		$defaults      = Helpers::get_default_image_attrs();
-		$attr['class'] = implode( ' ', array_merge( explode( ' ', $attr['class'] ), $defaults['class'] ) );
-		$attr          = wp_parse_args( $attr, $defaults );
+		$defaults                = Helpers::get_default_image_attrs();
+		$attr['class']           = implode( ' ', array_merge( explode( ' ', $attr['class'] ), $defaults['class'] ) );
+		$attr['container-class'] = implode( ' ', array_merge( explode( ' ', $attr['container-class'] ), $defaults['container-class'] ) );
+
+		$attr = wp_parse_args( $attr, $defaults );
 
 		// Get the edge image sizes array.
 		$sizes = apply_filters( 'Edge_Images\sizes', Helpers::get_wp_image_sizes() );
