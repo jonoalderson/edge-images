@@ -275,24 +275,6 @@ class Handler {
 			return $html;
 		}
 
-		// Merge defaults into $attr.
-		$defaults = Helpers::get_default_image_attrs();
-
-		$attr = wp_parse_args( $attr, $defaults );
-
-		// Get the edge image sizes array.
-		$sizes = apply_filters( 'Edge_Images\sizes', Helpers::get_wp_image_sizes() );
-
-		// Grab the attrs for the image size, or continue with defaults.
-		$size = Helpers::normalize_size_attr( $size );
-		if ( array_key_exists( $size, $sizes ) ) {
-			$attr = wp_parse_args( $sizes[ $size ], $attr );
-		}
-
-		// Merge our default classes and container classes back in.
-		$attr['class']           = implode( ' ', array_merge( explode( ' ', Helpers::classes_array_to_string( $attr['class'] ) ), $defaults['class'] ) );
-		$attr['container-class'] = implode( ' ', array_merge( explode( ' ', Helpers::classes_array_to_string( $attr['container-class'] ) ), $defaults['container-class'] ) );
-
 		// Maybe wrap the picture in a link.
 		if ( isset( $attr['href'] ) && $attr['href'] ) {
 			$html = sprintf(
