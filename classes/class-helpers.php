@@ -375,11 +375,11 @@ class Helpers {
 		}
 
 		// Don't ever transform the src if this is a local or dev environment.
-		switch ( wp_get_environment_type() ) {
-			case 'local':
-			case 'development':
-				return false;
-		}
+		// switch ( wp_get_environment_type() ) {
+		// case 'local':
+		// case 'development':
+		// return false;
+		// }
 
 		return true;
 	}
@@ -564,11 +564,9 @@ class Helpers {
 	public static function get_sizes_from_size( $size ) {
 
 		// Set defaults based on a 4/3 ratio constrained by the content width.
-		$width = self::get_content_width();
-		$sizes = array(
-			'width'  => $width,
-			'height' => $width * 0.75,
-		);
+		$width           = self::get_content_width();
+		$sizes['width']  = $width;
+		$sizes['height'] = $width * 0.75;
 
 		switch ( true ) {
 			// If the $size is an array, just use the values provided.
@@ -588,6 +586,28 @@ class Helpers {
 		}
 
 		return $sizes;
+	}
+
+	/**
+	 * Returns an array with default properties.
+	 *
+	 * @return array Array with default properties.
+	 */
+	public static function get_default_image_attrs() : array {
+		$width  = self::get_content_width();
+		$height = $width * 0.75;
+		$attrs  = array(
+			'class'           => array( 'edge-images-img' ),
+			'container-class' => array( 'edge-images-container' ),
+			'layout'          => 'responsive',
+			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
+			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
+			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
+			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
+			'caption'         => false,
+		);
+
+		return $attrs;
 	}
 
 }

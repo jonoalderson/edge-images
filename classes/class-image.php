@@ -39,7 +39,7 @@ class Image {
 	 */
 	public function __construct( int $id, array $attrs = array(), $size = 'large' ) {
 		$this->id    = $id;
-		$this->attrs = wp_parse_args( $attrs, $this->get_default_attrs() );
+		$this->attrs = wp_parse_args( $attrs, Helpers::get_default_image_attrs() );
 		$this->set_size( $size );
 		$this->init();
 	}
@@ -73,27 +73,6 @@ class Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
-	}
-
-	/**
-	 * Returns an array with default properties.
-	 *
-	 * @return array Array with default properties.
-	 */
-	public function get_default_attrs() : array {
-		$width  = Helpers::get_content_width();
-		$height = $width * 0.75;
-		$attrs  = array(
-			'class'           => array(),
-			'container-class' => array(),
-			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
-			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
-			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
-			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
-			'caption'         => false,
-		);
-
-		return $attrs;
 	}
 
 	/**

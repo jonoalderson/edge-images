@@ -97,10 +97,10 @@ class Handler {
 	public function enqueue_css() : void {
 
 		// Bail if images shouldn't wrap in a container.
-		$disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
-		if ( $disable ) {
-			return;
-		}
+		// $disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
+		// if ( $disable ) {
+		// return;
+		// }
 
 		// Get our stylesheet
 		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
@@ -275,6 +275,19 @@ class Handler {
 			return $html;
 		}
 
+		// Merge defaults into $attr.
+		$defaults      = Helpers::get_default_image_attrs();
+		$attr['class'] = implode( ' ', array_merge( explode( ' ', $attr['class'] ), $defaults['class'] ) );
+		$attr          = wp_parse_args( $attr, $defaults );
+
+		// Get the edge image sizes array.
+		$sizes = apply_filters( 'Edge_Images\sizes', Helpers::get_wp_image_sizes() );
+
+		// Grab the attrs for the image size, or continue with defaults.
+		if ( array_key_exists( $size, $sizes ) ) {
+			$attr = wp_parse_args( $sizes[ $size ], $attr );
+		}
+
 		// Maybe wrap the picture in a link.
 		if ( isset( $attr['href'] ) && $attr['href'] ) {
 			$html = sprintf(
@@ -297,12 +310,12 @@ class Handler {
 		if ( apply_filters( 'Edge_Images\disable_container_wrap', false ) !== true ) {
 			$html = sprintf(
 				'<%s style="%s" class="%s %s">%s</%s>',
-				$attr['container-type'],
+				( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
 				self::get_container_styles( $attr ),
-				Helpers::classes_array_to_string( $attr['container-class'] ),
+				( isset( $attr['container-class'] ) ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
 				'image-id-' . $attachment_id,
 				$html,
-				$attr['container-type']
+				( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
 			);
 		}
 
@@ -430,6 +443,7 @@ class Handler {
 			return $attrs;
 		}
 
+		// Bail if this image shouldn't use the edge.
 		if ( ! $this->image_should_use_edge( $attachment->ID, $attrs ) ) {
 			return $attrs;
 		}

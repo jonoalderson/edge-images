@@ -24,6 +24,7 @@ class Cloudflare extends Edge_Provider {
 			'onerror'  => ( isset( $this->args['onerror'] ) ) ? $this->args['onerror'] : 'redirect',
 			'metadata' => ( isset( $this->args['metadata'] ) ) ? $this->args['metadata'] : 'none',
 			'dpr'      => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
+
 		);
 
 		// Optional properties.
