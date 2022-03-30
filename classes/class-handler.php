@@ -97,10 +97,10 @@ class Handler {
 	public function enqueue_css() : void {
 
 		// Bail if images shouldn't wrap in a container.
-		// $disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
-		// if ( $disable ) {
-		// return;
-		// }
+		$disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
+		if ( $disable ) {
+			return;
+		}
 
 		// Get our stylesheet
 		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
