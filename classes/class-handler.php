@@ -276,9 +276,7 @@ class Handler {
 		}
 
 		// Merge defaults into $attr.
-		$defaults                = Helpers::get_default_image_attrs();
-		$attr['class']           = implode( ' ', array_merge( explode( ' ', $attr['class'] ), $defaults['class'] ) );
-		$attr['container-class'] = implode( ' ', array_merge( explode( ' ', $attr['container-class'] ), $defaults['container-class'] ) );
+		$defaults = Helpers::get_default_image_attrs();
 
 		$attr = wp_parse_args( $attr, $defaults );
 
@@ -290,6 +288,10 @@ class Handler {
 		if ( array_key_exists( $size, $sizes ) ) {
 			$attr = wp_parse_args( $sizes[ $size ], $attr );
 		}
+
+		// Merge our default classes and container classes back in.
+		$attr['class']           = implode( ' ', array_merge( explode( ' ', Helpers::classes_array_to_string( $attr['class'] ) ), $defaults['class'] ) );
+		$attr['container-class'] = implode( ' ', array_merge( explode( ' ', Helpers::classes_array_to_string( $attr['container-class'] ) ), $defaults['container-class'] ) );
 
 		// Maybe wrap the picture in a link.
 		if ( isset( $attr['href'] ) && $attr['href'] ) {
