@@ -37,9 +37,9 @@ class Image {
 	 * @param array  $attrs  The attachment attributes.
 	 * @param string $size The size.
 	 */
-	public function __construct( int $id, array $attrs = array(), $size = 'full' ) {
+	public function __construct( int $id, array $attrs = array(), $size = 'large' ) {
 		$this->id    = $id;
-		$this->attrs = wp_parse_args( $attrs, $this->get_default_attrs() );
+		$this->attrs = wp_parse_args( $attrs, Helpers::get_default_image_attrs() );
 		$this->set_size( $size );
 		$this->init();
 	}
@@ -73,27 +73,6 @@ class Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
-	}
-
-	/**
-	 * Returns an array with default properties.
-	 *
-	 * @return array Array with default properties.
-	 */
-	public function get_default_attrs() : array {
-		$width  = Helpers::get_content_width();
-		$height = $width * 0.75;
-		$attrs  = array(
-			'class'           => array(),
-			'container-class' => array(),
-			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
-			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
-			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
-			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
-			'caption'         => false,
-		);
-
-		return $attrs;
 	}
 
 	/**
@@ -133,32 +112,10 @@ class Image {
 			return;
 		}
 
-		$size = $this->get_size();
-
-		// If the $size is an array, just use the values provided.
-		if ( is_array( $size ) ) {
-			$this->attrs['width']  = $size[0];
-			$this->attrs['height'] = $size[1];
-			return;
-		}
-
-		// If it's a string, go fetch the values for that image size.
-		if ( is_string( $size ) ) {
-			$vals = Helpers::get_wp_size_vals( $size );
-			if ( ! $vals ) {
-				return;
-			}
-			$image                 = wp_get_attachment_image_src( $this->get_id(), $size );
-			$this->attrs['width']  = $image[1];
-			$this->attrs['height'] = $image[2];
-			return;
-		}
-
-		// Fall back to a 4/3 ratio constrained by the content width.
-		$width                 = Helpers::get_content_width();
-		$this->attrs['width']  = $width;
-		$this->attrs['height'] = $width * 0.75;
-
+		$size                  = $this->get_size();
+		$sizes                 = Helpers::get_sizes_from_size( $size );
+		$this->attrs['width']  = $sizes['width'];
+		$this->attrs['height'] = $sizes['height'];
 	}
 
 	/**

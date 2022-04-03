@@ -375,11 +375,11 @@ class Helpers {
 		}
 
 		// Don't ever transform the src if this is a local or dev environment.
-		switch ( wp_get_environment_type() ) {
-			case 'local':
-			case 'development':
-				return false;
-		}
+		// switch ( wp_get_environment_type() ) {
+		// case 'local':
+		// case 'development':
+		// return false;
+		// }
 
 		return true;
 	}
@@ -552,6 +552,62 @@ class Helpers {
 			return $caption;
 		}
 		return $matches[1][0];
+	}
+
+	/**
+	 * Convert a size value into a height and width array
+	 *
+	 * @param  string|array $size The size to use or convert.
+	 *
+	 * @return array       The width and height
+	 */
+	public static function get_sizes_from_size( $size ) {
+
+		// Set defaults based on a 4/3 ratio constrained by the content width.
+		$width           = self::get_content_width();
+		$sizes['width']  = $width;
+		$sizes['height'] = $width * 0.75;
+
+		switch ( true ) {
+			// If the $size is an array, just use the values provided.
+			case ( is_array( $size ) ):
+				$sizes['width']  = $size[0];
+				$sizes['height'] = $size[1];
+				break;
+			// If it's a string, go fetch the values for that image size.
+			case ( is_string( $size ) ):
+				$vals = self::get_wp_size_vals( $size );
+				if ( ! $vals ) {
+					break;
+				}
+				$sizes['width']  = $vals['width'];
+				$sizes['height'] = $vals['height'];
+				break;
+		}
+
+		return $sizes;
+	}
+
+	/**
+	 * Returns an array with default properties.
+	 *
+	 * @return array Array with default properties.
+	 */
+	public static function get_default_image_attrs() : array {
+		$width  = self::get_content_width();
+		$height = $width * 0.75;
+		$attrs  = array(
+			'class'           => array( 'edge-images-img' ),
+			'container-class' => array( 'edge-images-container' ),
+			'layout'          => 'responsive',
+			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
+			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
+			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
+			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
+			'caption'         => false,
+		);
+
+		return $attrs;
 	}
 
 }

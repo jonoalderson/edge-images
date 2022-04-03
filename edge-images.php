@@ -75,8 +75,6 @@ function deactivate_plugin() : void {
 
 }
 
-
-
 /**
  * Returns a Cloudflared image
  *
@@ -87,7 +85,7 @@ function deactivate_plugin() : void {
  *
  * @return false|string  The image HTML
  */
-function get_edge_image( int $id, array $atts = array(), $size, bool $echo = true ) {
+function get_edge_image( int $id, array $atts = array(), $size = 'large', bool $echo = true ) {
 
 	// Bail if this isn't a valid image ID.
 	if ( get_post_type( $id ) !== 'attachment' ) {
@@ -99,7 +97,6 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
 
 	// Try to fall back to a normal WP image if we didn't get an image object.
 	if ( ! $image ) {
-
 		$image = wp_get_attachment_image( $id, $size, false, $atts );
 		if ( $echo ) {
 			echo wp_kses( $image, array( 'img' ) );
@@ -130,7 +127,7 @@ function get_edge_image( int $id, array $atts = array(), $size, bool $echo = tru
  *
  * @return false|object        The image object
  */
-function get_edge_image_object( int $id, array $atts = array(), $size ) {
+function get_edge_image_object( int $id, array $atts = array(), $size = 'large' ) {
 
 	// Fall back to a normal image if we don't have everything we need.
 	if (
@@ -154,11 +151,36 @@ function get_edge_image_object( int $id, array $atts = array(), $size ) {
 /**
  * Replace a SRC string with an edge version
  *
- * @param  string $src  The src.
- * @param  array  $args The args.
+ * @param  string       $src  The src.
+ * @param  string|array $size The image size.
  *
  * @return string       The modified SRC attr.
  */
-function convert_to_edge_image( string $src, array $args ) : string {
+function convert_src( string $src, $size = 'large' ) : string {
+	$sizes          = Helpers::get_sizes_from_size( $size );
+	$args['width']  = $sizes['width'];
+	$args['height'] = $sizes['height'];
+
 	return Helpers::edge_src( $src, $args );
+}
+
+/**
+ * Get an Edge Image from an attachment SRC
+ *
+ * @param  string       $src  The src.
+ * @param  string|array $size The image size.
+ * @param  array        $args The args.
+ *
+ * @return string|false       The image HTML, or FALSE if no attachment was found.
+ */
+function from_src( string $src, $size = 'large', array $args = array() ) {
+
+	// Get the attachment ID from the string.
+	$attachment_id = attachment_url_to_postid( $src );
+
+	if ( ! $attachment_id ) {
+		return false;
+	}
+
+	return get_edge_image( $attachment_id, $args, $size, false );
 }

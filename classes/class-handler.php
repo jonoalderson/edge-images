@@ -297,12 +297,12 @@ class Handler {
 		if ( apply_filters( 'Edge_Images\disable_container_wrap', false ) !== true ) {
 			$html = sprintf(
 				'<%s style="%s" class="%s %s">%s</%s>',
-				$attr['container-type'],
+				( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
 				self::get_container_styles( $attr ),
-				Helpers::classes_array_to_string( $attr['container-class'] ),
+				( isset( $attr['container-class'] ) ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
 				'image-id-' . $attachment_id,
 				$html,
-				$attr['container-type']
+				( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
 			);
 		}
 
@@ -430,6 +430,7 @@ class Handler {
 			return $attrs;
 		}
 
+		// Bail if this image shouldn't use the edge.
 		if ( ! $this->image_should_use_edge( $attachment->ID, $attrs ) ) {
 			return $attrs;
 		}
