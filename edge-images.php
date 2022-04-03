@@ -97,7 +97,6 @@ function get_edge_image( int $id, array $atts = array(), $size = 'large', bool $
 
 	// Try to fall back to a normal WP image if we didn't get an image object.
 	if ( ! $image ) {
-
 		$image = wp_get_attachment_image( $id, $size, false, $atts );
 		if ( $echo ) {
 			echo wp_kses( $image, array( 'img' ) );
