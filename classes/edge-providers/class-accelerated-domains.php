@@ -60,12 +60,7 @@ class Accelerated_Domains extends Edge_Provider {
 			)
 		);
 
-		return $edge_url;
+		return esc_attr( $edge_url ); // Escape the ampersands to match WP's image handling.
 	}
-
-
-
-
-
 
 }
