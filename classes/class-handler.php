@@ -334,14 +334,12 @@ class Handler {
 		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1';
 		$styles[] = '--aspect-ratio:' . $ratio;
 
-		// Add height and width inline styles if this is a fixed image.
-		if ( $attr['layout'] === 'fixed' ) {
-			if ( $attr['width'] ) {
-				$styles[] = sprintf( 'max-width:%dpx', $attr['width'] );
-			}
-			if ( $attr['height'] ) {
-				$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
-			}
+		// Add max height and width.
+		if ( $attr['width'] ) {
+			$styles[] = sprintf( 'max-width:%dpx', $attr['width'] );
+		}
+		if ( $attr['height'] ) {
+			$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
 		}
 
 		return implode( ';', $styles );
