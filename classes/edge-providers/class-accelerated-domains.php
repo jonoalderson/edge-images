@@ -56,11 +56,11 @@ class Accelerated_Domains extends Edge_Provider {
 			http_build_query(
 				$this->get_properties(),
 				'',
-				'%26' // ampersand
+				'&'
 			)
 		);
 
-		return esc_url( $edge_url );
+		return esc_url_raw( $edge_url );
 	}
 
 
