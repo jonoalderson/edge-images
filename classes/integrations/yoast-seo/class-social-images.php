@@ -150,7 +150,7 @@ class Social_Images {
 		);
 		$src  = Helpers::edge_src( $image[0], $args );
 
-		return ( $src ) ? $src : $output;
+		return ( $src ) ? str_replace( '&amp;', '&', $src ) : $output;
 	}
 
 }
