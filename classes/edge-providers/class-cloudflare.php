@@ -57,10 +57,10 @@ class Cloudflare extends Edge_Provider {
 		$edge_url = $edge_prefix . http_build_query(
 			$this->get_properties(),
 			'',
-			'%2C'
+			'%2C' // comma
 		);
 
-		return esc_attr( $edge_url . $this->path );
+		return $edge_url;
 	}
 
 }
