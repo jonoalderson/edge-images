@@ -60,7 +60,7 @@ class Cloudflare extends Edge_Provider {
 			'%2C'
 		);
 
-		return esc_attr( $edge_url . $this->path );
+		return esc_url( $edge_url . $this->path );
 	}
 
 }

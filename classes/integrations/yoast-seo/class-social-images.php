@@ -150,7 +150,12 @@ class Social_Images {
 		);
 		$src  = Helpers::edge_src( $image[0], $args );
 
-		return ( $src ) ? $src : $output;
+		// Bail if we couldn't get an SRC.
+		if ( ! $src ) {
+			return $output;
+		}
+
+		return $src;
 	}
 
 }
