@@ -56,7 +56,7 @@ class Accelerated_Domains extends Edge_Provider {
 			http_build_query(
 				$this->get_properties(),
 				'',
-				'&'
+				'%26' // ampersand
 			)
 		);
 
