@@ -142,11 +142,16 @@ class Social_Images {
 
 		// Convert the image src to a Cloudflare string.
 		$args = array(
-			'width'  => self::OG_WIDTH,
-			'height' => self::OG_HEIGHT,
-			'fit'    => 'cover',
+			'width'   => self::OG_WIDTH,
+			'height'  => self::OG_HEIGHT,
+			'sharpen' => 1,
+			'cover'   => 'pad',
+			'fit'     => 'cover',
 		);
 		$src  = Helpers::edge_src( $image[0], $args );
+
+		echo $src;
+		die;
 
 		return ( $src ) ? $src : $output;
 	}
