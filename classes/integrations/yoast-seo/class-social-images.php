@@ -144,8 +144,8 @@ class Social_Images {
 		$args = array(
 			'width'   => self::OG_WIDTH,
 			'height'  => self::OG_HEIGHT,
-			'sharpen' => 1,
 			'fit'     => 'pad',
+			'sharpen' => 1,
 		);
 		$src  = Helpers::edge_src( $image[0], $args );
 
