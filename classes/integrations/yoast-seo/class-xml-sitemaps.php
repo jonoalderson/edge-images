@@ -76,11 +76,19 @@ class XML_Sitemaps {
 			return $uri;
 		}
 
+		// Set our args.
 		$args = array(
 			'width'  => self::IMAGE_WIDTH,
 			'height' => self::IMAGE_HEIGHT,
-			'fit'    => 'pad',
+			'fit'    => 'contain',
 		);
+
+		// Tweak the behaviour for small images.
+		if ( ( $image[1] < self::OG_WIDTH ) || ( $image[2] < self::OG_HEIGHT ) ) {
+			$args['fit']     = 'pad';
+			$args['sharpen'] = 1;
+		}
+
 		return Helpers::edge_src( $uri, $args );
 	}
 

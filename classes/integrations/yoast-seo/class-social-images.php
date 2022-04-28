@@ -67,11 +67,11 @@ class Social_Images {
 	}
 
 	/**
-	 * Remove the og:image:width and og:image:height
+	 * Manage the og:image:width and og:image:height
 	 *
-	 * @param array $presentation The presentation.
+	 * @param object $presentation The presentation.
 	 *
-	 * @return array The modified presentation
+	 * @return object The modified presentation
 	 */
 	public function set_image_dimensions( $presentation ) {
 
@@ -80,21 +80,27 @@ class Social_Images {
 			return $presentation;
 		}
 
-		// Bail if there's no key.
+		// Bail if there's no OG images key.
 		$key = array_key_first( $presentation->open_graph_images );
 		if ( ! isset( $presentation->open_graph_images[ $key ] ) ) {
 			return $presentation;
 		}
 
-		// Remove the width.
-		if ( isset( $presentation->open_graph_images[ $key ]['width'] ) ) {
-			unset( $presentation->open_graph_images[ $key ]['width'] );
+		// Remove the og:image:type (we don't know what it'll be if it's transformed).
+		if ( isset( $presentation->open_graph_images[ $key ]['type'] ) ) {
+			unset( $presentation->open_graph_images[ $key ]['type'] );
 		}
 
-		// Remove the height.
-		if ( isset( $presentation->open_graph_images[ $key ]['height'] ) ) {
-			unset( $presentation->open_graph_images[ $key ]['height'] );
+		// Get the image ID.
+		$image_id = $presentation->model->open_graph_image_id;
+		if ( ! $image_id ) {
+			return $presentation; // Bail if there's no image ID.
 		}
+
+		// Set the width and height based on the image's max dimensions.
+		$image = wp_get_attachment_image_src( $image_id, 'full' );
+		$presentation->open_graph_images[ $key ]['width']  = ( $image[1] < self::OG_WIDTH ) ? $image[1] : self::OG_WIDTH;
+		$presentation->open_graph_images[ $key ]['height'] = ( $image[2] < self::OG_HEIGHT ) ? $image[2] : self::OG_HEIGHT;
 
 		return $presentation;
 	}
@@ -140,13 +146,23 @@ class Social_Images {
 			return $output; // Bail if there's no image.
 		}
 
-		// Convert the image src to a Cloudflare string.
+		// Set our default args.
 		$args = array(
 			'width'  => self::OG_WIDTH,
 			'height' => self::OG_HEIGHT,
 			'fit'    => 'contain',
 		);
 
+		// Tweak the behaviour for small images.
+		if ( ( $image[1] < self::OG_WIDTH ) || ( $image[2] < self::OG_HEIGHT ) ) {
+			$args['fit']     = 'pad';
+			$args['sharpen'] = 1;
+		}
+
+		// Allow for filtering the args.
+		$args = apply_filters( 'Edge_Images\Yoast\social_image_args', $args );
+
+		// Convert the image src to a Cloudflare string.
 		$src = Helpers::edge_src( $image[0], $args );
 
 		// Bail if we couldn't get an SRC.

@@ -20,7 +20,7 @@ class Cloudflare extends Edge_Provider {
 			'width'    => ( isset( $this->args['width'] ) ) ? $this->args['width'] : Helpers::get_content_width(),
 			'fit'      => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
 			'f'        => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'auto',
-			'q'        => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_high(),
+			'q'        => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_default(),
 			'onerror'  => ( isset( $this->args['onerror'] ) ) ? $this->args['onerror'] : 'redirect',
 			'metadata' => ( isset( $this->args['metadata'] ) ) ? $this->args['metadata'] : 'none',
 			'dpr'      => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
