@@ -1,6 +1,17 @@
 # Edge Images
 
-**This plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below for more information.**
+**This WordPress plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below for more information.**
+
+## TOC
+- [Intro](#intro)
+- [Requirements](#requirements)
+- [Customization](#customization)
+- [Examples](#examples)
+- [Integrations](#integrations)
+- [Roadmap](#roadmap--known-issues)
+
+## Intro
+
 
 Automatically use an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)), to apply performance optimizations to `<img>` markup in WordPress.
 
@@ -9,7 +20,7 @@ Specifically, it intercepts various flavors of WordPress' native `wp_get_attachm
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
   - Wraps the `<img>` in a `<%container%>` elem (_optional_).
 
-## What problem does this solve?
+### What problem does this solve?
 WordPress ships with a concept of "image sizes", each of which has a _height_, _width_ and _crop_ option. It provides some defaults like 'large', 'medium' and 'thumbnail', and provides ways for developers to customize or extend these options. When a user adds images to content, or includes them in templates, they must select the most optimal size from the options available.
 
 This is often imprecise. Images are often loaded at 'roughly the right size', then shunk or stretched by the browser; by varying degrees of inaccuracy based on the user's context (such as viewport size, screen density, or content preferences). This is inefficient, and 'expensive' from a performance perspective.
