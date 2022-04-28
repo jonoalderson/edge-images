@@ -1,21 +1,20 @@
 # Edge Images
 
-**This WordPress plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below for more information.**
+A WordPress plugin which automatically uses an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)) to apply performance optimizations to `<img>` markup.
 
 ## TOC
-- [Intro](#intro)
+- [About](#about)
 - [Requirements](#requirements)
 - [Customization](#customization)
 - [Examples](#examples)
 - [Integrations](#integrations)
 - [Roadmap](#roadmap--known-issues)
+- [Changelog](#changelog)
 
-## Intro
+## About
 
-
-Automatically use an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)), to apply performance optimizations to `<img>` markup in WordPress.
-
-Specifically, it intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
+### How does it work?
+Edge Images intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
   - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
   - Wraps the `<img>` in a `<%container%>` elem (_optional_).
@@ -34,6 +33,7 @@ This plugin solves these problems, by:
 - Providing a large number of 'interstitial' `srcset` values (generated via an edge provider, in order to avoid storage/generation overheads).
 
 ## Requirements
+- PHP 7.0+
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
 - Supported edge providers are:
   - [Cloudflare](https://www.cloudflare.com/), with the 'Image resizing' feature enabled (note that this requires a _Pro_ account or higher).
@@ -293,3 +293,8 @@ Supports the following filters:
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
 - Inheriting additional/custom classes from the block editor's 'advanced' settings
+
+## Changelog
+
+### 28/04/2022
+- Added a changelog
