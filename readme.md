@@ -12,9 +12,9 @@ A WordPress plugin which automatically uses an edge transformation service (e.g.
 
 ## About
 
-### How does it work?
+### What does it do?
 Edge Images intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
-  - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
+  - Uses an associative array of named (or h/w array value) sizes as lookups for user-defined layout, presentation and optimization rules.
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
   - Wraps the `<img>` in a `<%container%>` elem (_optional_).
 
@@ -295,5 +295,5 @@ Does not currently support (but will in an upcoming release):
 
 ## Changelog
 
-### 28/04/2022
-- Added a changelog
+### 28/04/2022 - V2.0
+- First stable beta release
