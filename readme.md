@@ -25,7 +25,7 @@ This plugin solves these problems, by:
 ## Requirements
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
 - Supported edge providers are:
-  - [Cloudflare](https://www.cloudflare.com/), with the 'Image resizing' feature enabled (requires a _Pro_ account or higher).
+  - [Cloudflare](https://www.cloudflare.com/), with the 'Image resizing' feature enabled (note that this requires a _Pro_ account or higher).
   - [Accelerated Domains](https://accelerateddomains.com/), with the 'Image resizing' feature enabled.
 
 ## Customization
@@ -36,13 +36,16 @@ However, more fine-grained control can be achieved by registering custom sizes a
 The `Edge_Images\sizes` filter expects and returns an associative array of image definitions; where they key is the _name_ of the size, and the value is an array constructed with the following properties.
 
 #### Required
-- `height` (`int`): The height in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
+- `height` (`int`): The `height` in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
 - `width` (`int`): The `width` in pixels of the image of the smallest/mobile/default size. Sets the `width` attribute on the `<img>` elem.
 
 #### Optional
 - `sizes` (`str`):  The `sizes` attribute to be used on the `<img>` elem.
 - `srcset` (`arr`): An array of `width`/`height` arrays. Used to generate the `srcset` attribute (and stepped variations) on the `<img>` elem.
 - `fit` (`str`): Sets the `fit` attribute on the `<img>` elem. Defaults to `cover`.
+- `sharpen` (`int`): Applies a sharpening effect.
+- `blur` (`int`): Applies a blurring effect.
+- `gravity` (`string`): Alters the center of gravity.
 - `layout` (`str`): Determines how `<img>` markup should be generated, based on whether the image is `responsive` or has `fixed` dimensions. Defaults to `responsive`.
 - `loading` (`str`): Sets the `loading` attribute on the `<img>` elem. Defaults to `lazy`.
 - `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
@@ -143,9 +146,7 @@ function my_example_sizes($sizes) {
 - `Edge_Images\content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
 
 #### Image quality settings
-- `Edge_Images\quality_low` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `65`.
-- `Edge_Images\quality_medium` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `75`.
-- `Edge_Images\quality_high` (`int`): The value to use for low quality images (from `1`-`100`). Defaults to `85`.
+- `Edge_Images\quality` (`int`): Alter the default quality value (from `1`-`100`). Defaults to `85`.
 
 #### `srcset` generation settings
 - `Edge_Images\step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
@@ -276,6 +277,7 @@ Supports the following filters:
 - `Edge_Images\Yoast\disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
 - `Edge_Images\Yoast\disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
 - `Edge_Images\Yoast\disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
+- `Esge_Images\Yoast\social_image_args`: (`array`): Alters the args passed to the social image.
 
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):

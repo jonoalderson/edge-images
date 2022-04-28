@@ -4,7 +4,7 @@ namespace Edge_Images;
 
 /**
  * Plugin Name: Edge Images
- * Version: 1.10
+ * Version: 1.11
  * Description: Provides support for Cloudflare's images transformation service.
  * Author: Jono Alderson
  * Text Domain: edge-images
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '1.10' );
+	define( 'EDGE_IMAGES_VERSION', '1.11' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
@@ -76,7 +76,7 @@ function deactivate_plugin() : void {
 }
 
 /**
- * Returns a Cloudflared image
+ * Returns an edge image
  *
  * @param  int          $id    The attachment ID.
  * @param  array        $atts  The atts to pass (see wp_get_attachment_image).
@@ -110,12 +110,12 @@ function get_edge_image( int $id, array $atts = array(), $size = 'large', bool $
 
 	if ( $echo ) {
 		// Echo the image.
-		echo wp_kses( $html, array( 'picture', 'figure', 'img', 'a' ) );
+		echo Helpers::sanitize_image_html( $html );
 		return;
 	}
 
 	// Or just return the HTML.
-	return $html;
+	return Helpers::sanitize_image_html( $html );
 }
 
 /**
@@ -170,25 +170,4 @@ function convert_src( string $src, $size = 'large' ) : string {
 	}
 
 	return Helpers::edge_src( $src, $args );
-}
-
-/**
- * Get an Edge Image from an attachment SRC
- *
- * @param  string       $src  The src.
- * @param  string|array $size The image size.
- * @param  array        $args The args.
- *
- * @return string|false       The image HTML, or FALSE if no attachment was found.
- */
-function from_src( string $src, $size = 'large', array $args = array() ) {
-
-	// Get the attachment ID from the string.
-	$attachment_id = attachment_url_to_postid( $src );
-
-	if ( ! $attachment_id ) {
-		return false;
-	}
-
-	return get_edge_image( $attachment_id, $args, $size, false );
 }

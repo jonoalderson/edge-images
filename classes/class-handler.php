@@ -33,7 +33,7 @@ class Handler {
 	}
 
 	/**
-	 * Fixes WP not retrieving the right values for SVGs.
+	 * Fixes WP sometimes not retrieving the right values for SVGs.
 	 *
 	 * @param  array|false  $image         The image.
 	 * @param  int          $attachment_id The attachment ID.
@@ -96,19 +96,13 @@ class Handler {
 	 */
 	public function enqueue_css() : void {
 
-		// Bail if images shouldn't wrap in a container.
-		$disable = apply_filters( 'Edge_Images\disable_container_wrap', false );
-		if ( $disable ) {
-			return;
-		}
-
 		// Get our stylesheet
 		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
 		if ( ! file_exists( $stylesheet_path ) ) {
 			return; // Bail if we couldn't find it.
 		}
 
-		// Enqueue a dummy style
+		// Enqueue a dummy style to attach our inline styles to.
 		wp_register_style( 'edge-images', false );
 		wp_enqueue_style( 'edge-images' );
 
@@ -118,16 +112,13 @@ class Handler {
 	}
 
 	/**
-	 * Alter block editor image rendering
-	 *
-	 * TODO: Account for when images are linked (via $block['attrs']['linkDestination']).
-	 * TODO: Account for figure/figcaption.
+	 * Alter block editor image rendering, and return the modified image HTML
 	 *
 	 * @param string|null   $pre_render   The pre-rendered content.
 	 * @param array         $parsed_block The parsed block's properties.
 	 * @param WP_Block|null $parent_block The parent block
 	 *
-	 * @return string|null                The HTML content to render.
+	 * @return string|null                The modified HTML content
 	 */
 	public function alter_image_block_rendering( $pre_render, array $parsed_block, $parent_block ) {
 
@@ -162,6 +153,7 @@ class Handler {
 	 * Gets atts from the <img> to pass to the edge <img>
 	 *
 	 * @param  array $parsed_block The parsed block's properties.
+	 *
 	 * @return array               The image atts array
 	 */
 	private function get_image_atts( array $parsed_block ) : array {
@@ -204,7 +196,7 @@ class Handler {
 				if ( ! $image ) {
 					break;
 				}
-				$href = $image->attrs['src'];
+				$href = ( isset( $image->attrs['src'] ) ) ? $image->attrs['src'] : '';
 				break;
 			default:
 				$href = '';
@@ -275,48 +267,87 @@ class Handler {
 			return $html;
 		}
 
-		// Maybe wrap the picture in a link.
-		if ( isset( $attr['href'] ) && $attr['href'] ) {
-			$html = sprintf(
-				'<a href="%s">%s</a>',
-				$attr['href'],
-				$html
-			);
+		$html = self::maybe_wrap_image_in_link( $html, $attr );
+		$html = self::maybe_add_caption( $html, $attr );
+		$html = self::maybe_wrap_image_in_container( $attachment_id, $html, $attr );
+		$html = Helpers::sanitize_image_html( $html );
+
+		return $html;
+	}
+
+	/**
+	 * Maybe wrap the image in a link.
+	 *
+	 * @param  string $html The image HTML.
+	 * @param  array  $attr The image attributes.
+	 *
+	 * @return string       The modified HTML
+	 */
+	private static function maybe_wrap_image_in_link( string $html, array $attr ) : string {
+
+		// Bail if there's no link.
+		if ( ! isset( $attr['href'] ) || ! $attr['href'] ) {
+			return $html;
 		}
 
-		// Maybe get a caption.
-		if ( isset( $attr['caption'] ) && $attr['caption'] ) {
-			$html = sprintf(
-				'%s<figcaption>%s</figcaption>',
-				$html,
-				$attr['caption']
-			);
-		}
-
-		// Maybe wrap the image in a container.
-		if ( apply_filters( 'Edge_Images\disable_container_wrap', false ) !== true ) {
-			$html = sprintf(
-				'<%s style="%s" class="%s %s">%s</%s>',
-				( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
-				self::get_container_styles( $attr ),
-				( isset( $attr['container-class'] ) ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
-				'image-id-' . $attachment_id,
-				$html,
-				( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
-			);
-		}
-
-		$html = wp_kses(
-			$html,
-			array(
-				'figure'     => Helpers::allowed_container_attrs(),
-				'picture'    => Helpers::allowed_container_attrs(),
-				'img'        => Helpers::allowed_img_attrs(),
-				'a'          => array( 'href' => array() ),
-				'figcaption' => array(),
-			)
+		$html = sprintf(
+			'<a href="%s">%s</a>',
+			$attr['href'],
+			$html
 		);
 
+		return $html;
+	}
+
+	/**
+	 * Maybe add a caption.
+	 *
+	 * @param  string $html The image HTML.
+	 * @param  array  $attr The image attributes.
+	 *
+	 * @return string       The modified HTML
+	 */
+	private static function maybe_add_caption( string $html, array $attr ) : string {
+
+		// Bail if there's no link.
+		if ( ! isset( $attr['caption'] ) || ! $attr['caption'] ) {
+			return $html;
+		}
+
+		$html = sprintf(
+			'%s<figcaption>%s</figcaption>',
+			$html,
+			$attr['caption']
+		);
+
+		return $html;
+	}
+
+	/**
+	 * Maybe wrap the image in a container.
+	 *
+	 * @param  int    $attachment_id The attachment ID.
+	 * @param  string $html The image HTML.
+	 * @param  array  $attr The image attributes.
+	 *
+	 * @return string       The modified HTML
+	 */
+	private static function maybe_wrap_image_in_container( int $attachment_id, string $html, array $attr ) : string {
+
+		// Bail if image wrapping is disabled.
+		if ( apply_filters( 'Edge_Images\disable_container_wrap', false ) === true ) {
+			return $html;
+		}
+
+		$html = sprintf(
+			'<%s style="%s" class="%s %s">%s</%s>',
+			( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
+			self::get_container_styles( $attr ),
+			( isset( $attr['container-class'] ) ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
+			'image-id-' . $attachment_id,
+			$html,
+			( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
+		);
 		return $html;
 	}
 
@@ -409,14 +440,14 @@ class Handler {
 	 *
 	 * @param array        $attrs      The attachment attributes.
 	 * @param \WP_Post     $attachment The attachment.
-	 * @param string|array $size The attachment size.
+	 * @param string|array $size             The attachment size.
 	 *
 	 * @return array             The modified image attributes
 	 */
 	public function route_images_through_edge( $attrs, $attachment, $size ) : array {
 
-		// Bail if $attrs isn't an array.
-		if ( ! is_array( $attrs ) ) {
+		// Bail if $attrs isn't an array, or if it's empty.
+		if ( ! is_array( $attrs ) || empty( $attrs ) ) {
 			return $attrs;
 		}
 

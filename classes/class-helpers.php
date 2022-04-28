@@ -56,28 +56,14 @@ class Helpers {
 	 *
 	 * @var integer
 	 */
-	private const WIDTH_STEP = 100;
+	private const WIDTH_STEP = 200;
 
 	/**
 	 * The default image quality.
 	 *
 	 * @var integer
 	 */
-	private const IMAGE_QUALITY_HIGH = 85;
-
-	/**
-	 * The image quality for 1.5x images.
-	 *
-	 * @var integer
-	 */
-	private const IMAGE_QUALITY_MEDIUM = 75;
-
-	/**
-	 * The image quality for 2x images.
-	 *
-	 * @var integer
-	 */
-	private const IMAGE_QUALITY_LOW = 65;
+	private const IMAGE_QUALITY_DEFAULT = 85;
 
 	/**
 	 * Replace a SRC string with an edge version
@@ -156,7 +142,7 @@ class Helpers {
 	 */
 	public static function get_content_width() : int {
 		// See if there's a filtered width.
-		$filtered_width = apply_filters( 'Edge_Images\content_width', 0 );
+		$filtered_width = (int) apply_filters( 'Edge_Images\content_width', 0 );
 		if ( $filtered_width ) {
 			return $filtered_width;
 		}
@@ -170,30 +156,12 @@ class Helpers {
 	}
 
 	/**
-	 * Get the low image quality value
+	 * Get the default image quality value
 	 *
 	 * @return int The image quality value
 	 */
-	public static function get_image_quality_low() : int {
-		return apply_filters( 'Edge_Images\quality_low', self::IMAGE_QUALITY_LOW );
-	}
-
-	/**
-	 * Get the medium image quality value
-	 *
-	 * @return int The image quality value
-	 */
-	public static function get_image_quality_medium() : int {
-		return apply_filters( 'Edge_Images\quality_medium', self::IMAGE_QUALITY_MEDIUM );
-	}
-
-	/**
-	 * Get the High image quality value
-	 *
-	 * @return int The image quality value
-	 */
-	public static function get_image_quality_high() : int {
-		return apply_filters( 'Edge_Images\quality_high', self::IMAGE_QUALITY_HIGH );
+	public static function get_image_quality_default() : int {
+		return (int) apply_filters( 'Edge_Images\quality', self::IMAGE_QUALITY_DEFAULT );
 	}
 
 	/**
@@ -202,7 +170,7 @@ class Helpers {
 	 * @return int The image step value
 	 */
 	public static function get_width_step() : int {
-		return apply_filters( 'Edge_Images\step_value', self::WIDTH_STEP );
+		return (int) apply_filters( 'Edge_Images\step_value', self::WIDTH_STEP );
 	}
 
 	/**
@@ -211,7 +179,7 @@ class Helpers {
 	 * @return int The image min width value
 	 */
 	public static function get_image_min_width() : int {
-		return apply_filters( 'Edge_Images\min_width', self::WIDTH_MIN );
+		return (int) apply_filters( 'Edge_Images\min_width', self::WIDTH_MIN );
 	}
 
 	/**
@@ -220,7 +188,7 @@ class Helpers {
 	 * @return int The image max width value
 	 */
 	public static function get_image_max_width() : int {
-		return apply_filters( 'Edge_Images\max_width', self::WIDTH_MAX );
+		return (int) apply_filters( 'Edge_Images\max_width', self::WIDTH_MAX );
 	}
 
 	/**
@@ -609,5 +577,27 @@ class Helpers {
 
 		return $attrs;
 	}
+
+	/**
+	 * Sanitize the image HTML
+	 *
+	 * @param  string $html The image HTML.
+	 *
+	 * @return string       The sanitized HTML
+	 */
+	public static function sanitize_image_html( string $html ) : string {
+		$html = wp_kses(
+			$html,
+			array(
+				'figure'     => self::allowed_container_attrs(),
+				'picture'    => self::allowed_container_attrs(),
+				'img'        => self::allowed_img_attrs(),
+				'a'          => array( 'href' => array() ),
+				'figcaption' => array(),
+			)
+		);
+		return $html;
+	}
+
 
 }
