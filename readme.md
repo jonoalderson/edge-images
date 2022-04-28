@@ -2,7 +2,6 @@
 
 A WordPress plugin which automatically uses an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)) to apply performance optimizations to `<img>` markup.
 
-## TOC
 - [About](#about)
 - [Requirements](#requirements)
 - [Customization](#customization)
