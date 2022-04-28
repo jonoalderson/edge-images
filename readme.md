@@ -287,7 +287,7 @@ Supports the following filters:
 - `Edge_Images\Yoast\disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
 - `Edge_Images\Yoast\disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
 - `Edge_Images\Yoast\disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
-- `Esge_Images\Yoast\social_image_args`: (`array`): Alters the args passed to the social image.
+- `Edge_Images\Yoast\social_image_args`: (`array`): Alters the args passed to the social image.
 
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
