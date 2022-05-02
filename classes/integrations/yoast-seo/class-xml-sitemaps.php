@@ -83,18 +83,6 @@ class XML_Sitemaps {
 			'fit'    => 'contain',
 		);
 
-		// Get the image.
-		$image = wp_get_attachment_image_src( $image_id, 'full' );
-		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
-			return $uri; // Bail if there's no image.
-		}
-
-		// Tweak the behaviour for small images.
-		if ( ( $image[1] < self::OG_WIDTH ) || ( $image[2] < self::OG_HEIGHT ) ) {
-			$args['fit']     = 'pad';
-			$args['sharpen'] = 1;
-		}
-
 		return Helpers::edge_src( $uri, $args );
 	}
 
