@@ -37,7 +37,7 @@ class XML_Sitemaps {
 			return;
 		}
 
-		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ), 100 );
+		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ), 100, 2 );
 	}
 
 	/**
