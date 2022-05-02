@@ -91,7 +91,7 @@ class XML_Sitemaps {
 		}
 
 		// Tweak the behaviour for small images.
-		if ( ( $image[1] < self::OG_WIDTH ) || ( $image[2] < self::OG_HEIGHT ) ) {
+		if ( ( $image[1] < self::IMAGE_WIDTH ) || ( $image[2] < self::IMAGE_HEIGHT ) ) {
 			$args['fit']     = 'pad';
 			$args['sharpen'] = 1;
 		}
