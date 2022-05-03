@@ -156,7 +156,7 @@ class Social_Images {
 		// Tweak the behaviour for small images.
 		if ( ( $image[1] < self::OG_WIDTH ) || ( $image[2] < self::OG_HEIGHT ) ) {
 			$args['fit']     = 'pad';
-			$args['sharpen'] = 1;
+			$args['sharpen'] = 2;
 		}
 
 		// Allow for filtering the args.

@@ -93,7 +93,7 @@ class XML_Sitemaps {
 		// Tweak the behaviour for small images.
 		if ( ( $image[1] < self::IMAGE_WIDTH ) || ( $image[2] < self::IMAGE_HEIGHT ) ) {
 			$args['fit']     = 'pad';
-			$args['sharpen'] = 1;
+			$args['sharpen'] = 2;
 		}
 
 		return Helpers::edge_src( $uri, $args );
