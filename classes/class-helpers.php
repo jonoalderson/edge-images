@@ -343,11 +343,11 @@ class Helpers {
 		}
 
 		// Don't ever transform the src if this is a local or dev environment.
-		// switch ( wp_get_environment_type() ) {
-		// case 'local':
-		// case 'development':
-		// return false;
-		// }
+		switch ( wp_get_environment_type() ) {
+			case 'local':
+			case 'development':
+				return false;
+		}
 
 		return true;
 	}
