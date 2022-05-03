@@ -80,14 +80,32 @@ class Schema_Images {
 			return $data; // Bail if this isn't the primary image.
 		}
 
+		// Get the image.
+		global $post;
+		$image = wp_get_attachment_image_src( get_post_thumbnail_id( $post ), 'full' );
+		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
+			return $data; // Bail if there's no image.
+		}
+
+		$width  = $image[1];
+		$height = $image[2];
+
+		// Set the default args.
 		$args = array(
-			'width'  => self::SCHEMA_WIDTH,
-			'height' => self::SCHEMA_HEIGHT,
+			'width'  => $width,
+			'height' => $height,
 			'fit'    => 'cover',
 		);
 
+		// Tweak the behaviour for small images.
+		if ( ( $width < self::SCHEMA_WIDTH ) || ( $height < self::SCHEMA_HEIGHT ) ) {
+			$args['fit']     = 'pad';
+			$args['sharpen'] = 2;
+		}
+
 		$edge_url = Helpers::edge_src( $data['url'], $args );
 
+		// Update the schema values.
 		$data['url']        = $edge_url;
 		$data['contentUrl'] = $edge_url;
 		$data['width']      = self::SCHEMA_WIDTH;
