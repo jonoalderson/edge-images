@@ -318,6 +318,35 @@ class Handler {
 	}
 
 	/**
+	 * Construct a viable <container> even when the image is missing.
+	 *
+	 * @param  string $html             The <img> HTML.
+	 * @param  mixed  $size             The image size.
+	 * @param  array  $attr             The image attributes.
+	 *
+	 * @return array                    The modified $attr array
+	 */
+	public static function maybe_backfill_missing_dimensions( $html, $size, $attr ) : array {
+		if ( isset( $attr['height'] ) && isset( $attr['width'] ) ) {
+			return $attr;
+		}
+
+		// Get the normalized size string.
+		$normalized_size = Helpers::normalize_size_attr( $size );
+
+		// Get the edge image sizes array.
+		$sizes = apply_filters( 'Edge_Images\sizes', Helpers::get_wp_image_sizes() );
+
+		// Grab the attrs for the image size, or continue with defaults.
+		if ( array_key_exists( $normalized_size, $sizes ) ) {
+			$attr = wp_parse_args( $sizes[ $normalized_size ], Helpers::get_default_image_attrs() );
+		}
+
+		return $attr;
+	}
+
+
+	/**
 	 * Maybe wrap the image in a link.
 	 *
 	 * @param  string $html The image HTML.
