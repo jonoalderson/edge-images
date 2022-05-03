@@ -87,18 +87,15 @@ class Schema_Images {
 			return $data; // Bail if there's no image.
 		}
 
-		$width  = $image[1];
-		$height = $image[2];
-
 		// Set the default args.
 		$args = array(
-			'width'  => $width,
-			'height' => $height,
+			'width'  => self::SCHEMA_WIDTH,
+			'height' => self::SCHEMA_HEIGHT,
 			'fit'    => 'cover',
 		);
 
 		// Tweak the behaviour for small images.
-		if ( ( $width < self::SCHEMA_WIDTH ) || ( $height < self::SCHEMA_HEIGHT ) ) {
+		if ( ( $image[1] < self::SCHEMA_WIDTH ) || ( $image[2] < self::SCHEMA_HEIGHT ) ) {
 			$args['fit']     = 'pad';
 			$args['sharpen'] = 2;
 		}
