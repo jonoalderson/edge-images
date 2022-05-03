@@ -37,7 +37,7 @@ class XML_Sitemaps {
 			return;
 		}
 
-		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ), 100 );
+		add_filter( 'wpseo_xml_sitemap_img_src', array( $instance, 'use_edge_src' ), 100, 2 );
 	}
 
 	/**
@@ -66,10 +66,11 @@ class XML_Sitemaps {
 	 * Transform the URI to an edge version
 	 *
 	 * @param  string $uri The URI.
+	 * @param  object $post The Post.
 	 *
 	 * @return string      The modified URI
 	 */
-	public function use_edge_src( $uri ) : string {
+	public function use_edge_src( $uri, $post ) : string {
 
 		// Bail if $uri isn't a string.
 		if ( ! is_string( $uri ) ) {
@@ -83,10 +84,16 @@ class XML_Sitemaps {
 			'fit'    => 'contain',
 		);
 
+		// Get the image.
+		$image = wp_get_attachment_image_src( get_post_thumbnail_id( $post ), 'full' );
+		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
+			return $uri; // Bail if there's no image.
+		}
+
 		// Tweak the behaviour for small images.
-		if ( ( $image[1] < self::OG_WIDTH ) || ( $image[2] < self::OG_HEIGHT ) ) {
+		if ( ( $image[1] < self::IMAGE_WIDTH ) || ( $image[2] < self::IMAGE_HEIGHT ) ) {
 			$args['fit']     = 'pad';
-			$args['sharpen'] = 1;
+			$args['sharpen'] = 2;
 		}
 
 		return Helpers::edge_src( $uri, $args );

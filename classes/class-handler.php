@@ -33,6 +33,47 @@ class Handler {
 	}
 
 	/**
+	 * Get the inline styles for the container tag
+	 *
+	 * @param  array $attr The image attributes.
+	 * @return string      The style attribute values
+	 */
+	private static function get_container_styles( $attr ) : string {
+
+		$styles = array();
+
+		// Set the aspect ratio.
+		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : self::get_default_ratio( $attr );
+		$styles[] = '--aspect-ratio:' . $ratio;
+
+		// Add height and width inline styles if this is a fixed image.
+		if ( isset( $attr['layout'] ) && $attr['layout'] === 'fixed' ) {
+			if ( isset( $attr['width'] ) && $attr['width'] ) {
+				$styles[] = sprintf( 'max-width:%dpx', $attr['width'] );
+			}
+			if ( isset( $attr['height'] ) && $attr['height'] ) {
+				$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
+			}
+		}
+
+		return implode( ';', $styles );
+	}
+
+	/**
+	 * Build a default ratio based on attrs
+	 *
+	 * @param  array $attr The image attributes.
+	 *
+	 * @return string The ratio string
+	 */
+	private static function get_default_ratio( $attr ) : string {
+		if ( ! isset( $attr['width'] ) || ! isset( $attr['height'] ) ) {
+			return '1/1';
+		}
+		return $attr['width'] . '/' . $attr['height'];
+	}
+
+	/**
 	 * Fixes WP sometimes not retrieving the right values for SVGs.
 	 *
 	 * @param  array|false  $image         The image.
@@ -267,6 +308,7 @@ class Handler {
 			return $html;
 		}
 
+		$attr = self::maybe_backfill_missing_dimensions( $html, $size, $attr );
 		$html = self::maybe_wrap_image_in_link( $html, $attr );
 		$html = self::maybe_add_caption( $html, $attr );
 		$html = self::maybe_wrap_image_in_container( $attachment_id, $html, $attr );
@@ -274,6 +316,35 @@ class Handler {
 
 		return $html;
 	}
+
+	/**
+	 * Construct a viable <container> even when the image is missing.
+	 *
+	 * @param  string $html             The <img> HTML.
+	 * @param  mixed  $size             The image size.
+	 * @param  array  $attr             The image attributes.
+	 *
+	 * @return array                    The modified $attr array
+	 */
+	public static function maybe_backfill_missing_dimensions( $html, $size, $attr ) : array {
+		if ( isset( $attr['height'] ) && isset( $attr['width'] ) ) {
+			return $attr;
+		}
+
+		// Get the normalized size string.
+		$normalized_size = Helpers::normalize_size_attr( $size );
+
+		// Get the edge image sizes array.
+		$sizes = apply_filters( 'Edge_Images\sizes', Helpers::get_wp_image_sizes() );
+
+		// Grab the attrs for the image size, or continue with defaults.
+		if ( array_key_exists( $normalized_size, $sizes ) ) {
+			$attr = wp_parse_args( $sizes[ $normalized_size ], Helpers::get_default_image_attrs() );
+		}
+
+		return $attr;
+	}
+
 
 	/**
 	 * Maybe wrap the image in a link.
@@ -349,34 +420,6 @@ class Handler {
 			( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
 		);
 		return $html;
-	}
-
-	/**
-	 * Get the inline styles for the container tag
-	 *
-	 * @param  array $attr The image attributes.
-	 * @return string      The style attribute values
-	 */
-	private static function get_container_styles( $attr ) : string {
-
-		$styles = array();
-
-		// Set the aspect ratio.
-		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1';
-		$styles[] = '--aspect-ratio:' . $ratio;
-
-		// Add height and width inline styles if this is a fixed image.
-		if ( $attr['layout'] === 'fixed' ) {
-			if ( $attr['width'] ) {
-				$styles[] = sprintf( 'max-width:%dpx', $attr['width'] );
-			}
-			if ( $attr['height'] ) {
-				$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
-			}
-		}
-
-		return implode( ';', $styles );
-
 	}
 
 	/**

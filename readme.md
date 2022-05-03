@@ -1,15 +1,24 @@
 # Edge Images
 
-**This plugin is in early alpha testing. It is prone to potential bugs/issues/omissions. See _Roadmap & known issues_ below for more information.**
+A WordPress plugin which automatically uses an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)) to apply performance optimizations to `<img>` markup.
 
-Automatically use an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)), to apply performance optimizations to `<img>` markup in WordPress.
+- [About](#about)
+- [Requirements](#requirements)
+- [Customization](#customization)
+- [Examples](#examples)
+- [Integrations](#integrations)
+- [Roadmap](#roadmap--known-issues)
+- [Changelog](#changelog)
 
-Specifically, it intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
-  - Uses an associative array of named (or h/w array value) sizes as lookups to trigger user-defined rules (via plugin or theme logic).
+## About
+
+### What does it do?
+Edge Images intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
+  - Uses an associative array of named (or h/w array value) sizes as lookups for user-defined layout, presentation and optimization rules.
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
   - Wraps the `<img>` in a `<%container%>` elem (_optional_).
 
-## What problem does this solve?
+### What problem does this solve?
 WordPress ships with a concept of "image sizes", each of which has a _height_, _width_ and _crop_ option. It provides some defaults like 'large', 'medium' and 'thumbnail', and provides ways for developers to customize or extend these options. When a user adds images to content, or includes them in templates, they must select the most optimal size from the options available.
 
 This is often imprecise. Images are often loaded at 'roughly the right size', then shunk or stretched by the browser; by varying degrees of inaccuracy based on the user's context (such as viewport size, screen density, or content preferences). This is inefficient, and 'expensive' from a performance perspective.
@@ -23,6 +32,7 @@ This plugin solves these problems, by:
 - Providing a large number of 'interstitial' `srcset` values (generated via an edge provider, in order to avoid storage/generation overheads).
 
 ## Requirements
+- PHP 7.0+
 - Domain must be served through a supported edge provider, with image resizing features available and enabled.
 - Supported edge providers are:
   - [Cloudflare](https://www.cloudflare.com/), with the 'Image resizing' feature enabled (note that this requires a _Pro_ account or higher).
@@ -277,8 +287,13 @@ Supports the following filters:
 - `Edge_Images\Yoast\disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
 - `Edge_Images\Yoast\disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
 - `Edge_Images\Yoast\disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
-- `Esge_Images\Yoast\social_image_args`: (`array`): Alters the args passed to the social image.
+- `Edge_Images\Yoast\social_image_args`: (`array`): Alters the args passed to the social image.
 
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
 - Inheriting additional/custom classes from the block editor's 'advanced' settings
+
+## Changelog
+
+### 28/04/2022 - V2.0
+- First stable beta release
