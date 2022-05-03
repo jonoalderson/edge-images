@@ -99,8 +99,8 @@ class Social_Images {
 
 		// Set the width and height based on the image's max dimensions.
 		$image = wp_get_attachment_image_src( $image_id, 'full' );
-		$presentation->open_graph_images[ $key ]['width']  = ( $image[1] < self::OG_WIDTH ) ? $image[1] : self::OG_WIDTH;
-		$presentation->open_graph_images[ $key ]['height'] = ( $image[2] < self::OG_HEIGHT ) ? $image[2] : self::OG_HEIGHT;
+		$presentation->open_graph_images[ $key ]['width']  = self::OG_WIDTH;
+		$presentation->open_graph_images[ $key ]['height'] = self::OG_HEIGHT;
 
 		return $presentation;
 	}
