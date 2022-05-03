@@ -394,34 +394,6 @@ class Handler {
 	}
 
 	/**
-	 * Get the inline styles for the container tag
-	 *
-	 * @param  array $attr The image attributes.
-	 * @return string      The style attribute values
-	 */
-	private static function get_container_styles( $attr ) : string {
-
-		$styles = array();
-
-		// Set the aspect ratio.
-		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : '1/1';
-		$styles[] = '--aspect-ratio:' . $ratio;
-
-		// Add height and width inline styles if this is a fixed image.
-		if ( $attr['layout'] === 'fixed' ) {
-			if ( $attr['width'] ) {
-				$styles[] = sprintf( 'max-width:%dpx', $attr['width'] );
-			}
-			if ( $attr['height'] ) {
-				$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
-			}
-		}
-
-		return implode( ';', $styles );
-
-	}
-
-	/**
 	 * Remove the (first two) height and width attrs from <img> markup.
 	 *
 	 * NOTE: Widthout this, we create duplicate properties
