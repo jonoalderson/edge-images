@@ -64,9 +64,9 @@ class Social_Images {
 		}
 
 		// Don't run on the homepage (it's usually the logo).
-		if ( is_front_page() ) {
-			return false;
-		}
+		// if ( is_front_page() ) {
+		// return false;
+		// }
 
 		return true;
 	}
