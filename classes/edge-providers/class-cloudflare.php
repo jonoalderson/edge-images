@@ -26,17 +26,23 @@ class Cloudflare extends Edge_Provider {
 			'dpr'      => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
 		);
 
-		// Optional properties.
-		if ( isset( $this->args['height'] ) ) {
+		// Height.
+		if ( isset( $this->args['height'] ) && $this->args['height'] ) {
 			$properties['height'] = $this->args['height'];
 		}
-		if ( isset( $this->args['blur'] ) ) {
+
+		// Blue.
+		if ( isset( $this->args['blur'] ) && $this->args['blur'] ) {
 			$properties['blur'] = $this->args['blur'];
 		}
-		if ( isset( $this->args['sharpen'] ) ) {
+
+		// Sharpen.
+		if ( isset( $this->args['sharpen'] ) && $this->args['sharpen'] ) {
 			$properties['sharpen'] = $this->args['sharpen'];
 		}
-		if ( isset( $this->args['gravity'] ) ) {
+
+		// Gravity.
+		if ( isset( $this->args['gravity'] ) && $this->args['gravity'] ) {
 			$properties['gravity'] = $this->args['gravity'];
 		}
 
@@ -47,7 +53,7 @@ class Cloudflare extends Edge_Provider {
 
 	/**
 	 * Get the edge URL
-	 * E.g., https://staging.prosettings.net/cdn-cgi/image/f=auto%2Cfit=cover[...]path-to-image.jpg
+	 * E.g., https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover[...]path-to-image.jpg
 	 *
 	 * @return string The edge URL.
 	 */

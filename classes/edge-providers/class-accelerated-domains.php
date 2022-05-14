@@ -17,22 +17,31 @@ class Accelerated_Domains extends Edge_Provider {
 	private function get_properties() : array {
 
 		$properties = array(
-			'width'   => ( isset( $this->args['width'] ) ) ? $this->args['width'] : Helpers::get_content_width(),
-			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
-			'format'  => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
-			'quality' => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_default(),
-			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
+			'width' => ( isset( $this->args['width'] ) ) ? $this->args['width'] : Helpers::get_content_width(),
+			'fit'   => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
+			'f'     => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
+			'q'     => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_default(),
+			'dpr'   => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
 		);
 
-		// Optional properties.
-		if ( isset( $this->args['height'] ) ) {
+		// Height.
+		if ( isset( $this->args['height'] ) && $this->args['height'] ) {
 			$properties['height'] = $this->args['height'];
 		}
-		if ( isset( $this->args['gravity'] ) ) {
-			$properties['gravity'] = $this->args['gravity'];
+
+		// Blue.
+		if ( isset( $this->args['blur'] ) && $this->args['blur'] ) {
+			$properties['blur'] = $this->args['blur'];
 		}
-		if ( isset( $this->args['sharpen'] ) ) {
+
+		// Sharpen.
+		if ( isset( $this->args['sharpen'] ) && $this->args['sharpen'] ) {
 			$properties['sharpen'] = $this->args['sharpen'];
+		}
+
+		// Gravity.
+		if ( isset( $this->args['gravity'] ) && $this->args['gravity'] ) {
+			$properties['gravity'] = $this->args['gravity'];
 		}
 
 		ksort( $properties );
