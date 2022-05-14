@@ -33,11 +33,6 @@ class Social_Images {
 
 		$instance = new self();
 
-		// Bail if these filters shouldn't run.
-		if ( ! $instance->should_filter() ) {
-			return;
-		}
-
 		add_filter( 'wpseo_opengraph_image_size', array( $instance, 'set_full_size_og_image' ) );
 		add_filter( 'wpseo_opengraph_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
 		add_filter( 'wpseo_twitter_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
@@ -50,6 +45,11 @@ class Social_Images {
 	 * @return bool
 	 */
 	private function should_filter() : bool {
+
+		// Don't run on the homepage (it's usually the logo).
+		if ( is_front_page() ) {
+			return false;
+		}
 
 		// Bail if the Yoast SEO integration is disabled.
 		$disable_integration = apply_filters( 'Edge_Images\Yoast\disable', false );
@@ -79,6 +79,11 @@ class Social_Images {
 	 * @return object The modified presentation
 	 */
 	public function set_image_dimensions( $presentation ) {
+
+		// Bail if this shouldn't filter.
+		if ( ! $this->should_filter() ) {
+			return $presentation;
+		}
 
 		// Bail if there's no open graph image info.
 		if ( ! $presentation->open_graph_images ) {
@@ -115,7 +120,13 @@ class Social_Images {
 	 *
 	 * @return string The image size to use
 	 */
-	public function set_full_size_og_image() : string {
+	public function set_full_size_og_image( $original ) : string {
+
+		// Bail if this shouldn't filter.
+		if ( ! $this->should_filter() ) {
+			return $original;
+		}
+
 		return 'full';
 	}
 
@@ -128,6 +139,11 @@ class Social_Images {
 	 * @return string The modified string
 	 */
 	public function route_image_through_edge( $output, $presenter ) : string {
+
+		// Bail if this shouldn't filter.
+		if ( ! $this->should_filter() ) {
+			return $output;
+		}
 
 		// Bail if $output isn't a string.
 		if ( ! is_string( $output ) ) {
