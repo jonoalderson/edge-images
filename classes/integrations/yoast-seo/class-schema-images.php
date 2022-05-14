@@ -131,10 +131,24 @@ class Schema_Images {
 			return $data; // Bail if this isn't the logo.
 		}
 
+		// Bail if the schema doesn't contain required properties.
+		if (
+			! isset( $data['logo']['width'] ) ||
+			! isset( $data['logo']['height'] ) ||
+			! isset( $data['logo']['contentUrl'] ) ||
+			! isset( $data['logo']['url'] ) ||
+			! $data['logo']['width'] ||
+			! $data['logo']['height'] ||
+			! $data['logo']['contentUrl'] ||
+			! $data['logo']['url']
+		) {
+			return $data;
+		}
+
 		// Set our default args.
 		$args = array(
-			'width'  => $data['logo']['width'],
-			'height' => $data['logo']['height'],
+			'width'  => ( $data['logo']['width'] > 1000 ) ? 1000 : $data['logo']['width'],
+			'height' => ( $data['logo']['height'] > 1000 ) ? 1000 : $data['logo']['height'],
 			'fit'    => 'contain',
 		);
 

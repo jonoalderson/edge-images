@@ -158,7 +158,7 @@ class Social_Images {
 			return $output;
 		}
 
-		return $src;
+		return $image;
 	}
 
 	/**
