@@ -137,6 +137,11 @@ class Social_Images {
 		// Get the image ID.
 		$image_id = $presenter->model->open_graph_image_id;
 		if ( ! $image_id ) {
+			// If there's no image, fall back to the site logo.
+			$logo = $this->transform_image_without_scaling();
+			if ( $logo ) {
+				return $logo;
+			}
 			return $output; // Bail if there's no image ID.
 		}
 
@@ -146,6 +151,25 @@ class Social_Images {
 			return $output; // Bail if there's no image.
 		}
 
+		$image = $this->transform_image_with_scaling( $image );
+
+		// Bail if we couldn't get an SRC.
+		if ( ! $image ) {
+			return $output;
+		}
+
+		return $image;
+	}
+
+	/**
+	 * Transform an image into an edge SRC, and scale it up if necessary
+	 *
+	 * @param  array $image The image
+	 *
+	 * @return string       The edge SRC
+	 */
+	private function transform_image_with_scaling( array $image ) : string {
+
 		// Set our default args.
 		$args = array(
 			'width'  => self::OG_WIDTH,
@@ -154,7 +178,10 @@ class Social_Images {
 		);
 
 		// Tweak the behaviour for small images.
-		if ( ( $image[1] < self::OG_WIDTH ) || ( $image[2] < self::OG_HEIGHT ) ) {
+		if (
+				$image[1] < self::OG_WIDTH ||
+				$image[2] < self::OG_HEIGHT
+		) {
 			$args['fit']     = 'pad';
 			$args['sharpen'] = 2;
 		}
@@ -162,13 +189,41 @@ class Social_Images {
 		// Allow for filtering the args.
 		$args = apply_filters( 'Edge_Images\Yoast\social_image_args', $args );
 
-		// Convert the image src to a Cloudflare string.
+		// Convert the image src to a edge SRC.
 		$src = Helpers::edge_src( $image[0], $args );
 
-		// Bail if we couldn't get an SRC.
-		if ( ! $src ) {
-			return $output;
+		return $src;
+	}
+
+	/**
+	 * Transform an image without scaling it
+	 *
+	 * @return string|false The SRC, or FALSE on failure
+	 */
+	private function transform_image_without_scaling() {
+
+		$logo_id = YoastSEO()->meta->for_current_page()->company_logo_id;
+		if ( ! $logo_id ) {
+			return false;
 		}
+
+		$image = wp_get_attachment_image_src( $logo_id, 'full', false );
+		if ( ! $image ) {
+			return false;
+		}
+
+		// Set our default args.
+		$args = array(
+			'width'  => $image[1],
+			'height' => $image[2],
+			'fit'    => 'contain',
+		);
+
+		// Allow for filtering the args.
+		$args = apply_filters( 'Edge_Images\Yoast\social_image_args', $args );
+
+		// Convert the image src to a edge SRC.
+		$src = Helpers::edge_src( $image[0], $args );
 
 		return $src;
 	}

@@ -200,6 +200,9 @@ class Image {
 		if ( ! isset( $ratio[0] ) || ! isset( $ratio[1] ) ) {
 			return false;
 		}
+		if ( ! $ratio[0] || ! $ratio[1] ) {
+			return false;
+		}
 
 		// Divide the width by the ratio to get the height.
 		return ceil( $width / ( $ratio[0] / $ratio[1] ) );

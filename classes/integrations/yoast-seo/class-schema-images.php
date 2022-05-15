@@ -38,6 +38,7 @@ class Schema_Images {
 		}
 
 		add_filter( 'wpseo_schema_imageobject', array( $instance, 'edge_primary_image' ) );
+		add_filter( 'wpseo_schema_organization', array( $instance, 'edge_organization_logo' ) );
 	}
 
 	/**
@@ -110,6 +111,55 @@ class Schema_Images {
 
 		return $data;
 
+	}
+
+	/**
+	 * Alter the Organization's logo property to use the edge.
+	 *
+	 * @param  array $data The image schema properties.
+	 *
+	 * @return array       The modified properties
+	 */
+	public function edge_organization_logo( $data ) : array {
+
+		// Bail if $data isn't an array.
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
+
+		if ( ! \strpos( $data['@id'], 'organization' ) ) {
+			return $data; // Bail if this isn't the logo.
+		}
+
+		// Bail if the schema doesn't contain required properties.
+		if (
+			! isset( $data['logo']['width'] ) ||
+			! isset( $data['logo']['height'] ) ||
+			! isset( $data['logo']['contentUrl'] ) ||
+			! isset( $data['logo']['url'] ) ||
+			! $data['logo']['width'] ||
+			! $data['logo']['height'] ||
+			! $data['logo']['contentUrl'] ||
+			! $data['logo']['url']
+		) {
+			return $data;
+		}
+
+		// Set our default args.
+		$args = array(
+			'width'  => ( $data['logo']['width'] > 1000 ) ? 1000 : $data['logo']['width'],
+			'height' => ( $data['logo']['height'] > 1000 ) ? 1000 : $data['logo']['height'],
+			'fit'    => 'contain',
+		);
+
+		// Allow for filtering the args.
+		$args = apply_filters( 'Edge_Images\Yoast\social_image_args', $args );
+
+		// Convert the image src to a edge SRC.
+		$data['logo']['url']        = Helpers::edge_src( $data['logo']['contentUrl'], $args );
+		$data['logo']['contentUrl'] = $data['logo']['url'];
+
+		return $data;
 	}
 
 }
