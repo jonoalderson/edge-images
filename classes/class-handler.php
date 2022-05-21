@@ -291,7 +291,7 @@ class Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function decorate_edge_image( $html = '', $attachment_id = 0, $size = false, bool $icon = false, $attr = array() ) : string {
+	public static function decorate_edge_image( $html = '', $attachment_id = 0, $size = false, $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
 		if ( ! $html ) {
