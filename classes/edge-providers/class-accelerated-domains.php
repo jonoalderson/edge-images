@@ -17,7 +17,7 @@ class Accelerated_Domains extends Edge_Provider {
 	private function get_properties() : array {
 
 		$properties = array(
-			'width' => ( isset( $this->args['width'] ) ) ? $this->args['width'] : Helpers::get_content_width(),
+			'width' => ( isset( $this->args['width'] ) && $this->args['width'] ) ? $this->args['width'] : Helpers::get_content_width(),
 			'fit'   => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
 			'f'     => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
 			'q'     => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_default(),
