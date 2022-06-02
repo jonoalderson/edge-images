@@ -38,134 +38,6 @@ This plugin solves these problems, by:
   - [Cloudflare](https://www.cloudflare.com/), with the 'Image resizing' feature enabled (note that this requires a _Pro_ account or higher).
   - [Accelerated Domains](https://accelerateddomains.com/), with the 'Image resizing' feature enabled.
 
-## Customization
-The plugin automatically converts WordPress' native image sizes, and any sizes registered via `add_image_size()`.
-However, more fine-grained control can be achieved by registering custom sizes and definitions using the `Edge_Images\sizes` filter.
-
-### Using `Edge_Images\sizes`
-The `Edge_Images\sizes` filter expects and returns an associative array of image definitions; where they key is the _name_ of the size, and the value is an array constructed with the following properties.
-
-#### Required
-- `height` (`int`): The `height` in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
-- `width` (`int`): The `width` in pixels of the image of the smallest/mobile/default size. Sets the `width` attribute on the `<img>` elem.
-
-#### Optional
-- `sizes` (`str`):  The `sizes` attribute to be used on the `<img>` elem.
-- `srcset` (`arr`): An array of `width`/`height` arrays. Used to generate the `srcset` attribute (and stepped variations) on the `<img>` elem.
-- `fit` (`str`): Sets the `fit` attribute on the `<img>` elem. Defaults to `cover`.
-- `sharpen` (`int`): Applies a sharpening effect.
-- `blur` (`int`): Applies a blurring effect.
-- `gravity` (`string`): Alters the center of gravity.
-- `layout` (`str`): Determines how `<img>` markup should be generated, based on whether the image is `responsive` or has `fixed` dimensions. Defaults to `responsive`.
-- `loading` (`str`): Sets the `loading` attribute on the `<img>` elem. Defaults to `lazy`.
-- `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
-- `class` (`array`|`str`): Extends the `class` value(s) on the `<img>` elem.
-- `container-type` (`str`): Sets the `<%container%>` tag type. Defaults to `figure`.
-- `container-class` (`array`|`str`): Extends the `class` value(s) on the `<%container%>` elem.
-
-#### Example configurations:
-A general use-case, which defines dimensions, sizes, and custom `srcset` values.
-```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['example_size_1'] = array(
-    'width'   => 173,
-    'height'  => 229,
-    'sizes'   => '(max-width: 768px) 256px, 173px',
-    'srcset'  => array(
-      array(
-        'width'  => 256,
-        'height' => 229,
-      )
-    )
-  );
-  return $sizes;
-}
-```
-
-A simple small image.
-```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['small_logo'] = array(
-    'width'  => 70,
-    'height' => 20,
-    'sizes'  => '70px'
-  );
-  return $sizes;
-}
-```
-
-A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
-```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['32x32'] = array(
-    'width'  => 32,
-    'height' => 32,
-    'sizes'  => '32px'
-  );
-  return $sizes;
-}
-```
-
-A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
-```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['card'] = array(
-    'width'  => 195,
-    'height' => 195,
-    'sizes'  => '(max-width: 1120px) 25vw, (min-width: 1121px) and (max-width: 1440px) 150px, 195px',
-    'srcset' => array(
-      array(
-        'width'  => 150,
-        'height' => 150,
-      ),
-      array(
-        'width'  => 125,
-        'height' => 125,
-      ),
-      array(
-        'width'  => 100,
-        'height' => 100,
-      ),
-    ),
-    'loading' => 'eager',
-    'container-class' => array('pineapples', 'bananas'),
-    'class' => 'oranges'
-  );
-  return $sizes;
-}
-```
-
-### Other filters
-#### Enabling/disabling
-- `Edge_Images\disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
-- `Edge_Images\exclude` (`array`): An array of images to exclude from transformation.
-- `Edge_Images\force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
-- `Edge_Images\disable_container_wrap` (`bool`): Disable wrapping images in a `<%container%>` element (and disable the associated CSS). Defaults to `false`.
-
-#### General configuration
-- `Edge_Images\provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
-- `Edge_Images\domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
-- `Edge_Images\content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
-
-#### Image quality settings
-- `Edge_Images\quality` (`int`): Alter the default quality value (from `1`-`100`). Defaults to `85`.
-
-#### `srcset` generation settings
-- `Edge_Images\step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
-- `Edge_Images\min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
-- `Edge_Images\max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
-
-#### Additional optimizations
-- `Edge_Images\preloads` (`array`): An associative array of image IDs and sizes to automatically preload (via `<link>` tags in the `<head>`).
-
 ## Examples
 
 ### Before
@@ -272,6 +144,135 @@ public function preload_images( array $preloads ) : array {
   return $preloads;
 }
 ```
+
+## Customization
+The plugin automatically converts WordPress' native image sizes, and any sizes registered via `add_image_size()`.
+However, more fine-grained control can be achieved by registering custom sizes and definitions using the `Edge_Images\sizes` filter.
+
+### Using `Edge_Images\sizes`
+The `Edge_Images\sizes` filter expects and returns an associative array of image definitions; where they key is the _name_ of the size, and the value is an array constructed with the following properties.
+
+#### Required
+- `height` (`int`): The `height` in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
+- `width` (`int`): The `width` in pixels of the image of the smallest/mobile/default size. Sets the `width` attribute on the `<img>` elem.
+
+#### Optional
+- `sizes` (`str`):  The `sizes` attribute to be used on the `<img>` elem.
+- `srcset` (`arr`): An array of `width`/`height` arrays. Used to generate the `srcset` attribute (and stepped variations) on the `<img>` elem.
+- `fit` (`str`): Sets the `fit` attribute on the `<img>` elem. Defaults to `cover`.
+- `sharpen` (`int`): Applies a sharpening effect.
+- `blur` (`int`): Applies a blurring effect.
+- `gravity` (`string`): Alters the center of gravity.
+- `layout` (`str`): Determines how `<img>` markup should be generated, based on whether the image is `responsive` or has `fixed` dimensions. Defaults to `responsive`.
+- `loading` (`str`): Sets the `loading` attribute on the `<img>` elem. Defaults to `lazy`.
+- `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
+- `fetchpriority` (`str`): Sets the `fetchpriority` attribute on the `<img>` elem.
+- `class` (`array`|`str`): Extends the `class` value(s) on the `<img>` elem.
+- `container-type` (`str`): Sets the `<%container%>` tag type. Defaults to `figure`.
+- `container-class` (`array`|`str`): Extends the `class` value(s) on the `<%container%>` elem.
+
+#### Example configurations:
+A general use-case, which defines dimensions, sizes, and custom `srcset` values.
+```php
+add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+
+function my_example_sizes($sizes) {
+  $sizes['example_size_1'] = array(
+    'width'   => 173,
+    'height'  => 229,
+    'sizes'   => '(max-width: 768px) 256px, 173px',
+    'srcset'  => array(
+      array(
+        'width'  => 256,
+        'height' => 229,
+      )
+    )
+  );
+  return $sizes;
+}
+```
+
+A simple small image.
+```php
+add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+
+function my_example_sizes($sizes) {
+  $sizes['small_logo'] = array(
+    'width'  => 70,
+    'height' => 20,
+    'sizes'  => '70px'
+  );
+  return $sizes;
+}
+```
+
+A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
+```php
+add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+
+function my_example_sizes($sizes) {
+  $sizes['32x32'] = array(
+    'width'  => 32,
+    'height' => 32,
+    'sizes'  => '32px'
+  );
+  return $sizes;
+}
+```
+
+A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
+```php
+add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+
+function my_example_sizes($sizes) {
+  $sizes['card'] = array(
+    'width'  => 195,
+    'height' => 195,
+    'sizes'  => '(max-width: 1120px) 25vw, (min-width: 1121px) and (max-width: 1440px) 150px, 195px',
+    'srcset' => array(
+      array(
+        'width'  => 150,
+        'height' => 150,
+      ),
+      array(
+        'width'  => 125,
+        'height' => 125,
+      ),
+      array(
+        'width'  => 100,
+        'height' => 100,
+      ),
+    ),
+    'loading' => 'eager',
+    'container-class' => array('pineapples', 'bananas'),
+    'class' => 'oranges'
+  );
+  return $sizes;
+}
+```
+
+### Other filters
+#### Enabling/disabling
+- `Edge_Images\disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
+- `Edge_Images\exclude` (`array`): An array of images to exclude from transformation.
+- `Edge_Images\force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
+- `Edge_Images\disable_container_wrap` (`bool`): Disable wrapping images in a `<%container%>` element (and disable the associated CSS). Defaults to `false`.
+
+#### General configuration
+- `Edge_Images\provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
+- `Edge_Images\domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
+- `Edge_Images\content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
+
+#### Image quality settings
+- `Edge_Images\quality` (`int`): Alter the default quality value (from `1`-`100`). Defaults to `85`.
+
+#### `srcset` generation settings
+- `Edge_Images\step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
+- `Edge_Images\min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
+- `Edge_Images\max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
+
+#### Additional optimizations
+- `Edge_Images\preloads` (`array`): An associative array of image IDs and sizes to automatically preload (via `<link>` tags in the `<head>`).
 
 ## Integrations
 The plugin automatically integrates with the following systems and plugins.
