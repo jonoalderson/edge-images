@@ -121,7 +121,7 @@ class Handler {
 	public function enqueue_js() : void {
 
 		// Get our stylesheet
-		$script_path = Helpers::SCRIPTS_PATH . '/main.js';
+		$script_path = Helpers::SCRIPTS_PATH . '/main.min.js';
 		if ( ! file_exists( $script_path ) ) {
 			return; // Bail if we couldn't find it.
 		}
