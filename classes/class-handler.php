@@ -26,10 +26,10 @@ class Handler {
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_edge' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
-		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 0 );
+		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
+		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_js' ), 2 );
 		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ) );
-		// add_filter( 'wp_get_attachment_image_src', array( $instance, 'fix_wp_get_attachment_image_svg' ), 1, 4 );
 	}
 
 	/**
@@ -74,45 +74,6 @@ class Handler {
 	}
 
 	/**
-	 * Fixes WP sometimes not retrieving the right values for SVGs.
-	 *
-	 * @param  array|false  $image         The image.
-	 * @param  int          $attachment_id The attachment ID.
-	 * @param  string|int[] $size          The size.
-	 * @param  bool         $icon          Whether to use an icon.
-	 *
-	 * @return array                       The modified image
-	 */
-	public function fix_wp_get_attachment_image_svg( $image, $attachment_id, $size, $icon ) : array {
-
-		if ( ! $image || ! isset( $image[0] ) || ! isset( $image[1] ) || ! isset( $image[2] ) ) {
-			return array(); // Bail if the image isn't valid.
-		}
-
-		// Check if this is an SVG.
-		if ( is_array( $image ) && preg_match( '/\.svg$/i', $image[0] ) && $image[1] <= 1 ) {
-			if ( is_array( $size ) ) {
-				// If $image is an array, we can use the H and W values.
-				$image[1] = $size[0];
-				$image[2] = $size[1];
-			} elseif ( ( $xml = simplexml_load_file( $image[0] ) ) !== false ) {
-				// Otherwise, we should get the attributes from the SVG file.
-				$attr     = $xml->attributes();
-				$viewbox  = explode( ' ', $attr->viewBox );
-				$image[1] = isset( $attr->width ) && preg_match( '/\d+/', $attr->width, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[2] : null );
-				$image[2] = isset( $attr->height ) && preg_match( '/\d+/', $attr->height, $value ) ? (int) $value[0] : ( count( $viewbox ) == 4 ? (int) $viewbox[3] : null );
-			} else {
-				// Or fall back to no values.
-				$image[1] = null;
-				$image[2] = null;
-			}
-		}
-
-		return $image;
-	}
-
-
-	/**
 	 * Adds our aspect ratio variable as a safe style
 	 *
 	 * @param  array $styles The safe styles.
@@ -151,6 +112,29 @@ class Handler {
 		$stylesheet = file_get_contents( $stylesheet_path );
 		wp_add_inline_style( 'edge-images', $stylesheet );
 	}
+
+	/**
+	 * Enqueue our JS
+	 *
+	 * @return void
+	 */
+	public function enqueue_js() : void {
+
+		// Get our stylesheet
+		$script_path = Helpers::SCRIPTS_PATH . '/main.js';
+		if ( ! file_exists( $script_path ) ) {
+			return; // Bail if we couldn't find it.
+		}
+
+		// Enqueue a dummy style to attach our inline styles to.
+		wp_register_script( 'edge-images', false );
+		wp_enqueue_script( 'edge-images' );
+
+		// Output the stylesheet inline
+		$script = file_get_contents( $script_path );
+		wp_add_inline_script( 'edge-images', $script );
+	}
+
 
 	/**
 	 * Alter block editor image rendering, and return the modified image HTML

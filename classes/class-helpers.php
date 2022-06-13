@@ -24,6 +24,13 @@ class Helpers {
 	public const STYLES_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/css';
 
 	/**
+	 * The plugin scripts path
+	 *
+	 * @var string
+	 */
+	public const SCRIPTS_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/js';
+
+	/**
 	 * The cache group to use
 	 *
 	 * @var string
