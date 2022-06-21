@@ -127,7 +127,7 @@ class Handler {
 		}
 
 		// Enqueue a dummy style to attach our inline styles to.
-		wp_register_script( 'edge-images', false );
+		wp_register_script( 'edge-images', false, array(), EDGE_IMAGES_VERSION, true );
 		wp_enqueue_script( 'edge-images' );
 
 		// Output the stylesheet inline
