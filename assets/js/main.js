@@ -6,7 +6,7 @@ document.body.addEventListener(
       return;
     }
     // Bail if this isn't an Edge image.
-    if (e.classList.contains('edge-images-img') == false) {
+    if (e.target.classList.contains('edge-images-img') == false) {
       return;
     }
     e.target.style.backgroundImage = "none";

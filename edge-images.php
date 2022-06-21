@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '2.03' );
+	define( 'EDGE_IMAGES_VERSION', '2.04' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
