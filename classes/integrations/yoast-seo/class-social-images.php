@@ -174,7 +174,7 @@ class Social_Images {
 		$args = array(
 			'width'  => self::OG_WIDTH,
 			'height' => self::OG_HEIGHT,
-			'fit'    => 'contain',
+			'fit'    => 'cover',
 		);
 
 		// Tweak the behaviour for small images.
@@ -216,7 +216,7 @@ class Social_Images {
 		$args = array(
 			'width'  => $image[1],
 			'height' => $image[2],
-			'fit'    => 'contain',
+			'fit'    => 'cover',
 		);
 
 		// Allow for filtering the args.
