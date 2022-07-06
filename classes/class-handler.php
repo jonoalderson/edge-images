@@ -166,6 +166,13 @@ class Handler {
 		$atts  = $this->get_image_atts( $parsed_block );
 		$image = $this->get_content_image( $parsed_block['attrs']['id'], $atts );
 
+		// DEBUG: Show image info
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+			print_r( $atts );
+			print_r( $image );
+			die
+		}
+
 		// Bail if we didn't get an image; fall back to the original block.
 		if ( ! $image ) {
 			return $pre_render;
@@ -252,12 +259,6 @@ class Handler {
 			$atts['container-class'] = array();
 		}
 		$atts['container-class'][] = 'wp-block-image';
-
-		// If we're debugging, always return true.
-		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
-			print_r( $atts );
-			die;
-		}
 
 		// Get our transformed image.
 		$image = get_edge_image( $id, $atts, 'content', false );
