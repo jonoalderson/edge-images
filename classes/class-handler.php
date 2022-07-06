@@ -168,6 +168,8 @@ class Handler {
 
 		// DEBUG: Show image info
 		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+			print_r( $pre_render );
+			print_r( $parent_block );
 			print_r( $atts );
 			print_r( $image );
 			die;
