@@ -170,7 +170,7 @@ class Handler {
 		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
 			print_r( $atts );
 			print_r( $image );
-			die
+			die;
 		}
 
 		// Bail if we didn't get an image; fall back to the original block.
