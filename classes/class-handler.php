@@ -28,7 +28,7 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_js' ), 2 );
-		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
+		// add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ) );
 	}
 
@@ -165,15 +165,6 @@ class Handler {
 		// Build our image.
 		$atts  = $this->get_image_atts( $parsed_block );
 		$image = $this->get_content_image( $parsed_block['attrs']['id'], $atts );
-
-		// DEBUG: Show image info
-		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
-			print_r( $pre_render );
-			print_r( $parent_block );
-			print_r( $atts );
-			print_r( $image );
-			die;
-		}
 
 		// Bail if we didn't get an image; fall back to the original block.
 		if ( ! $image ) {
