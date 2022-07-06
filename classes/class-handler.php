@@ -198,12 +198,6 @@ class Handler {
 			$atts['caption'] = $caption;
 		}
 
-		// If we're debugging, always return true.
-		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
-			print_r( $parsed_block );
-			die;
-		}
-
 		return $atts;
 	}
 
@@ -258,6 +252,12 @@ class Handler {
 			$atts['container-class'] = array();
 		}
 		$atts['container-class'][] = 'wp-block-image';
+
+		// If we're debugging, always return true.
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+			print_r( $atts );
+			die;
+		}
 
 		// Get our transformed image.
 		$image = get_edge_image( $id, $atts, 'content', false );
