@@ -12,6 +12,17 @@ use Edge_Images\Helpers;
 class Edge_Provider {
 
 	/**
+	 * The required fields
+	 *
+	 * @var array
+	 */
+	protected array $required_fields = array(
+		'width',
+		'height',
+		'src',
+	);
+
+	/**
 	 * Create the provider
 	 *
 	 * @param string $path The path to the image.

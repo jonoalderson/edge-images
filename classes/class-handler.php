@@ -2,8 +2,8 @@
 
 namespace Edge_Images;
 
-use Edge_Images\Helpers;
-use Edge_Images\Image;
+use Edge_Images\{Helpers, Image};
+use Edge_Images\Elements\Picture;
 
 /**
  * Filters wp_get_attachment_image and related functions to use the edge.
@@ -295,7 +295,10 @@ class Handler {
 		$attr = self::maybe_backfill_missing_dimensions( $html, $size, $attr );
 		$html = self::maybe_wrap_image_in_link( $html, $attr );
 		$html = self::maybe_add_caption( $html, $attr );
-		$html = self::maybe_wrap_image_in_container( $attachment_id, $html, $attr );
+		$html = self::wrap_image_in_container( $attachment_id, $html, $attr );
+
+		$picture = new Picture( $attr );
+
 		$html = Helpers::sanitize_image_html( $html );
 
 		return $html;
@@ -387,21 +390,13 @@ class Handler {
 	 *
 	 * @return string       The modified HTML
 	 */
-	private static function maybe_wrap_image_in_container( int $attachment_id, string $html, array $attr ) : string {
-
-		// Bail if image wrapping is disabled.
-		if ( apply_filters( 'Edge_Images\disable_container_wrap', false ) === true ) {
-			return $html;
-		}
-
+	private static function wrap_image_in_container( int $attachment_id, string $html, array $attr ) : string {
 		$html = sprintf(
-			'<%s style="%s" class="%s %s">%s</%s>',
-			( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
+			'<picture style="%s" class="%s %s">%s</picture>',
 			self::get_container_styles( $attr ),
 			( isset( $attr['container-class'] ) ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
 			'image-id-' . $attachment_id,
 			$html,
-			( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
 		);
 		return $html;
 	}

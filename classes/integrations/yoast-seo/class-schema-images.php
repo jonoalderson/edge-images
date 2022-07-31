@@ -147,8 +147,8 @@ class Schema_Images {
 
 		// Set our default args.
 		$args = array(
-			'width'  => ( $data['logo']['width'] > 1000 ) ? 1000 : $data['logo']['width'],
-			'height' => ( $data['logo']['height'] > 1000 ) ? 1000 : $data['logo']['height'],
+			'width'  => ( $data['logo']['width'] > 1200 ) ? 1200 : $data['logo']['width'],
+			'height' => ( $data['logo']['height'] > 1200 ) ? 1200 : $data['logo']['height'],
 			'fit'    => 'contain',
 		);
 

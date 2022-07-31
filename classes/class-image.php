@@ -3,6 +3,7 @@
 namespace Edge_Images;
 
 use Edge_Images\{Helpers, Handler};
+use Edge_Imagge\Components\{Picture, Source, Img};
 
 /**
  * Generates and managers an image.
@@ -29,6 +30,27 @@ class Image {
 	 * @var string|array
 	 */
 	public $size;
+
+	/**
+	 * The <picture> tag
+	 *
+	 * @var Picture
+	 */
+	public Picture $picture;
+
+	/**
+	 * The <source> elem(s)
+	 *
+	 * @var array
+	 */
+	public array $sources;
+
+	/**
+	 * The <img> elem
+	 *
+	 * @var Img
+	 */
+	public Img $img;
 
 	/**
 	 * Construct the image object
@@ -480,7 +502,7 @@ class Image {
 			Helpers::normalize_attr_array( $this->get_attr( 'container-class' ) ),
 			array(
 				'edge-images-container',
-				$this->attrs['container-type'] . '-' . $size_class,
+				'picture-' . $size_class,
 				isset( $this->attrs['layout'] ) ? $this->attrs['layout'] : null,
 			)
 		);

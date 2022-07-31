@@ -256,21 +256,25 @@ class Helpers {
 	 * @return false|string The flattened classes
 	 */
 	public static function classes_array_to_string( $classes ) {
+
+		// If it's already a string, explode it into an array so that we can sanitize it consistently.
 		if ( is_string( $classes ) ) {
 			$classes = explode( ' ', $classes );
 		}
 
-		if ( is_array( $classes ) ) {
-			$classes = array_map(
-				function( $class ) {
-					return sanitize_html_class( $class );
-				},
-				$classes
-			);
-			return implode( ' ', $classes );
-		}
+		// Sanitize each class in the array
+		$classes = array_map(
+			function( $class ) {
+				return \sanitize_html_class( $class );
+			},
+			$classes
+		);
 
-		return false;
+		// Remove empties and duplicates.
+		$classes = array_values( array_unique( array_filter( $classes ) ) );
+
+		return implode( ' ', $classes );
+
 	}
 
 	/**
@@ -589,10 +593,9 @@ class Helpers {
 			'class'           => array( 'edge-images-img' ),
 			'container-class' => array( 'edge-images-container' ),
 			'layout'          => 'responsive',
-			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
-			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
-			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
-			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
+			'fit'             => apply_filters( 'Edge_Images\fit_attr', 'cover' ),
+			'loading'         => apply_filters( 'Edge_Images\loading_attr', 'lazy' ),
+			'decoding'        => apply_filters( 'Edge_Images\decodingg_attr', 'async' ),
 			'caption'         => false,
 		);
 

@@ -92,7 +92,9 @@ class Preloads {
 		// Bail if we're missing key properties.
 		if (
 			! isset( $image->attrs['srcset'] ) ||
-			! isset( $image->attrs['sizes'] )
+			! isset( $image->attrs['sizes'] ) ||
+			! $image->attrs['srcset'] ||
+			! $image->attrs['sizes']
 		) {
 			return false;
 		}
