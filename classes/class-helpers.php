@@ -24,6 +24,13 @@ class Helpers {
 	public const STYLES_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/css';
 
 	/**
+	 * The plugin scripts path
+	 *
+	 * @var string
+	 */
+	public const SCRIPTS_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/js';
+
+	/**
 	 * The cache group to use
 	 *
 	 * @var string
@@ -293,9 +300,13 @@ class Helpers {
 	public static function should_transform_images() : bool {
 
 		// Bail if we're in the admin.
-		// if ( is_admin() && () defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 		if ( is_admin() ) {
 			return false;
+		}
+
+		// If we're debugging, always return true.
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+			return true;
 		}
 
 		// Bail if the functionality has been disabled via a filter.
@@ -315,6 +326,11 @@ class Helpers {
 	 * @return bool
 	 */
 	public static function should_transform_image( int $id ) : bool {
+
+		// If we're debugging, always return true.
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+			return true;
+		}
 
 		// Bail if functionality has been disabled via a filter.
 		if ( ! self::should_transform_images() ) {
@@ -336,6 +352,11 @@ class Helpers {
 	 * @return bool
 	 */
 	public static function should_transform_image_src() : bool {
+
+		// If we're debugging, always return true.
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+			return true;
+		}
 
 		$force_transform = apply_filters( 'Edge_Images\force_transform', false );
 		if ( $force_transform ) {

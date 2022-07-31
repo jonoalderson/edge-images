@@ -24,26 +24,18 @@ class Cloudflare extends Edge_Provider {
 			'onerror'  => ( isset( $this->args['onerror'] ) ) ? $this->args['onerror'] : 'redirect',
 			'metadata' => ( isset( $this->args['metadata'] ) ) ? $this->args['metadata'] : 'none',
 			'dpr'      => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
+			'gravity'  => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : 'auto',
 		);
 
-		// Height.
-		if ( isset( $this->args['height'] ) && $this->args['height'] ) {
+		// Optional properties.
+		if ( isset( $this->args['height'] ) ) {
 			$properties['height'] = $this->args['height'];
 		}
-
-		// Blue.
-		if ( isset( $this->args['blur'] ) && $this->args['blur'] ) {
+		if ( isset( $this->args['blur'] ) ) {
 			$properties['blur'] = $this->args['blur'];
 		}
-
-		// Sharpen.
-		if ( isset( $this->args['sharpen'] ) && $this->args['sharpen'] ) {
+		if ( isset( $this->args['sharpen'] ) ) {
 			$properties['sharpen'] = $this->args['sharpen'];
-		}
-
-		// Gravity.
-		if ( isset( $this->args['gravity'] ) && $this->args['gravity'] ) {
-			$properties['gravity'] = $this->args['gravity'];
 		}
 
 		ksort( $properties );
@@ -53,7 +45,7 @@ class Cloudflare extends Edge_Provider {
 
 	/**
 	 * Get the edge URL
-	 * E.g., https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover[...]path-to-image.jpg
+	 * E.g., https://staging.prosettings.net/cdn-cgi/image/f=auto%2Cfit=cover[...]path-to-image.jpg
 	 *
 	 * @return string The edge URL.
 	 */
