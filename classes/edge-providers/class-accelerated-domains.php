@@ -22,7 +22,6 @@ class Accelerated_Domains extends Edge_Provider {
 			'format'  => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
 			'quality' => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_default(),
 			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
-			'gravity' => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : 'auto',
 		);
 
 		// Optional properties.
@@ -31,6 +30,12 @@ class Accelerated_Domains extends Edge_Provider {
 		}
 		if ( isset( $this->args['sharpen'] ) ) {
 			$properties['sharpen'] = $this->args['sharpen'];
+		}
+		if ( isset( $this->args['blur'] ) ) {
+			$properties['blur'] = $this->args['blur'];
+		}
+		if ( isset( $this->args['gravity'] ) ) {
+			$properties['gravity'] = $this->args['gravity'];
 		}
 
 		ksort( $properties );

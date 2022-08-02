@@ -24,18 +24,20 @@ class Cloudflare extends Edge_Provider {
 			'onerror'  => ( isset( $this->args['onerror'] ) ) ? $this->args['onerror'] : 'redirect',
 			'metadata' => ( isset( $this->args['metadata'] ) ) ? $this->args['metadata'] : 'none',
 			'dpr'      => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
-			'gravity'  => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : 'auto',
 		);
 
 		// Optional properties.
 		if ( isset( $this->args['height'] ) ) {
 			$properties['height'] = $this->args['height'];
 		}
+		if ( isset( $this->args['sharpen'] ) ) {
+			$properties['sharpen'] = $this->args['sharpen'];
+		}
 		if ( isset( $this->args['blur'] ) ) {
 			$properties['blur'] = $this->args['blur'];
 		}
-		if ( isset( $this->args['sharpen'] ) ) {
-			$properties['sharpen'] = $this->args['sharpen'];
+		if ( isset( $this->args['gravity'] ) ) {
+			$properties['gravity'] = $this->args['gravity'];
 		}
 
 		ksort( $properties );
