@@ -41,20 +41,20 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 	spl_autoload_register( __NAMESPACE__ . '\autoloader' );
 
-	// Register activation & deactivation functions
+	// Register activation & deactivation functions.
 	register_activation_hook( __NAMESPACE__, 'activate_plugin' );
 	register_deactivation_hook( __NAMESPACE__, 'deactivate_plugin' );
 
-	// Load our core functionality
+	// Load our core functionality.
 	Handler::register();
 
-	// Load admin interface
+	// Load admin interface.
 	Admin::register();
 
-	// Load features
+	// Load features.
 	Features\Preloads::register();
 
-	// Load integrations
+	// Load integrations.
 	Integrations\Yoast_SEO\Social_Images::register();
 	Integrations\Yoast_SEO\Schema_Images::register();
 	Integrations\Yoast_SEO\XML_Sitemaps::register();
@@ -62,7 +62,9 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 } )();
 
 /**
- * Runs our plugin activation routine
+ * Runs our plugin activation routine.
+ *
+ * @return void
  */
 function activate_plugin() : void {
 
@@ -70,6 +72,8 @@ function activate_plugin() : void {
 
 /**
  * Runs our plugin deactivation routine
+ *
+ * @return void
  */
 function deactivate_plugin() : void {
 
