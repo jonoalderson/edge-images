@@ -300,7 +300,7 @@ class Helpers {
 	public static function should_transform_images() : bool {
 
 		// Bail if we're in the admin, but not the post editor.
-		$screen = get_current_screen();
+		$screen = \get_current_screen();
 		if ( is_admin() && ! $screen->parent_base !== 'edit' ) {
 			return false;
 		}
