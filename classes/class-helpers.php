@@ -301,7 +301,7 @@ class Helpers {
 
 		// Bail if we're in the admin.
 		if ( is_admin() ) {
-			return false;
+			// return false;
 		}
 
 		// If we're debugging, always return true.

@@ -141,7 +141,7 @@ class Handler {
 	 *
 	 * @param string|null   $pre_render   The pre-rendered content.
 	 * @param array         $parsed_block The parsed block's properties.
-	 * @param WP_Block|null $parent_block The parent block
+	 * @param WP_Block|null $parent_block The parent block.
 	 *
 	 * @return string|null                The modified HTML content
 	 */
@@ -149,7 +149,7 @@ class Handler {
 
 		// Bail if we're in the admin or doing a REST request.
 		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			return false;
+			// return false;
 		}
 
 		// Bail if this isn't an image block .
