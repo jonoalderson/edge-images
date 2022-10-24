@@ -151,12 +151,11 @@ class Handler {
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/screen.php';
 		}
-		$screen = get_current_screen();
 		if ( is_admin() && get_current_screen()->parent_base !== 'edit' ) {
-			return false;
+			return $pre_render;
 		}
 
-		// Bail if this isn't an image block .
+		// Bail if this isn't an image block.
 		if ( $parsed_block['blockName'] !== 'core/image' ) {
 			return $pre_render;
 		}

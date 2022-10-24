@@ -299,14 +299,6 @@ class Helpers {
 	 */
 	public static function should_transform_images() : bool {
 
-		// Bail if we're in the admin, but not the post editor.
-		if ( ! function_exists( 'get_current_screen' ) ) {
-			require_once ABSPATH . '/wp-admin/includes/screen.php';
-		}
-		if ( is_admin() && get_current_screen()->parent_base !== 'edit' ) {
-			return false;
-		}
-
 		// If we're debugging, always return true.
 		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
 			return true;
@@ -315,6 +307,15 @@ class Helpers {
 		// Bail if the functionality has been disabled via a filter.
 		$disabled = apply_filters( 'Edge_Images\disable', false );
 		if ( $disabled === true ) {
+			return false;
+		}
+
+		// Bail if we're in the admin, but not the post editor.
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			require_once ABSPATH . '/wp-admin/includes/screen.php';
+		}
+error_log(get_current_screen()->parent_base);
+		if ( is_admin() && get_current_screen()->parent_base !== 'edit' ) {
 			return false;
 		}
 
