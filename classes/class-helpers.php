@@ -303,8 +303,7 @@ class Helpers {
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/screen.php';
 		}
-		$screen = \get_current_screen();
-		if ( is_admin() && $screen->parent_base !== 'edit' ) {
+		if ( is_admin() && get_current_screen()->parent_base !== 'edit' ) {
 			return false;
 		}
 

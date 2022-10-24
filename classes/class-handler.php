@@ -147,17 +147,12 @@ class Handler {
 	 */
 	public function alter_image_block_rendering( $pre_render, array $parsed_block, $parent_block ) {
 
-		// Bail if we're in the admin or doing a REST request.
-		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			return false;
-		}
-
 		// Bail if we're in the admin, but not the post editor.
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/screen.php';
 		}
-		$screen = \get_current_screen();
-		if ( is_admin() && $screen->parent_base !== 'edit' ) {
+		$screen = get_current_screen();
+		if ( is_admin() && get_current_screen()->parent_base !== 'edit' ) {
 			return false;
 		}
 
