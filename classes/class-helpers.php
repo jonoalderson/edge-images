@@ -310,15 +310,6 @@ class Helpers {
 			return false;
 		}
 
-		// Bail if we're in the admin, but not the post editor.
-		if ( ! function_exists( 'get_current_screen' ) ) {
-			require_once ABSPATH . '/wp-admin/includes/screen.php';
-		}
-error_log(get_current_screen()->parent_base);
-		if ( is_admin() && get_current_screen()->parent_base !== 'edit' ) {
-			return false;
-		}
-
 		return true;
 	}
 

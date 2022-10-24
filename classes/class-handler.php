@@ -130,7 +130,7 @@ class Handler {
 		wp_register_script( 'edge-images', false, array(), EDGE_IMAGES_VERSION, true );
 		wp_enqueue_script( 'edge-images' );
 
-		// Output the stylesheet inline
+		// Output the stylesheet inline.
 		$script = file_get_contents( $script_path );
 		wp_add_inline_script( 'edge-images', $script );
 	}
@@ -151,7 +151,7 @@ class Handler {
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/screen.php';
 		}
-		if ( is_admin() && get_current_screen()->parent_base !== 'edit' ) {
+		if ( is_admin() && get_current_screen() && get_current_screen()->parent_base !== 'edit' ) {
 			return $pre_render;
 		}
 
