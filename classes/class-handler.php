@@ -149,7 +149,13 @@ class Handler {
 
 		// Bail if we're in the admin or doing a REST request.
 		if ( is_admin() || defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			// return false;
+			return false;
+		}
+
+		// Bail if we're in the admin, but not the post editor.
+		$screen = get_current_screen();
+		if ( is_admin() && ! $screen->parent_base !== 'edit' ) {
+			return false;
 		}
 
 		// Bail if this isn't an image block .
