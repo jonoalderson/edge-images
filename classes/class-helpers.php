@@ -84,6 +84,8 @@ class Helpers {
 
 		// Bail if we shouldn't transform the image based on the src.
 		if ( ! self::should_transform_image_src() ) {
+			echo "don't transform brcause src";
+			die;
 			return $src;
 		}
 
@@ -301,6 +303,9 @@ class Helpers {
 
 		// Bail if we're in the admin.
 		if ( is_admin() ) {
+			echo 'admin';
+			die;
+
 			return false;
 		}
 
@@ -312,6 +317,9 @@ class Helpers {
 		// Bail if the functionality has been disabled via a filter.
 		$disabled = apply_filters( 'Edge_Images\disable', false );
 		if ( $disabled === true ) {
+			echo 'filtering 2';
+			die;
+
 			return false;
 		}
 
@@ -334,12 +342,17 @@ class Helpers {
 
 		// Bail if functionality has been disabled via a filter.
 		if ( ! self::should_transform_images() ) {
+			echo 'filtering';
+			die;
 			return false;
 		}
 
 		// Bail if this image ID has been filtered.
 		$excluded_images = apply_filters( 'Edge_Images\exclude', array() );
 		if ( $id && in_array( $id, $excluded_images, true ) ) {
+			echo 'excluded';
+			die;
+
 			return false;
 		}
 
@@ -367,6 +380,9 @@ class Helpers {
 		switch ( wp_get_environment_type() ) {
 			case 'local':
 			case 'development':
+				echo 'environment';
+				die;
+
 				return false;
 		}
 

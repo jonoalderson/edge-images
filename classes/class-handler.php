@@ -130,7 +130,7 @@ class Handler {
 		wp_register_script( 'edge-images', false, array(), EDGE_IMAGES_VERSION, true );
 		wp_enqueue_script( 'edge-images' );
 
-		// Output the stylesheet inline
+		// Output the stylesheet inline.
 		$script = file_get_contents( $script_path );
 		wp_add_inline_script( 'edge-images', $script );
 	}
@@ -141,7 +141,7 @@ class Handler {
 	 *
 	 * @param string|null   $pre_render   The pre-rendered content.
 	 * @param array         $parsed_block The parsed block's properties.
-	 * @param WP_Block|null $parent_block The parent block
+	 * @param WP_Block|null $parent_block The parent block.
 	 *
 	 * @return string|null                The modified HTML content
 	 */
@@ -152,7 +152,12 @@ class Handler {
 			return false;
 		}
 
-		// Bail if this isn't an image block .
+		// Only filter allowed block types.
+		// wp-block-acf-equipment-summary
+		print_r( $parent_block );
+		die;
+
+		// Bail if this isn't an image block.
 		if ( $parsed_block['blockName'] !== 'core/image' ) {
 			return $pre_render;
 		}
