@@ -153,6 +153,9 @@ class Handler {
 		}
 
 		// Bail if we're in the admin, but not the post editor.
+		if ( !function_exists( 'get_current_screen' ) ) { 
+			require_once ABSPATH . '/wp-admin/includes/screen.php'; 
+		 } 
 		$screen = \get_current_screen();
 		if ( is_admin() && ! $screen->parent_base !== 'edit' ) {
 			return false;
