@@ -587,7 +587,8 @@ class Helpers {
 			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
 			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
 			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
-			'decoding'        => apply_filters( 'Edge_Images\default_decodingg_attr', 'async' ),
+			'decoding'        => apply_filters( 'Edge_Images\default_decoding_attr', 'async' ),
+			'fetchpriority'   => apply_filters( 'Edge_Images\default_fetchpriority_attr', 'low' ),
 			'caption'         => false,
 		);
 
