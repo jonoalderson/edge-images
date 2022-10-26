@@ -310,6 +310,14 @@ class Helpers {
 			return false;
 		}
 
+		// Bail if we're in the admin, but not the post editor.
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			require_once ABSPATH . '/wp-admin/includes/screen.php';
+		}
+		if ( is_admin() && get_current_screen() && get_current_screen()->parent_base !== 'edit' ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -490,7 +498,7 @@ class Helpers {
 	/**
 	 * Attempts to get an alt attribute from <img> element HTML
 	 *
-	 * @param  string $html The HTML containing the <img> element
+	 * @param  string $html The HTML containing the <img> element.
 	 *
 	 * @return string        The alt attribute
 	 */
@@ -507,7 +515,7 @@ class Helpers {
 	/**
 	 * Attempts to get an href attribute from a linked <img> element HTML
 	 *
-	 * @param  string $html The HTML containing the <img> element
+	 * @param  string $html The HTML containing the <img> element.
 	 *
 	 * @return string        The href value
 	 */
@@ -524,7 +532,7 @@ class Helpers {
 	/**
 	 * Attempts to get an href attribute from an <img> element HTML
 	 *
-	 * @param  string $html The HTML containing the <img> element
+	 * @param  string $html The HTML containing the <img> element.
 	 *
 	 * @return string        The href value
 	 */
