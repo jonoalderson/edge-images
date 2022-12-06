@@ -98,17 +98,17 @@ class Handler {
 	 */
 	public function enqueue_css() : void {
 
-		// Get our stylesheet
+		// Get our stylesheet.
 		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
 		if ( ! file_exists( $stylesheet_path ) ) {
 			return; // Bail if we couldn't find it.
 		}
 
 		// Enqueue a dummy style to attach our inline styles to.
-		wp_register_style( 'edge-images', false );
+		wp_register_style( 'edge-images', false, array(), EDGE_IMAGES_VERSION );
 		wp_enqueue_style( 'edge-images' );
 
-		// Output the stylesheet inline
+		// Output the stylesheet inline.
 		$stylesheet = file_get_contents( $stylesheet_path );
 		wp_add_inline_style( 'edge-images', $stylesheet );
 	}

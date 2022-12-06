@@ -9,7 +9,7 @@ document.body.addEventListener(
     if (e.target.classList.contains('edge-images-img') == false) {
       return;
     }
-    e.target.style.backgroundImage = "none";
+    e.target.classList.add = "edge-images-img--loaded";
   },
   true
 );

@@ -443,6 +443,8 @@ class Helpers {
 
 		if ( ! $image_sizes ) {
 
+			$image_sizes = array();
+
 			global $_wp_additional_image_sizes;
 
 			$default_image_sizes = get_intermediate_image_sizes();

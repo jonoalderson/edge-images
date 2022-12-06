@@ -471,6 +471,7 @@ class Image {
 				'attachment-' . $size_class,
 				'size-' . $size_class,
 				'edge-images-img',
+				'edge-images-img--' . $this->attrs['loading'],
 			)
 		);
 		$this->attrs['class'] = array_unique( $this->attrs['class'] );
