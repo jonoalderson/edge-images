@@ -10,40 +10,6 @@ use Edge_Images\{Edge_Provider, Helpers};
 class Accelerated_Domains extends Edge_Provider {
 
 	/**
-	 * Get the properties
-	 *
-	 * @return array The properties.
-	 */
-	private function get_properties() : array {
-
-		$properties = array(
-			'width'   => ( isset( $this->args['width'] ) ) ? $this->args['width'] : Helpers::get_content_width(),
-			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : 'cover',
-			'format'  => ( isset( $this->args['format'] ) ) ? $this->args['format'] : 'webp',
-			'quality' => ( isset( $this->args['quality'] ) ) ? $this->args['quality'] : Helpers::get_image_quality_default(),
-			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : 1,
-		);
-
-		// Optional properties.
-		if ( isset( $this->args['height'] ) ) {
-			$properties['height'] = $this->args['height'];
-		}
-		if ( isset( $this->args['sharpen'] ) ) {
-			$properties['sharpen'] = $this->args['sharpen'];
-		}
-		if ( isset( $this->args['blur'] ) ) {
-			$properties['blur'] = $this->args['blur'];
-		}
-		if ( isset( $this->args['gravity'] ) ) {
-			$properties['gravity'] = $this->args['gravity'];
-		}
-
-		ksort( $properties );
-
-		return $properties;
-	}
-
-	/**
 	 * Get the edge URL
 	 * E.g., https://www.example.com/acd-cgi/img/v1/path-to-image.jpg?width=200&height=200
 	 *
@@ -57,7 +23,7 @@ class Accelerated_Domains extends Edge_Provider {
 			$edge_prefix,
 			$this->path,
 			http_build_query(
-				$this->get_properties(),
+				$this->get_transform_args(),
 				'',
 				'|'
 			)

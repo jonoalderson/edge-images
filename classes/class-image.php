@@ -73,6 +73,7 @@ class Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
+
 	}
 
 	/**
