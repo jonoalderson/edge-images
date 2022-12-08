@@ -80,7 +80,6 @@ public function register_edge_image_sizes( array $sizes ) : array {
     'height'  => 500,
     'sizes'   => '(max-width: 968px) calc(100vw - 2.5em), 968px',
     'loading' => 'eager',
-    'container-type' => 'picture',
   );
 }
 
@@ -168,7 +167,6 @@ The `Edge_Images\sizes` filter expects and returns an associative array of image
 - `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
 - `fetchpriority` (`str`): Sets the `fetchpriority` attribute on the `<img>` elem.
 - `class` (`array`|`str`): Extends the `class` value(s) on the `<img>` elem.
-- `container-type` (`str`): Sets the `<%container%>` tag type. Defaults to `figure`.
 - `container-class` (`array`|`str`): Extends the `class` value(s) on the `<%container%>` elem.
 
 #### Example configurations:

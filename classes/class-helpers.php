@@ -300,7 +300,7 @@ class Helpers {
 	public static function should_transform_images() : bool {
 
 		// If we're debugging, always return true.
-		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE === true ) {
 			return true;
 		}
 
@@ -594,7 +594,6 @@ class Helpers {
 			'class'           => array( 'edge-images-img' ),
 			'container-class' => array( 'edge-images-container' ),
 			'layout'          => 'responsive',
-			'container-type'  => apply_filters( 'Edge_Images\default_container_type', 'figure' ),
 			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
 			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
 			'decoding'        => apply_filters( 'Edge_Images\default_decoding_attr', 'async' ),

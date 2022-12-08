@@ -28,7 +28,7 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_js' ), 2 );
-		// add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
+		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ) );
 	}
 
@@ -92,7 +92,7 @@ class Handler {
 	}
 
 	/**
-	 * Enqueue our CSS
+	 * Enqueue our CSS (and render it inline)
 	 *
 	 * @return void
 	 */
@@ -114,13 +114,13 @@ class Handler {
 	}
 
 	/**
-	 * Enqueue our JS
+	 * Enqueue our JS (and output it inline)
 	 *
 	 * @return void
 	 */
 	public function enqueue_js() : void {
 
-		// Get our stylesheet
+		// Get our script.
 		$script_path = Helpers::SCRIPTS_PATH . '/main.min.js';
 		if ( ! file_exists( $script_path ) ) {
 			return; // Bail if we couldn't find it.
@@ -185,13 +185,14 @@ class Handler {
 	 * @return array               The image atts array
 	 */
 	private function get_image_atts( array $parsed_block ) : array {
-		$atts = array();
+		$atts  = array();
+		$attrs = $parsed_block['attrs'];
 
 		// Get the alt attribute if it's set.
 		$atts['alt'] = Helpers::get_alt_from_img_el( $parsed_block['innerHTML'] );
 
 		// Get the link destination if it's set.
-		if ( isset( $parsed_block['attrs']['linkDestination'] ) ) {
+		if ( isset( $attrs['linkDestination'] ) ) {
 			$atts['href'] = $this->get_image_link( $parsed_block );
 		}
 
@@ -199,6 +200,21 @@ class Handler {
 		$caption = Helpers::get_caption_from_img_el( $parsed_block['innerHTML'] );
 		if ( $caption && $caption !== '' ) {
 			$atts['caption'] = $caption;
+		}
+
+		// Get the width from the attrs.
+		if ( isset( $attrs['width'] ) ) {
+			$atts['width'] = $attrs['width'];
+		}
+
+		// Get the height from the attrs.
+		if ( isset( $attrs['height'] ) ) {
+			$atts['height'] = $attrs['height'];
+		}
+
+		// Get the size from the attrs.
+		if ( isset( $attrs['sizeSlug'] ) ) {
+			$atts['size'] = $attrs['sizeSlug'];
 		}
 
 		return $atts;
@@ -241,14 +257,19 @@ class Handler {
 	 */
 	private function get_content_image( int $id, array $atts = array() ) {
 
+		// Get the size, or fall back to 'full'.
+		$size = ( isset( $atts['size'] ) ) ? $atts['size'] : 'full';
+
 		// Get the height and width of the full-sized image.
-		$image = wp_get_attachment_image_src( $id, 'full' );
+		$image = wp_get_attachment_image_src( $id, $size );
 		if ( ! $image ) {
 			return false;
 		}
 
-		// Constrain our image to the maximum content width, based on the ratio.
-		$attrs = Helpers::constrain_image_to_content_width( $image[1], $image[2] );
+		// If there's no specific size, constrain our image to the maximum content width, based on the ratio.
+		if ( ! ( isset( $atts['width'] ) && isset( $atts['height'] ) ) ) {
+			$atts = array_merge( $atts, Helpers::constrain_image_to_content_width( $image[1], $image[2] ) );
+		}
 
 		// Add WP's native block class(es).
 		if ( ! isset( $atts['container-class'] ) ) {
@@ -305,7 +326,7 @@ class Handler {
 	}
 
 	/**
-	 * Construct a viable <container> even when the image is missing.
+	 * Construct a viable <picture> even when the image is missing.
 	 *
 	 * @param  string $html             The <img> HTML.
 	 * @param  mixed  $size             The image size.
@@ -314,6 +335,8 @@ class Handler {
 	 * @return array                    The modified $attr array
 	 */
 	public static function maybe_backfill_missing_dimensions( $html, $size, $attr ) : array {
+
+		// Bail if the height and width are set (because then we know we have a valid image).
 		if ( isset( $attr['height'] ) && isset( $attr['width'] ) ) {
 			return $attr;
 		}
@@ -398,13 +421,11 @@ class Handler {
 		}
 
 		$html = sprintf(
-			'<%s style="%s" class="%s %s">%s</%s>',
-			( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
+			'<picture style="%s" class="%s %s">%s</picture>',
 			self::get_container_styles( $attr ),
 			( isset( $attr['container-class'] ) ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
 			'image-id-' . $attachment_id,
 			$html,
-			( isset( $attr['container-type'] ) ) ? $attr['container-type'] : 'picture',
 		);
 		return $html;
 	}
@@ -460,7 +481,10 @@ class Handler {
 			return false;
 		}
 
-		// Placeholder logic for broader exclusion.
+		// Bail if we shouldn't be transforming any images.
+		if ( ! Helpers::should_transform_images() ) {
+			return false;
+		}
 
 		return true;
 	}
