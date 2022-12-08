@@ -4,7 +4,7 @@ namespace Edge_Images;
 
 /**
  * Plugin Name: Edge Images
- * Version: 2.03
+ * Version: 3.0
  * Description: Provides support for Cloudflare's images transformation service.
  * Author: Jono Alderson
  * Text Domain: edge-images
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '2.04' );
+	define( 'EDGE_IMAGES_VERSION', '3.0' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
@@ -150,28 +150,4 @@ function get_edge_image_object( int $id, array $atts = array(), $size = 'large' 
 	}
 
 	return $image;
-}
-
-/**
- * Replace a SRC string with an edge version
- *
- * @param  string       $src  The src.
- * @param  string|array $size The image size.
- *
- * @return string       The modified SRC attr.
- */
-function convert_src( string $src, $size = 'large' ) : string {
-
-	if ( is_string( $size ) ) {
-		$sizes          = Helpers::get_sizes_from_size( $size );
-		$args['width']  = $sizes['width'];
-		$args['height'] = $sizes['height'];
-	}
-
-	if ( is_array( $size ) ) {
-		$args['width']  = $size[0];
-		$args['height'] = $size[1];
-	}
-
-	return Helpers::edge_src( $src, $args );
 }
