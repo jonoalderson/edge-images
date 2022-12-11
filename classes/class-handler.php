@@ -251,7 +251,9 @@ class Handler {
 	/**
 	 * Gets an image sized for display in the_content.
 	 *
-	 * @param  int $id The attachment ID.
+	 * @param  int   $id The attachment ID.
+	 *
+	 * @param array $atts The image attributes.
 	 *
 	 * @return false|Image The Edge Image
 	 */
@@ -318,10 +320,30 @@ class Handler {
 
 		$attr = self::maybe_backfill_missing_dimensions( $html, $size, $attr );
 		$html = self::maybe_wrap_image_in_link( $html, $attr );
+		$html = self::maybe_add_source_tags( $html, $attr );
 		$html = self::maybe_add_caption( $html, $attr );
 		$html = self::maybe_wrap_image_in_container( $attachment_id, $html, $attr );
 		$html = Helpers::sanitize_image_html( $html );
 
+		return $html;
+	}
+
+	/**
+	 * Maybe wrap the image in a link.
+	 *
+	 * @param  string $html The image HTML.
+	 * @param  array  $attr The image attributes.
+	 *
+	 * @return string       The modified HTML
+	 */
+	private static function maybe_add_source_tags( string $html, array $attr ) : string {
+		foreach ( $attr['sources'] as $dpr => $sources ) {
+			$html = sprintf(
+				'<source media="(-webkit-min-device-pixel-ratio: %s)" srcset="%s"></source>',
+				$dpr,
+				implode( ', ', $sources )
+			) . $html;
+		}
 		return $html;
 	}
 

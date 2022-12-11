@@ -432,6 +432,21 @@ class Helpers {
 	}
 
 	/**
+	 * Get the permitted container attributes
+	 *
+	 * @return array The attributes
+	 */
+	public static function allowed_source_attrs() : array {
+		return array(
+			'style' => array(),
+			'class' => array(),
+			'media' => array(),
+			'src' => array(),
+			'srcset' => array()
+		);
+	}
+
+	/**
 	 * Gets the registered (and custom) system image sizes
 	 *
 	 * @return array The image sizes
@@ -620,6 +635,7 @@ class Helpers {
 				'img'        => self::allowed_img_attrs(),
 				'a'          => array( 'href' => array() ),
 				'figcaption' => array(),
+				'source'     => self::allowed_source_attrs(),
 			)
 		);
 		return $html;

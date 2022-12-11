@@ -67,13 +67,29 @@ class Image {
 
 		// Init all of the attributes.
 		$this->init_dimensions();
+		$this->init_dpr();
 		$this->init_src();
 		$this->init_ratio();
 		$this->init_layout();
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
+	}
 
+	/**
+	 * Init the DPR
+	 * Default to 1
+	 *
+	 * @return void
+	 */
+	private function init_dpr() : void {
+
+		// Bail if a DPR is already set.
+		if ( $this->has_attr( 'dpr' ) ) {
+			return;
+		}
+
+		$this->attrs['dpr'] = 1;
 	}
 
 	/**
@@ -237,6 +253,10 @@ class Image {
 	 */
 	private function init_src() : void {
 
+		if ( isset( $this->attrs['src'] ) && $this->attrs['src'] ) {
+			return; // Bail if already set.
+		}
+
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
 		if ( ! $full_image || ! isset( $full_image[0] ) || ! $full_image[0] ) {
@@ -281,6 +301,10 @@ class Image {
 	 */
 	private function init_srcset() : void {
 
+		if ( isset( $this->attrs['srcset'] ) && $this->attrs['srcset'] ) {
+			return; // Bail if already set.
+		}
+
 		// Bail if we're missing an SRC.
 		if ( ! isset( $this->attrs['src'] ) || ! $this->attrs['src'] ) {
 			return;
@@ -296,23 +320,42 @@ class Image {
 			$this->attrs['layout'] = 'responsive';
 		}
 
+		$sources = array();
 		switch ( $this->attrs['layout'] ) {
 			case 'responsive':
 				$srcset = array_merge(
 					$this->get_dpx_srcset_sizes(),
 					$this->get_generic_srcset_sizes(),
-					$this->get_srcset_sizes_from_context( $this->attrs['full-src'] )
+					$this->get_srcset_sizes_from_context()
 				);
+				for ( $dpr = 2; $dpr <= 3; $dpr ++ ) {
+					$this->attrs['dpr'] = $dpr;
+					$this->attrs['q']   = Helpers::get_image_quality_default() - 10 * $dpr;
+					$sources[$dpr]          = array_merge(
+						$this->get_dpx_srcset_sizes(),
+						$this->get_generic_srcset_sizes(),
+						$this->get_srcset_sizes_from_context(),
+					);
+				}
 				break;
 			case 'fixed':
 				$srcset = array_merge(
 					$this->get_dpx_srcset_sizes(),
-					$this->get_srcset_sizes_from_context( $this->attrs['full-src'] )
+					$this->get_srcset_sizes_from_context()
 				);
+				for ( $dpr = 2; $dpr <= 3; $dpr ++ ) {
+					$this->attrs['dpr'] = $dpr;
+					$this->attrs['q']   = Helpers::get_image_quality_default() - 10 * $dpr;
+					$sources[$dpr]          = array_merge(
+						$this->get_dpx_srcset_sizes(),
+						$this->get_srcset_sizes_from_context()
+					);
+				}
 				break;
 		}
 
-		$this->attrs['srcset'] = array_unique( $srcset );
+		$this->attrs['srcset']  = array_unique( $srcset );
+		$this->attrs['sources'] = $sources;
 	}
 
 	/**
@@ -532,13 +575,12 @@ class Image {
 	/**
 	 * Adds key srcset sizes from the image's size
 	 *
-	 * @param string $src The image src.
-	 *
 	 * @return array The srcset attr
 	 */
-	public function get_srcset_sizes_from_context( string $src ) : array {
+	public function get_srcset_sizes_from_context() : array {
 
-		$sizes = array();
+		$sizes  = array();
+		$srcset = array();
 
 		// Start with any custom srcset values.
 		if ( $this->has_attr( 'srcset' ) ) {
@@ -548,8 +590,14 @@ class Image {
 			}
 		}
 
-		// Create the srcset strings.
-		$srcset = array();
+		// Bail if we have no sizes.
+		if ( ! $sizes || empty( $sizes ) ) {
+			return $srcset;
+		}
+
+		// Get our args.
+		$args = $this->attrs;
+
 		foreach ( $sizes as $v ) {
 			$h              = ( isset( $v['width'] ) ) ? $v['height'] : null;
 			$args           = $this->get_attrs();
