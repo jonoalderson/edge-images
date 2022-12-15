@@ -79,7 +79,8 @@ class Edge_Provider {
 		}
 
 		// Remove empty values and sort our array.
-		ksort( array_filter( $args ) );
+		$args = array_filter( $args );
+		ksort( $args );
 
 		return $args;
 	}
