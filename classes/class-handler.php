@@ -473,10 +473,10 @@ class Handler {
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_dimension_attributes( $html = '', $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
+	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
 
 		// Bail if there's no HTML.
-		if ( ! $html ) {
+		if ( ! $html || $html === '' ) {
 			return '';
 		}
 
