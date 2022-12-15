@@ -46,6 +46,14 @@ class Handler {
 		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : self::get_default_ratio( $attr );
 		$styles[] = '--aspect-ratio:' . $ratio;
 
+		// Add max height and width inline styles if defined.
+		if ( isset( $attr['max-width'] ) ) {
+			$styles[] = sprintf( 'max-width:%dpx', $attr['max-width'] );
+		}
+		if ( isset( $attr['max-height'] ) ) {
+			$styles[] = sprintf( 'max-height:%dpx', $attr['max-height'] );
+		}
+
 		// Add height and width inline styles if this is a fixed image.
 		if ( isset( $attr['layout'] ) && $attr['layout'] === 'fixed' ) {
 			if ( isset( $attr['width'] ) && $attr['width'] ) {
@@ -217,6 +225,11 @@ class Handler {
 			$atts['size'] = $attrs['sizeSlug'];
 		}
 
+		// Get the alignment from the attrs.
+		if ( isset( $attrs['align'] ) ) {
+			$atts['align'] = $attrs['align'];
+		}
+
 		return $atts;
 	}
 
@@ -251,7 +264,8 @@ class Handler {
 	/**
 	 * Gets an image sized for display in the_content.
 	 *
-	 * @param  int $id The attachment ID.
+	 * @param  int   $id The attachment ID.
+	 * @param array $atts The image attributes.
 	 *
 	 * @return false|Image The Edge Image
 	 */
@@ -260,8 +274,10 @@ class Handler {
 		// Get the size, or fall back to 'full'.
 		$size = ( isset( $atts['size'] ) ) ? $atts['size'] : 'full';
 
-		// Get the height and width of the full-sized image.
+		// Get the full-sized image.
 		$image = wp_get_attachment_image_src( $id, $size );
+
+		// Bail if the image doesn't exist.
 		if ( ! $image ) {
 			return false;
 		}
@@ -271,11 +287,24 @@ class Handler {
 			$atts = array_merge( $atts, Helpers::constrain_image_to_content_width( $image[1], $image[2] ) );
 		}
 
+		// If there's a specific size set, use this for our max height/width.
+		if ( isset( $atts['width'] ) ) {
+			$atts['max-width'] = $atts['width'];
+		}
+		if ( isset( $atts['height'] ) ) {
+			$atts['max-height'] = $atts['height'];
+		}
+
 		// Add WP's native block class(es).
 		if ( ! isset( $atts['container-class'] ) ) {
 			$atts['container-class'] = array();
 		}
 		$atts['container-class'][] = 'wp-block-image';
+
+		// Add alignment.
+		if ( isset( $atts['align'] ) ) {
+			$atts['container-class'][] = 'align' . $atts['align'];
+		}
 
 		// Get our transformed image.
 		$image = get_edge_image( $id, $atts, 'content', false );

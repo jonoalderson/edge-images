@@ -10,16 +10,16 @@ use Edge_Images\Helpers;
 class Edge_Provider {
 
 	/**
-	 * The properties to set for images.
+	 * The args to set for images.
 	 *
 	 * @var array
 	 */
-	public array $properties = array(
+	public array $args = array(
 		'width'    => null,
 		'height'   => null,
 		'fit'      => null,
-		'format'   => null,
-		'quality'  => null,
+		'f'        => null,
+		'q'        => null,
 		'dpr'      => null,
 		'sharpen'  => null,
 		'blur'     => null,
@@ -34,13 +34,6 @@ class Edge_Provider {
 	 * @var string
 	 */
 	public string $path;
-
-	/**
-	 * The args to pass to the transformer
-	 *
-	 * @var array
-	 */
-	public array $args;
 
 	/**
 	 * Create the provider
@@ -70,7 +63,7 @@ class Edge_Provider {
 			'dpr'     => ( $this->args['dpr'] ) ? $this->args['dpr'] : 1,
 			'sharpen' => ( $this->args['sharpen'] ) ? $this->args['sharpen'] : null,
 			'blur'    => ( $this->args['blur'] ) ? $this->args['blur'] : null,
-			'gravity' => ( $this->args['g'] ) ? $this->args['gravity'] : null,
+			'gravity' => ( $this->args['gravity'] ) ? $this->args['gravity'] : null,
 		);
 
 		// Unset any empty/null properties.
