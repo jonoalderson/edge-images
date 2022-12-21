@@ -40,7 +40,7 @@ class Handler {
 
 		$styles = array();
 
-		// Set the aspect ratio.
+		// Add the aspect ratio.
 		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : self::get_default_ratio( $attr );
 		$styles[] = '--aspect-ratio:' . $ratio;
 
@@ -154,10 +154,7 @@ class Handler {
 	public function alter_image_block_rendering( $pre_render, array $parsed_block, $parent_block ) {
 
 		// Bail if we're in the admin, but not the post editor.
-		if ( ! function_exists( 'get_current_screen' ) ) {
-			require_once ABSPATH . '/wp-admin/includes/screen.php';
-		}
-		if ( is_admin() && get_current_screen() && get_current_screen()->parent_base !== 'edit' ) {
+		if ( Helpers::in_admin_but_not_post_editor() ) {
 			return $pre_render;
 		}
 
@@ -443,7 +440,7 @@ class Handler {
 	private static function maybe_wrap_image_in_container( int $attachment_id, string $html, array $attr ) : string {
 
 		// Bail if image wrapping is disabled.
-		if ( apply_filters( 'Edge_Images\disable_container_wrap', false ) === true ) {
+		if ( apply_filters( 'edge_images_disable_container_wrap', false ) === true ) {
 			return $html;
 		}
 

@@ -88,7 +88,7 @@ class Helpers {
 		}
 
 		// Get the provider class (default to Cloudflare).
-		$provider       = apply_filters( 'Edge_Images\provider', 'cloudflare' );
+		$provider       = apply_filters( 'edge_images_provider', 'cloudflare' );
 		$provider_class = 'Edge_Images\Edge_Providers\\' . ucfirst( $provider );
 
 		// Bail if we can't find one.
@@ -149,7 +149,7 @@ class Helpers {
 	 */
 	public static function get_content_width() : int {
 		// See if there's a filtered width.
-		$filtered_width = (int) apply_filters( 'Edge_Images\content_width', 0 );
+		$filtered_width = (int) apply_filters( 'edge_images_content_width', 0 );
 		if ( $filtered_width ) {
 			return $filtered_width;
 		}
@@ -168,7 +168,7 @@ class Helpers {
 	 * @return int The image quality value
 	 */
 	public static function get_image_quality_default() : int {
-		return (int) apply_filters( 'Edge_Images\quality', self::IMAGE_QUALITY_DEFAULT );
+		return (int) apply_filters( 'edge_images_quality', self::IMAGE_QUALITY_DEFAULT );
 	}
 
 	/**
@@ -177,7 +177,7 @@ class Helpers {
 	 * @return int The image step value
 	 */
 	public static function get_width_step() : int {
-		return (int) apply_filters( 'Edge_Images\step_value', self::WIDTH_STEP );
+		return (int) apply_filters( 'edge_images_step_value', self::WIDTH_STEP );
 	}
 
 	/**
@@ -186,7 +186,7 @@ class Helpers {
 	 * @return int The image min width value
 	 */
 	public static function get_image_min_width() : int {
-		return (int) apply_filters( 'Edge_Images\min_width', self::WIDTH_MIN );
+		return (int) apply_filters( 'edge_images_min_width', self::WIDTH_MIN );
 	}
 
 	/**
@@ -195,7 +195,7 @@ class Helpers {
 	 * @return int The image max width value
 	 */
 	public static function get_image_max_width() : int {
-		return (int) apply_filters( 'Edge_Images\max_width', self::WIDTH_MAX );
+		return (int) apply_filters( 'edge_images_max_width', self::WIDTH_MAX );
 	}
 
 	/**
@@ -305,20 +305,35 @@ class Helpers {
 		}
 
 		// Bail if the functionality has been disabled via a filter.
-		$disabled = apply_filters( 'Edge_Images\disable', false );
+		$disabled = apply_filters( 'edge_images_disable', false );
 		if ( $disabled === true ) {
 			return false;
 		}
 
 		// Bail if we're in the admin, but not the post editor.
-		if ( ! function_exists( 'get_current_screen' ) ) {
-			require_once ABSPATH . '/wp-admin/includes/screen.php';
-		}
-		if ( is_admin() && get_current_screen() && get_current_screen()->parent_base !== 'edit' ) {
+		if ( self::in_admin_but_not_post_editor() ) {
 			return false;
 		}
 
 		return true;
+	}
+
+	/**
+	 * Checks if we're in on an admin screen, but not the post editor
+	 *
+	 * @return boolean
+	 */
+	public static function in_admin_but_not_post_editor() : bool {
+		// Check that we're able to get the current screen.
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			require_once ABSPATH . '/wp-admin/includes/screen.php';
+		}
+		if ( is_admin() && get_current_screen() ) {
+			if ( get_current_screen()->base !== 'post' ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -331,7 +346,7 @@ class Helpers {
 	public static function should_transform_image( int $id ) : bool {
 
 		// If we're debugging, always return true.
-		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE === true ) {
 			return true;
 		}
 
@@ -341,7 +356,7 @@ class Helpers {
 		}
 
 		// Bail if this image ID has been filtered.
-		$excluded_images = apply_filters( 'Edge_Images\exclude', array() );
+		$excluded_images = apply_filters( 'edge_images_exclude', array() );
 		if ( $id && in_array( $id, $excluded_images, true ) ) {
 			return false;
 		}
@@ -357,16 +372,11 @@ class Helpers {
 	public static function should_transform_image_src() : bool {
 
 		// If we're debugging, always return true.
-		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE == true ) {
+		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE === true ) {
 			return true;
 		}
 
-		$force_transform = apply_filters( 'Edge_Images\force_transform', false );
-		if ( $force_transform ) {
-			return true;
-		}
-
-		// Don't ever transform the src if this is a local or dev environment.
+		// Don't normally transform the src if this is a local or dev environment.
 		switch ( wp_get_environment_type() ) {
 			case 'local':
 			case 'development':
@@ -396,7 +406,7 @@ class Helpers {
 	 * @return string The domain
 	 */
 	public static function get_rewrite_domain() : string {
-		return apply_filters( 'Edge_Images\domain', get_site_url() );
+		return apply_filters( 'edge_images_domain', get_site_url() );
 	}
 
 	/**
@@ -594,10 +604,10 @@ class Helpers {
 			'class'           => array( 'edge-images-img' ),
 			'container-class' => array( 'edge-images-container' ),
 			'layout'          => 'responsive',
-			'fit'             => apply_filters( 'Edge_Images\default_fit', 'cover' ),
-			'loading'         => apply_filters( 'Edge_Images\default_loading_attr', 'lazy' ),
-			'decoding'        => apply_filters( 'Edge_Images\default_decoding_attr', 'async' ),
-			'fetchpriority'   => apply_filters( 'Edge_Images\default_fetchpriority_attr', 'low' ),
+			'fit'             => apply_filters( 'edge_images_fit', 'cover' ),
+			'loading'         => apply_filters( 'edge_images_loading', 'lazy' ),
+			'decoding'        => apply_filters( 'edge_images_decoding', 'async' ),
+			'fetchpriority'   => apply_filters( 'edge_images_fetchpriority', 'low' ),
 			'caption'         => false,
 		);
 

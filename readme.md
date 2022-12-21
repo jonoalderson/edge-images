@@ -61,11 +61,11 @@ echo wp_get_attachment_image( $image_id, 'banner' );
 ```
 
 ### After
-Use Edge Images `Edge_Images\sizes` filter to define a 'banner', and output that image.
+Use Edge Images `edge_images_sizes` filter to define a 'banner', and output that image.
 
 **PHP**
 ```php
-add_filter( 'Edge_Images\sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
+add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
 
 /**
  * Register image sizes for Edge Images plugin
@@ -120,7 +120,7 @@ echo wp_get_attachment_image( $image_id, 'banner' );
 ### Preloading
 
 ```php
-add_filter( 'Edge_Images\preloads', 'preload_images', 1, 1 );
+add_filter( 'edge_images_preloads', 'preload_images', 1, 1 );
 
 /**
  * Register images to preload
@@ -146,10 +146,10 @@ public function preload_images( array $preloads ) : array {
 
 ## Customization
 The plugin automatically converts WordPress' native image sizes, and any sizes registered via `add_image_size()`.
-However, more fine-grained control can be achieved by registering custom sizes and definitions using the `Edge_Images\sizes` filter.
+However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
 
-### Using `Edge_Images\sizes`
-The `Edge_Images\sizes` filter expects and returns an associative array of image definitions; where they key is the _name_ of the size, and the value is an array constructed with the following properties.
+### Using `edge_images_sizes`
+The `edge_images_sizes` filter expects and returns an associative array of image definitions; where they key is the _name_ of the size, and the value is an array constructed with the following properties.
 
 #### Required
 - `height` (`int`): The `height` in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
@@ -172,7 +172,7 @@ The `Edge_Images\sizes` filter expects and returns an associative array of image
 #### Example configurations:
 A general use-case, which defines dimensions, sizes, and custom `srcset` values.
 ```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 
 function my_example_sizes($sizes) {
   $sizes['example_size_1'] = array(
@@ -192,7 +192,7 @@ function my_example_sizes($sizes) {
 
 A simple small image.
 ```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 
 function my_example_sizes($sizes) {
   $sizes['small_logo'] = array(
@@ -206,7 +206,7 @@ function my_example_sizes($sizes) {
 
 A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
 ```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 
 function my_example_sizes($sizes) {
   $sizes['32x32'] = array(
@@ -220,7 +220,7 @@ function my_example_sizes($sizes) {
 
 A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
 ```php
-add_filter( 'Edge_Images\sizes', 'my_example_sizes', 1, 1 );
+add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
 
 function my_example_sizes($sizes) {
   $sizes['card'] = array(
@@ -251,26 +251,25 @@ function my_example_sizes($sizes) {
 
 ### Other filters
 #### Enabling/disabling
-- `Edge_Images\disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
-- `Edge_Images\exclude` (`array`): An array of images to exclude from transformation.
-- `Edge_Images\force_transform` (`bool`): Forcibly enable transformation, even if environmental settings would otherwise disable it (e.g., if a site is in a local environment). Defaults to `false`.
-- `Edge_Images\disable_container_wrap` (`bool`): Disable wrapping images in a `<%container%>` element (and disable the associated CSS). Defaults to `false`.
+- `edge_images_disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
+- `edge_images_exclude` (`array`): An array of images to exclude from transformation.
+- `edge_images_disable_container_wrap` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
 
 #### General configuration
-- `Edge_Images\provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
-- `Edge_Images\domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
-- `Edge_Images\content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
+- `edge_images_provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
+- `edge_images_domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
+- `edge_images_content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
 
 #### Image quality settings
-- `Edge_Images\quality` (`int`): Alter the default quality value (from `1`-`100`). Defaults to `85`.
+- `edge_images_quality` (`int`): Alter the default quality value (from `1`-`100`). Defaults to `85`.
 
 #### `srcset` generation settings
-- `Edge_Images\step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
-- `Edge_Images\min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
-- `Edge_Images\max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
+- `edge_images_step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
+- `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
+- `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
 
 #### Additional optimizations
-- `Edge_Images\preloads` (`array`): An associative array of image IDs and sizes to automatically preload (via `<link>` tags in the `<head>`).
+- `edge_images_preloads` (`array`): An associative array of image IDs and sizes to automatically preload (via `<link>` tags in the `<head>`).
 
 ## Integrations
 The plugin automatically integrates with the following systems and plugins.
@@ -282,11 +281,11 @@ Automatically transforms images in:
 - XML sitemaps
 
 Supports the following filters:
-- `Edge_Images\Yoast\disable` (`bool`): Disables the Yoast SEO integration. Defaults to `false`.
-- `Edge_Images\Yoast\disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
-- `Edge_Images\Yoast\disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
-- `Edge_Images\Yoast\disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
-- `Edge_Images\Yoast\social_image_args`: (`array`): Alters the args passed to the social image.
+- `edge_images_yoast_disable` (`bool`): Disables the Yoast SEO integration. Defaults to `false`.
+- `edge_images_yoast_disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
+- `edge_images_yoast_disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
+- `edge_images_yoast_disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
+- `edge_images_yoast_social_image_args`: (`array`): Alters the args passed to the social image.
 
 ## Roadmap & known issues
 Does not currently support (but will in an upcoming release):
