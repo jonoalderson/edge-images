@@ -98,51 +98,6 @@ class Handler {
 	}
 
 	/**
-	 * Enqueue our CSS (and render it inline)
-	 *
-	 * @return void
-	 */
-	public function enqueue_css() : void {
-
-		// Get our stylesheet.
-		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
-		if ( ! file_exists( $stylesheet_path ) ) {
-			return; // Bail if we couldn't find it.
-		}
-
-		// Enqueue a dummy style to attach our inline styles to.
-		wp_register_style( 'edge-images', false, array(), EDGE_IMAGES_VERSION );
-		wp_enqueue_style( 'edge-images' );
-
-		// Output the stylesheet inline.
-		$stylesheet = file_get_contents( $stylesheet_path );
-		wp_add_inline_style( 'edge-images', $stylesheet );
-	}
-
-	/**
-	 * Enqueue our JS (and output it inline)
-	 *
-	 * @return void
-	 */
-	public function enqueue_js() : void {
-
-		// Get our script.
-		$script_path = Helpers::SCRIPTS_PATH . '/main.min.js';
-		if ( ! file_exists( $script_path ) ) {
-			return; // Bail if we couldn't find it.
-		}
-
-		// Enqueue a dummy style to attach our inline styles to.
-		wp_register_script( 'edge-images', false, array(), EDGE_IMAGES_VERSION, true );
-		wp_enqueue_script( 'edge-images' );
-
-		// Output the stylesheet inline.
-		$script = file_get_contents( $script_path );
-		wp_add_inline_script( 'edge-images', $script );
-	}
-
-
-	/**
 	 * Alter block editor image rendering, and return the modified image HTML
 	 *
 	 * @param string|null   $pre_render   The pre-rendered content.
@@ -369,7 +324,7 @@ class Handler {
 		$normalized_size = Helpers::normalize_size_attr( $size );
 
 		// Get the edge image sizes array.
-		$sizes = apply_filters( 'Edge_Images\sizes', Helpers::get_wp_image_sizes() );
+		$sizes = apply_filters( 'edge_images_sizes', Helpers::get_wp_image_sizes() );
 
 		// Grab the attrs for the image size, or continue with defaults.
 		if ( array_key_exists( $normalized_size, $sizes ) ) {

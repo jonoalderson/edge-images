@@ -48,13 +48,13 @@ class XML_Sitemaps {
 	private function should_filter() : bool {
 
 		// Bail if the Yoast SEO integration is disabled.
-		$disable_integration = apply_filters( 'Edge_Images\Yoast\disable', false );
+		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
 		if ( $disable_integration ) {
 			return false;
 		}
 
 		// Bail if schema image filtering is disabled.
-		$disable_feature = apply_filters( 'Edge_Images\Yoast\disable_xml_sitemap_images', false );
+		$disable_feature = apply_filters( 'edge_images_yoast_disable_xml_sitemap_images', false );
 		if ( $disable_feature ) {
 			return false;
 		}
