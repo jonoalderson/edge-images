@@ -26,9 +26,7 @@ class Handler {
 		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_edge' ), 100, 3 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
 		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
-		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
-		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_js' ), 2 );
-		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ) );
+		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ), 10, 1 );
 		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 	}
 

@@ -46,6 +46,7 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	register_deactivation_hook( __NAMESPACE__, 'deactivate_plugin' );
 
 	// Load our core functionality.
+	Assets::register();
 	Handler::register();
 
 	// Load admin interface.
