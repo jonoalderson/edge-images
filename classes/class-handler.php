@@ -460,10 +460,7 @@ class Handler {
 	}
 
 	/**
-	 * Remove the (first two) height and width attrs from <img> markup.
-	 *
-	 * NOTE: Widthout this, we create duplicate properties
-	 *       with wp_get_attachment_image_attributes!
+	 * Remove the height and width attrs from <img> markup, so that we can replace them with our customized values
 	 *
 	 * @param  string $html             The <img> HTML.
 	 * @param  int    $attachment_id    The attachment ID.
@@ -490,6 +487,7 @@ class Handler {
 			return $html;
 		}
 
+		// Strip the attributes.
 		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
 		return $html;
 	}
