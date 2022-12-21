@@ -1,9 +1,13 @@
 <?php
+/**
+ * Edge Images plugin file.
+ *
+ * @package Edge_Images
+ */
 
 namespace Edge_Images;
 
-use Edge_Images\Helpers;
-use Edge_Images\Image;
+use Edge_Images\{Helpers, Image};
 
 /**
  * Filters wp_get_attachment_image and related functions to use the edge.

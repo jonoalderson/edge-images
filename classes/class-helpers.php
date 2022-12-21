@@ -1,4 +1,9 @@
 <?php
+/**
+ * Edge Images plugin file.
+ *
+ * @package Edge_Images
+ */
 
 namespace Edge_Images;
 

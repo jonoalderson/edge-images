@@ -1,4 +1,9 @@
 <?php
+/**
+ * Edge Images plugin file.
+ *
+ * @package Edge_Images\Integrations
+ */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
