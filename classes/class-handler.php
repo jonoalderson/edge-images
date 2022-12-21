@@ -28,8 +28,8 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_js' ), 2 );
-		// add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ) );
+		// add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
 	}
 
 	/**
@@ -497,21 +497,19 @@ class Handler {
 	/**
 	 * Check whether an image should use the edge
 	 *
-	 * @param int   $id The attachment ID.
-	 *
-	 * @param  array $attrs The attachment attributes.
+	 * @param int $id The attachment ID.
 	 *
 	 * @return bool
 	 */
-	public function image_should_use_edge( int $id, array $attrs ) : bool {
-
-		// Bail if we shouldn't be transforming this image.
-		if ( ! Helpers::should_transform_image( $id ) ) {
-			return false;
-		}
+	public function image_should_use_edge( int $id ) : bool {
 
 		// Bail if we shouldn't be transforming any images.
 		if ( ! Helpers::should_transform_images() ) {
+			return false;
+		}
+
+		// Bail if we shouldn't be transforming this image.
+		if ( ! Helpers::should_transform_image( $id ) ) {
 			return false;
 		}
 
@@ -545,7 +543,7 @@ class Handler {
 		}
 
 		// Bail if this image shouldn't use the edge.
-		if ( ! $this->image_should_use_edge( $attachment->ID, $attrs ) ) {
+		if ( ! $this->image_should_use_edge( $attachment->ID ) ) {
 			return $attrs;
 		}
 
