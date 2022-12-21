@@ -1,17 +1,7 @@
-=== Edge Images ===
-Contributors: jonoaldersonwp
-Donate link: https://www.jonoalderson.com
-License: GPLv3
-License URI: http://www.gnu.org/licenses/gpl.html
-Tags: images, cloudflare, accelerated domains, performance
-Tested up to: 6.1.1
-Stable tag: 3.2
-Requires PHP: 7.4
-
+# Edge Images
 A WordPress plugin which automatically uses an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)) to apply performance optimizations to `<img>` markup.
 
-== Description ==
-
+## Description
 Edge Images intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
   - Uses an associative array of named (or h/w array value) sizes as lookups for user-defined layout, presentation and optimization rules.
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
