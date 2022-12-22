@@ -1,4 +1,9 @@
 <?php
+/**
+ * Edge Images plugin file.
+ *
+ * @package Edge_Images\Integrations
+ */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
@@ -49,13 +54,13 @@ class Schema_Images {
 	private function should_filter() : bool {
 
 		// Bail if the Yoast SEO integration is disabled.
-		$disable_integration = apply_filters( 'Edge_Images\Yoast\disable', false );
+		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
 		if ( $disable_integration ) {
 			return false;
 		}
 
 		// Bail if schema image filtering is disabled.
-		$disable_feature = apply_filters( 'Edge_Images\Yoast\disable_schema_images', false );
+		$disable_feature = apply_filters( 'edge_images_yoast_ydisable_schema_images', false );
 		if ( $disable_feature ) {
 			return false;
 		}
@@ -133,14 +138,10 @@ class Schema_Images {
 
 		// Bail if the schema doesn't contain required properties.
 		if (
-			! isset( $data['logo']['width'] ) ||
-			! isset( $data['logo']['height'] ) ||
-			! isset( $data['logo']['contentUrl'] ) ||
-			! isset( $data['logo']['url'] ) ||
-			! $data['logo']['width'] ||
-			! $data['logo']['height'] ||
-			! $data['logo']['contentUrl'] ||
-			! $data['logo']['url']
+			! isset( $data['logo']['width'] ) || ! $data['logo']['width'] ||
+			! isset( $data['logo']['height'] ) || ! $data['logo']['height'] ||
+			! isset( $data['logo']['contentUrl'] ) || ! $data['logo']['contentUrl'] ||
+			! isset( $data['logo']['url'] ) || ! $data['logo']['url']
 		) {
 			return $data;
 		}
@@ -153,7 +154,7 @@ class Schema_Images {
 		);
 
 		// Allow for filtering the args.
-		$args = apply_filters( 'Edge_Images\Yoast\social_image_args', $args );
+		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
 
 		// Convert the image src to a edge SRC.
 		$data['logo']['url']        = Helpers::edge_src( $data['logo']['contentUrl'], $args );

@@ -1,4 +1,9 @@
 <?php
+/**
+ * Edge Images plugin file.
+ *
+ * @package Edge_Images\Integrations
+ */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
@@ -52,13 +57,13 @@ class Social_Images {
 	private function should_filter() : bool {
 
 		// Bail if the Yoast SEO integration is disabled.
-		$disable_integration = apply_filters( 'Edge_Images\Yoast\disable', false );
+		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
 		if ( $disable_integration ) {
 			return false;
 		}
 
 		// Bail if schema image filtering is disabled.
-		$disable_feature = apply_filters( 'Edge_Images\Yoast\disable_social_images', false );
+		$disable_feature = apply_filters( 'edge_images_yoast_disable_social_images', false );
 		if ( $disable_feature ) {
 			return false;
 		}
@@ -164,7 +169,7 @@ class Social_Images {
 	/**
 	 * Transform an image into an edge SRC, and scale it up if necessary
 	 *
-	 * @param  array $image The image
+	 * @param  array $image The image.
 	 *
 	 * @return string       The edge SRC
 	 */
@@ -187,7 +192,7 @@ class Social_Images {
 		}
 
 		// Allow for filtering the args.
-		$args = apply_filters( 'Edge_Images\Yoast\social_image_args', $args );
+		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
 
 		// Convert the image src to a edge SRC.
 		$src = Helpers::edge_src( $image[0], $args );
@@ -220,7 +225,7 @@ class Social_Images {
 		);
 
 		// Allow for filtering the args.
-		$args = apply_filters( 'Edge_Images\Yoast\social_image_args', $args );
+		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
 
 		// Convert the image src to a edge SRC.
 		$src = Helpers::edge_src( $image[0], $args );

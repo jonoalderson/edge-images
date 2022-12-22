@@ -1,14 +1,45 @@
 <?php
+/**
+ * Edge Images
+ *
+ * @package   Edge_Images
+ * @copyright Copyright (C) 2008-2022, Yoast BV - support@yoast.com
+ * @license   http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3 or higher
+ *
+ * @wordpress-plugin
+ * Plugin Name: Edge Images
+ * Description: Provides support for transforming images on the edge, via Cloudflare or Accelerated Domains.
+ *
+ * Author: Jono Alderson
+ * Author URI: https://www.jonoalderson.com
+ * Plugin URI:  https://www.jonoalderson.com/plugins/edge-images/
+ * Donate link: https://www.jonoalderson.com
+ * Contributors: jonoaldersonwp
+ *
+ * Version: 3.2
+ * Requires at least: 6.0
+ * Tested up to: 6.1.1
+ * Stable tag: 3.1
+ * Requires PHP: 7.4
+ *
+ * Text Domain: edge-images
+ * Tags: images, cloudflare, accelerated domains, performance
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 namespace Edge_Images;
-
-/**
- * Plugin Name: Edge Images
- * Version: 2.05
- * Description: Provides support for Cloudflare's images transformation service.
- * Author: Jono Alderson
- * Text Domain: edge-images
- */
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +48,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '2.05' );
+	define( 'EDGE_IMAGES_VERSION', '3.2' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
@@ -41,20 +72,21 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 	require_once 'autoload.php';
 	spl_autoload_register( __NAMESPACE__ . '\autoloader' );
 
-	// Register activation & deactivation functions
+	// Register activation & deactivation functions.
 	register_activation_hook( __NAMESPACE__, 'activate_plugin' );
 	register_deactivation_hook( __NAMESPACE__, 'deactivate_plugin' );
 
-	// Load our core functionality
+	// Load our core functionality.
+	Assets::register();
 	Handler::register();
 
-	// Load admin interface
+	// Load admin interface.
 	Admin::register();
 
-	// Load features
+	// Load features.
 	Features\Preloads::register();
 
-	// Load integrations
+	// Load integrations.
 	Integrations\Yoast_SEO\Social_Images::register();
 	Integrations\Yoast_SEO\Schema_Images::register();
 	Integrations\Yoast_SEO\XML_Sitemaps::register();
@@ -62,7 +94,9 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 } )();
 
 /**
- * Runs our plugin activation routine
+ * Runs our plugin activation routine.
+ *
+ * @return void
  */
 function activate_plugin() : void {
 
@@ -70,6 +104,8 @@ function activate_plugin() : void {
 
 /**
  * Runs our plugin deactivation routine
+ *
+ * @return void
  */
 function deactivate_plugin() : void {
 
@@ -108,8 +144,8 @@ function get_edge_image( int $id, array $atts = array(), $size = 'large', bool $
 	// Construct the <img>, and wrap it in a <picture>.
 	$html = $image->construct_img_el( true );
 
+	// Echo the image.
 	if ( $echo ) {
-		// Echo the image.
 		echo Helpers::sanitize_image_html( $html );
 		return;
 	}
@@ -146,28 +182,4 @@ function get_edge_image_object( int $id, array $atts = array(), $size = 'large' 
 	}
 
 	return $image;
-}
-
-/**
- * Replace a SRC string with an edge version
- *
- * @param  string       $src  The src.
- * @param  string|array $size The image size.
- *
- * @return string       The modified SRC attr.
- */
-function convert_src( string $src, $size = 'large' ) : string {
-
-	if ( is_string( $size ) ) {
-		$sizes          = Helpers::get_sizes_from_size( $size );
-		$args['width']  = $sizes['width'];
-		$args['height'] = $sizes['height'];
-	}
-
-	if ( is_array( $size ) ) {
-		$args['width']  = $size[0];
-		$args['height'] = $size[1];
-	}
-
-	return Helpers::edge_src( $src, $args );
 }

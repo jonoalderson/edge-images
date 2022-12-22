@@ -1,4 +1,9 @@
 <?php
+/**
+ * Edge Images plugin file.
+ *
+ * @package Edge_Images\Features
+ */
 
 namespace Edge_Images\Features;
 
@@ -25,7 +30,7 @@ class Preloads {
 	 * @return void
 	 */
 	public function preload_filtered_images() : void {
-		$images = apply_filters( 'Edge_Images\preloads', array() );
+		$images = apply_filters( 'edge_images_preloads', array() );
 
 		// Bail if $images isn't an array.
 		if ( ! is_array( $images ) || empty( $images ) ) {
@@ -68,9 +73,12 @@ class Preloads {
 		}
 
 		echo sprintf(
-			'<link rel="preload" as="image" imagesrcset="%s" imagesizes="%s">',
-			implode( ', ', $image->attrs['srcset'] ),
-			$image->attrs['sizes'],
+			'<link rel="preload" as="image" imagesrcset="%s" imagesizes="%s" fetchpriority="high">',
+			implode(
+				', ',
+				esc_url_raw( $image->attrs['srcset'] ),
+				esc_attr( $image->attrs['sizes'] ),
+			)
 		) . PHP_EOL;
 
 	}
