@@ -77,7 +77,7 @@ class Edge_Provider {
 				! $v ||
 				is_null( $v ) ||
 				( is_array( $v ) && empty( $v ) ) ||
-				( is_string( $v ) && $v !== '' )
+				( is_string( $v ) && $v === '' )
 				) {
 					unset( $args[ $k ] );
 			}
