@@ -19,19 +19,7 @@ class Edge_Provider {
 	 *
 	 * @var array
 	 */
-	public array $args = array(
-		'width'    => null,
-		'height'   => null,
-		'fit'      => null,
-		'f'        => null,
-		'q'        => null,
-		'dpr'      => null,
-		'sharpen'  => null,
-		'blur'     => null,
-		'gravity'  => null,
-		'onerror'  => null,
-		'metadata' => null,
-	);
+	public array $args = array();
 
 	/**
 	 * The image path
@@ -48,7 +36,24 @@ class Edge_Provider {
 	 */
 	public function __construct( string $path, array $args = array() ) {
 		$this->path = $path;
-		$this->args = $args;
+
+		$this->args = wp_parse_args(
+			$args,
+			array(
+				'width'    => Helpers::get_content_width(),
+				'height'   => null,
+				'fit'      => 'cover',
+				'f'        => null,
+				'q'        => Helpers::get_image_quality_default(),
+				'dpr'      => 1,
+				'sharpen'  => null,
+				'blur'     => null,
+				'gravity'  => null,
+				'onerror'  => null,
+				'metadata' => null,
+			)
+		);
+
 		$this->normalize_args();
 	}
 
@@ -60,15 +65,15 @@ class Edge_Provider {
 	protected function get_transform_args() : array {
 
 		$args = array(
-			'width'   => ( $this->args['width'] ) ? $this->args['width'] : Helpers::get_content_width(),
-			'height'  => ( $this->args['height'] ) ? $this->args['height'] : null,
-			'fit'     => ( $this->args['fit'] ) ? $this->args['fit'] : 'cover',
-			'f'       => ( $this->args['f'] ) ? $this->args['f'] : 'auto',
-			'q'       => ( $this->args['q'] ) ? $this->args['q'] : Helpers::get_image_quality_default(),
-			'dpr'     => ( $this->args['dpr'] ) ? $this->args['dpr'] : 1,
-			'sharpen' => ( $this->args['sharpen'] ) ? $this->args['sharpen'] : null,
-			'blur'    => ( $this->args['blur'] ) ? $this->args['blur'] : null,
-			'gravity' => ( $this->args['gravity'] ) ? $this->args['gravity'] : null,
+			'width'   => ( isset( $this->args['width'] ) ) ? $this->args['width'] : null,
+			'height'  => ( isset( $this->args['height'] ) ) ? $this->args['height'] : null,
+			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : null,
+			'f'       => ( isset( $this->args['f'] ) ) ? $this->args['f'] : 'auto',
+			'q'       => ( isset( $this->args['q'] ) ) ? $this->args['q'] : null,
+			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : null,
+			'sharpen' => ( isset( $this->args['sharpen'] ) ) ? $this->args['sharpen'] : null,
+			'blur'    => ( isset( $this->args['blur'] ) ) ? $this->args['blur'] : null,
+			'gravity' => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : null,
 		);
 
 		// Unset any empty/null properties.
