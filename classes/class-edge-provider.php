@@ -118,7 +118,7 @@ class Edge_Provider {
 		// Convert 'quality' to 'q'.
 		if ( isset( $args['quality'] ) ) {
 			$args['q'] = $args['quality'];
-			unset( $args['q'] );
+			unset( $args['quality'] );
 		}
 
 		$this->args = array_filter( $args );
