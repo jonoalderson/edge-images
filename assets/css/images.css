@@ -15,13 +15,13 @@
 }
 @supports (--custom:property) {
   .edge-images-container {
-    width: var(--width);
+    width: var(--width, 100%);
     position: relative;
   }
   .edge-images-container::before {
     content: "";
     display: block;
-    padding-bottom: calc(100% / (var(--aspect-ratio)));
+    padding-bottom: calc(100% / (var(--aspect-ratio, 1/1)));
   }
   .edge-images-container .edge-images-img {
     position: absolute;
