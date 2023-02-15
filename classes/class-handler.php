@@ -50,19 +50,19 @@ class Handler {
 
 		// Add max height and width inline styles if defined.
 		if ( isset( $attr['max-width'] ) ) {
-			$styles[] = sprintf( '--width:%dpx', $attr['max-width'] );
+			$styles[] = sprintf( '--max-width:%dpx', $attr['max-width'] );
 		}
 		if ( isset( $attr['max-height'] ) ) {
-			$styles[] = sprintf( 'max-height:%dpx', $attr['max-height'] );
+			$styles[] = sprintf( '--max-height:%dpx', $attr['max-height'] );
 		}
 
 		// Add height and width inline styles if this is a fixed image.
 		if ( isset( $attr['layout'] ) && $attr['layout'] === 'fixed' ) {
 			if ( isset( $attr['width'] ) && $attr['width'] ) {
-				$styles[] = sprintf( '--width:%dpx', $attr['width'] );
+				$styles[] = sprintf( '--max-width:%dpx', $attr['width'] );
 			}
 			if ( isset( $attr['height'] ) && $attr['height'] ) {
-				$styles[] = sprintf( 'max-height:%dpx', $attr['height'] );
+				$styles[] = sprintf( '--max-height:%dpx', $attr['height'] );
 			}
 		}
 
@@ -98,7 +98,8 @@ class Handler {
 		}
 
 		$styles[] = '--aspect-ratio';
-		$styles[] = '--width';
+		$styles[] = '--max-width';
+		$styles[] = '--max-height';
 		return $styles;
 	}
 

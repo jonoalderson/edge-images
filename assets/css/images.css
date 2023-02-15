@@ -11,10 +11,10 @@
   -o-object-fit: cover;
      object-fit: cover;
   height: auto;
-  content-visibility: auto;
 }
 @supports (--custom:property) {
   .edge-images-container {
+    width: var(--max-width, 100%);
     width: var(--width, 100%);
     position: relative;
   }
@@ -25,8 +25,8 @@
   }
   .edge-images-container .edge-images-img {
     position: absolute;
+    height: 100%;
     top: 0;
     left: 0;
-    height: 100%;
   }
 }
