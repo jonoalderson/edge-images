@@ -15,7 +15,6 @@
 @supports (--custom:property) {
   .edge-images-container {
     width: var(--max-width, 100%);
-    width: var(--width, 100%);
     position: relative;
   }
   .edge-images-container::before {
