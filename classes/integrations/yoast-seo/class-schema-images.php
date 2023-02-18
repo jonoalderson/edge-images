@@ -39,7 +39,7 @@ class Schema_Images {
 
 		// Bail if these filters shouldn't run.
 		if ( ! $instance->should_filter() ) {
-			return;
+			// return;
 		}
 
 		add_filter( 'wpseo_schema_imageobject', array( $instance, 'edge_primary_image' ) );
@@ -146,18 +146,40 @@ class Schema_Images {
 			return $data;
 		}
 
+		// Get the image ID.
+		$image_id = Helpers::get_attachment_id_from_url( $data['logo']['contentUrl'] );
+		if ( ! $image_id ) {
+			return $data; // Bail if there's no image ID.
+		}
+
+		// Get the image.
+		$image = wp_get_attachment_image_src( $image_id, 'full' );
+		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
+			return $data; // Bail if there's no image.
+		}
+
 		// Set our default args.
 		$args = array(
-			'width'  => ( $data['logo']['width'] > 1000 ) ? 1000 : $data['logo']['width'],
-			'height' => ( $data['logo']['height'] > 1000 ) ? 1000 : $data['logo']['height'],
+			'width'  => ( $image[1] > self::SCHEMA_WIDTH ) ? self::SCHEMA_WIDTH : $image[1],
+			'height' => ( $image[2] > self::SCHEMA_HEIGHT ) ? self::SCHEMA_HEIGHT : $image[2],
 			'fit'    => 'contain',
 		);
+
+		// Tweak the behaviour for small images.
+		if ( ( $image[1] < self::SCHEMA_WIDTH ) || ( $image[2] < self::SCHEMA_HEIGHT ) ) {
+			$args['fit']     = 'pad';
+			$args['sharpen'] = 2;
+		}
+
+		// Match the w/h if we've altered them.
+		$data['logo']['width']  = $args['width'];
+		$data['logo']['height'] = $args['height'];
 
 		// Allow for filtering the args.
 		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
 
 		// Convert the image src to a edge SRC.
-		$data['logo']['url']        = Helpers::edge_src( $data['logo']['contentUrl'], $args );
+		$data['logo']['url']        = Helpers::edge_src( $image[0], $args );
 		$data['logo']['contentUrl'] = $data['logo']['url'];
 
 		return $data;
