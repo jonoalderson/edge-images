@@ -279,8 +279,10 @@ class Image {
 			return;
 		}
 
-		$this->attrs['src']      = $full_image[0];
-		$this->attrs['full-src'] = $full_image[0];
+		$this->attrs['src']         = $full_image[0];
+		$this->attrs['full-src']    = $full_image[0];
+		$this->attrs['full-width']  = $full_image[1];
+		$this->attrs['full-height'] = $full_image[2];
 
 		// Bail if we shouldn't transform the src.
 		if ( ! Helpers::should_transform_image_src() ) {
@@ -359,7 +361,7 @@ class Image {
 	private function get_generic_srcset_sizes() : array {
 		$srcset     = array();
 		$args       = $this->get_attrs();
-		$max_width  = min( 2 * $args['width'], Helpers::get_image_max_width() );
+		$max_width  = min( 2 * $args['width'], Helpers::get_image_max_width(), $args['full-width'] );
 		$width_step = Helpers::get_width_step();
 
 		for ( $w = Helpers::get_image_min_width(); $w <= $max_width; $w += $width_step ) {
