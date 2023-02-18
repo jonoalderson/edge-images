@@ -114,13 +114,13 @@ class Handler {
 	 */
 	public function alter_image_block_rendering( $pre_render, array $parsed_block, $parent_block ) {
 
-		// Bail if we're in the admin, but not the post editor.
-		if ( Helpers::in_admin_but_not_post_editor() ) {
+		// Bail if this isn't an image block.
+		if ( $parsed_block['blockName'] !== 'core/image' ) {
 			return $pre_render;
 		}
 
-		// Bail if this isn't an image block.
-		if ( $parsed_block['blockName'] !== 'core/image' ) {
+		// Bail if we're in the admin, but not the post editor.
+		if ( Helpers::in_admin_but_not_post_editor() ) {
 			return $pre_render;
 		}
 
@@ -311,7 +311,7 @@ class Handler {
 	}
 
 	/**
-	 * Construct a viable <picture> even when the image is missing.
+	 * Construct a viable <picture> even when dimensions are missing.
 	 *
 	 * @param  string $html             The <img> HTML.
 	 * @param  mixed  $size             The image size.

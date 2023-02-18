@@ -10,7 +10,7 @@ namespace Edge_Images;
 use Edge_Images\{Helpers, Handler};
 
 /**
- * Generates and managers an image.
+ * Generates and manages an image.
  */
 class Image {
 
@@ -45,6 +45,7 @@ class Image {
 	public function __construct( int $id, array $attrs = array(), $size = 'large' ) {
 		$this->id    = $id;
 		$this->attrs = wp_parse_args( $attrs, Helpers::get_default_image_attrs() );
+
 		$this->set_size( $size );
 		$this->init();
 	}
@@ -149,7 +150,11 @@ class Image {
 		}
 
 		// Construct the key string.
-		$key = 'image_' . $this->id . '_' . Helpers::normalize_size_attr( $this->get_size() );
+		$key = sprintf(
+			'image_%d_%s',
+			(int) $this->id,
+			Helpers::normalize_size_attr( $this->get_size() )
+		);
 
 		return $key;
 
@@ -211,54 +216,6 @@ class Image {
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * Init the width
-	 *
-	 * @return void
-	 */
-	private function init_width() : void {
-		if ( isset( $this->attrs['width'] ) && $this->attrs['width'] ) {
-			return; // Bail if already set.
-		}
-
-		// Bail if width isn't available.
-		$width = $this->get_attr( 'width' );
-		if ( ! $width ) {
-			return;
-		}
-
-		// Set the width.
-		$this->attrs['width'] = $width;
-	}
-
-	/**
-	 * Init the height
-	 *
-	 * @return void
-	 */
-	private function init_height() : void {
-		if ( isset( $this->attrs['height'] ) && $this->attrs['height'] ) {
-			return; // Bail if already set.
-		}
-
-		// Get the height.
-		$height = $this->get_attr( 'height' );
-
-		// Set the height, or calculate it if we know the width/ratio.
-		if ( $height ) {
-			// Just set the height.
-			$this->attrs['height'] = $height;
-		} else {
-			// Or calculate it by using the width and the ratio.
-			$width = $this->get_attr( 'width' );
-			if ( ! $width ) {
-				return; // Bail if there's no width.
-			}
-			$height                = $this->calculate_height_from_ratio( $width );
-			$this->attrs['height'] = ( $height ) ? $height : null;
-		}
 	}
 
 	/**

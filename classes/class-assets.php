@@ -39,7 +39,7 @@ class Assets {
 	public function enqueue_css() : void {
 
 		// Get our stylesheet.
-		$stylesheet_path = Helpers::STYLES_PATH . '/images.css';
+		$stylesheet_path = Helpers::STYLES_PATH . '/images.min.css';
 		if ( ! file_exists( $stylesheet_path ) ) {
 			return; // Bail if we couldn't find it.
 		}
