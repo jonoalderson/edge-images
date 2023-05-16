@@ -659,6 +659,7 @@ class Helpers {
 			$query_args = array(
 				'post_type'   => 'attachment',
 				'post_status' => 'inherit',
+				'order'       => 'DESC',
 				'fields'      => 'ids',
 				'meta_query'  => array(
 					array(
