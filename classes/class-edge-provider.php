@@ -68,7 +68,7 @@ class Edge_Provider {
 			'width'   => ( isset( $this->args['width'] ) ) ? $this->args['width'] : null,
 			'height'  => ( isset( $this->args['height'] ) ) ? $this->args['height'] : null,
 			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : null,
-			'f'       => ( isset( $this->args['f'] ) ) ? $this->args['f'] : 'auto',
+			'f'       => ( isset( $this->args['f'] ) ) ? $this->args['f'] : null,
 			'q'       => ( isset( $this->args['q'] ) ) ? $this->args['q'] : null,
 			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : null,
 			'sharpen' => ( isset( $this->args['sharpen'] ) ) ? $this->args['sharpen'] : null,
