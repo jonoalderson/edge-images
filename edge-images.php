@@ -173,6 +173,23 @@ function get_edge_image_object( int $id, array $atts = array(), $size = 'large' 
 		return false;
 	}
 
+	// Try to get this from the cache.
+	$cache_group = 'edge_images_image';
+	$cache_key   = base64_encode(
+		wp_json_encode(
+			array(
+				$id,
+				$size,
+				$atts,
+			)
+		)
+	);
+
+	$image = wp_cache_get( $cache_key, $cache_group );
+	if ( $image ) {
+		return $image;
+	}
+
 	// Get the image.
 	$image = new Image( $id, $atts, $size );
 
@@ -180,6 +197,8 @@ function get_edge_image_object( int $id, array $atts = array(), $size = 'large' 
 	if ( ! $image ) {
 		return false;
 	}
+
+	wp_cache_set( $cache_key, $image, $cache_group, DAY_IN_SECONDS );
 
 	return $image;
 }
