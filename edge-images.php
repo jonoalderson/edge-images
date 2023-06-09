@@ -88,7 +88,7 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 
 	// Load integrations.
 	Integrations\Yoast_SEO\Social_Images::register();
-	// Integrations\Yoast_SEO\Schema_Images::register();
+	Integrations\Yoast_SEO\Schema_Images::register();
 	Integrations\Yoast_SEO\XML_Sitemaps::register();
 
 } )();

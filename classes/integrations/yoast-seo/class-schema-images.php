@@ -77,12 +77,9 @@ class Schema_Images {
 	 */
 	public function edge_primary_image( $data ) : array {
 
-		$cache_key = 'edge_images_primary_schema_image';
-
-		// See if we can get this from cache.
-		$cached = get_transient( $cache_key );
-		if ( $cached ) {
-			return $cached;
+		// Bail if this isn't a singular post.
+		if ( ! is_singular() ) {
+			return $data;
 		}
 
 		// Bail if $data isn't an array.
@@ -94,8 +91,16 @@ class Schema_Images {
 			return $data; // Bail if this isn't the primary image.
 		}
 
-		// Get the image.
 		global $post;
+		$cache_key = 'edge_images_primary_schema_image_' . $post->ID;
+
+		// See if we can get this from cache.
+		$cached = get_transient( $cache_key );
+		if ( $cached ) {
+			return $cached;
+		}
+
+		// Get the image.
 		$image = wp_get_attachment_image_src( get_post_thumbnail_id( $post ), 'full' );
 		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
 			return $data; // Bail if there's no image.
