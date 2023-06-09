@@ -1,6 +1,7 @@
 .edge-images-container {
 	display: block;
 	width: 100%;
+	max-width: 100%;
 	max-height: 100%;
 	padding: 0;
 	overflow: hidden;
@@ -8,24 +9,31 @@
 		width: 100%;
   		object-fit: cover;
 		height: auto;
-		content-visibility: auto;
 	}
 }
 
 @supports (--custom:property) {
 	.edge-images-container {
+		width: ~'var(--max-width, 100%)';
+		height: ~'var(--max-height, 100%)';
 		position: relative;
 		&::before {
 			content: "";
 			display: block;
-			padding-bottom: calc(100% / ~'(var(--aspect-ratio))');
+			padding-bottom: calc(100% / ~'(var(--aspect-ratio, 1/1))');
 		}
 		& .edge-images-img {
 			position: absolute;
+			height: 100%;
 			top: 0;
 			left: 0;
-			height: 100%;
 		}
+	}
+}
+
+.edge-images-container.contain {
+	img {
+		object-fit: contain;
 	}
 }
 

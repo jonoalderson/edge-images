@@ -78,6 +78,13 @@ class Helpers {
 	private const IMAGE_QUALITY_DEFAULT = 85;
 
 	/**
+	 * The default edge provider.
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_PROVIDER = 'cloudflare';
+
+	/**
 	 * Replace a SRC string with an edge version
 	 *
 	 * @param  string $src The src.
@@ -92,8 +99,8 @@ class Helpers {
 			return $src;
 		}
 
-		// Get the provider class (default to Cloudflare).
-		$provider       = apply_filters( 'edge_images_provider', 'cloudflare' );
+		// Get the provider class.
+		$provider       = apply_filters( 'edge_images_provider', self::DEFAULT_PROVIDER );
 		$provider_class = 'Edge_Images\Edge_Providers\\' . ucfirst( $provider );
 
 		// Bail if we can't find one.
@@ -211,8 +218,6 @@ class Helpers {
 	 * @return false|array  The values
 	 */
 	public static function get_wp_size_vals( string $size ) {
-
-		$vals = array();
 
 		// Get our default image sizes.
 		$default_image_sizes = get_intermediate_image_sizes();
@@ -457,37 +462,36 @@ class Helpers {
 	 */
 	public static function get_wp_image_sizes() : array {
 
-		$cache_key   = 'image_sizes';
+		$cache_key = 'image_sizes';
+
+		// See if we can ge this from cache.
 		$image_sizes = wp_cache_get( $cache_key, self::CACHE_GROUP );
-
-		if ( ! $image_sizes ) {
-
-			$image_sizes = array();
-
-			global $_wp_additional_image_sizes;
-
-			$default_image_sizes = get_intermediate_image_sizes();
-
-			foreach ( $default_image_sizes as $size ) {
-				$image_sizes[ $size ]['width']  = intval( get_option( "{$size}_size_w" ) );
-				$image_sizes[ $size ]['height'] = intval( get_option( "{$size}_size_h" ) );
-			}
-
-			if ( isset( $_wp_additional_image_sizes ) && count( $_wp_additional_image_sizes ) ) {
-				$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
-			}
-
-			// Tidy up default WP nonsense.
-			foreach ( $image_sizes as &$size ) {
-				unset( $size['crop'] );
-				if ( $size['height'] === 9999 ) {
-					unset( $size['height'] );
-				}
-			}
-
-			wp_cache_set( $cache_key, $image_sizes, self::CACHE_GROUP, HOUR_IN_SECONDS );
-
+		if ( $image_sizes ) {
+			return $image_sizes;
 		}
+
+		$image_sizes = array();
+		global $_wp_additional_image_sizes;
+		$default_image_sizes = get_intermediate_image_sizes();
+
+		foreach ( $default_image_sizes as $size ) {
+			$image_sizes[ $size ]['width']  = intval( get_option( "{$size}_size_w" ) );
+			$image_sizes[ $size ]['height'] = intval( get_option( "{$size}_size_h" ) );
+		}
+
+		if ( isset( $_wp_additional_image_sizes ) && count( $_wp_additional_image_sizes ) ) {
+			$image_sizes = array_merge( $image_sizes, $_wp_additional_image_sizes );
+		}
+
+		// Tidy up default WP nonsense.
+		foreach ( $image_sizes as &$size ) {
+			unset( $size['crop'] );
+			if ( $size['height'] === 9999 ) {
+				unset( $size['height'] );
+			}
+		}
+
+		wp_cache_set( $cache_key, $image_sizes, self::CACHE_GROUP, HOUR_IN_SECONDS );
 
 		return $image_sizes;
 	}
@@ -643,6 +647,60 @@ class Helpers {
 		);
 		return $html;
 	}
+
+	/**
+	 * Get an attachment ID given a URL.
+	 *
+	 * @param string $url The URL.
+	 *
+	 * @return false|int Attachment ID, or FALSE
+	 */
+	public static function get_attachment_id_from_url( $url ) {
+
+		$attachment_id = 0;
+
+		$dir = wp_upload_dir();
+
+		if ( false !== strpos( $url, $dir['baseurl'] . '/' ) ) { // Is URL in uploads directory?
+			$file = basename( $url );
+
+			$query_args = array(
+				'post_type'   => 'attachment',
+				'post_status' => 'inherit',
+				'order'       => 'DESC',
+				'fields'      => 'ids',
+				'meta_query'  => array(
+					array(
+						'value'   => $file,
+						'compare' => 'LIKE',
+						'key'     => '_wp_attachment_metadata',
+					),
+				),
+			);
+
+			$query = new \WP_Query( $query_args );
+
+			if ( ! $query->have_posts() ) {
+				return false;
+			}
+
+			foreach ( $query->posts as $post_id ) {
+
+				$meta = wp_get_attachment_metadata( $post_id );
+
+				$original_file       = basename( $meta['file'] );
+				$cropped_image_files = wp_list_pluck( $meta['sizes'], 'file' );
+
+				if ( $original_file === $file || in_array( $file, $cropped_image_files, false ) ) {
+					return $post_id;
+				}
+			}
+		}
+
+		return false;
+	}
+
+
 
 
 }

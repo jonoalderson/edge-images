@@ -29,6 +29,13 @@ class Schema_Images {
 	const SCHEMA_HEIGHT = 675;
 
 	/**
+	 * The cache group to use
+	 *
+	 * @var string
+	 */
+	public const CACHE_GROUP = 'edge_images';
+
+	/**
 	 * Register the integration
 	 *
 	 * @return void
@@ -60,7 +67,7 @@ class Schema_Images {
 		}
 
 		// Bail if schema image filtering is disabled.
-		$disable_feature = apply_filters( 'edge_images_yoast_ydisable_schema_images', false );
+		$disable_feature = apply_filters( 'edge_images_yoast_disable_schema_images', false );
 		if ( $disable_feature ) {
 			return false;
 		}
@@ -77,6 +84,11 @@ class Schema_Images {
 	 */
 	public function edge_primary_image( $data ) : array {
 
+		// Bail if this isn't a singular post.
+		if ( ! is_singular() ) {
+			return $data;
+		}
+
 		// Bail if $data isn't an array.
 		if ( ! is_array( $data ) ) {
 			return $data;
@@ -86,8 +98,16 @@ class Schema_Images {
 			return $data; // Bail if this isn't the primary image.
 		}
 
-		// Get the image.
 		global $post;
+		$cache_key = 'edge_images_primary_schema_image_' . $post->ID;
+
+		// See if we can get this from cache.
+		$cached = wp_cache_get( $cache_key, self::CACHE_GROUP );
+		if ( $cached ) {
+			return $cached;
+		}
+
+		// Get the image.
 		$image = wp_get_attachment_image_src( get_post_thumbnail_id( $post ), 'full' );
 		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
 			return $data; // Bail if there's no image.
@@ -114,6 +134,8 @@ class Schema_Images {
 		$data['width']      = self::SCHEMA_WIDTH;
 		$data['height']     = self::SCHEMA_HEIGHT;
 
+		wp_cache_set( $cache_key, $data, self::CACHE_GROUP, 86400 );
+
 		return $data;
 
 	}
@@ -126,6 +148,15 @@ class Schema_Images {
 	 * @return array       The modified properties
 	 */
 	public function edge_organization_logo( $data ) : array {
+
+		$cache_key = 'edge_images_organization_logo_schema';
+
+		// See if we can get this from cache.
+		$cached_logo = wp_cache_get( $cache_key, self::CACHE_GROUP );
+		if ( $cached_logo ) {
+			$data['logo'] = $cached_logo; // Set the logo from the cached data.
+			return $data;
+		}
 
 		// Bail if $data isn't an array.
 		if ( ! is_array( $data ) ) {
@@ -146,19 +177,43 @@ class Schema_Images {
 			return $data;
 		}
 
+		// Get the image ID.
+		$image_id = Helpers::get_attachment_id_from_url( $data['logo']['contentUrl'] );
+		if ( ! $image_id ) {
+			return $data; // Bail if there's no image ID.
+		}
+
+		// Get the image.
+		$image = wp_get_attachment_image_src( $image_id, 'full' );
+		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
+			return $data; // Bail if there's no image.
+		}
+
 		// Set our default args.
 		$args = array(
-			'width'  => ( $data['logo']['width'] > 1200 ) ? 1200 : $data['logo']['width'],
-			'height' => ( $data['logo']['height'] > 1200 ) ? 1200 : $data['logo']['height'],
+			'width'  => ( $image[1] > self::SCHEMA_WIDTH ) ? self::SCHEMA_WIDTH : $image[1],
+			'height' => ( $image[2] > self::SCHEMA_HEIGHT ) ? self::SCHEMA_HEIGHT : $image[2],
 			'fit'    => 'contain',
 		);
+
+		// Tweak the behaviour for small images.
+		if ( ( $image[1] < self::SCHEMA_WIDTH ) || ( $image[2] < self::SCHEMA_HEIGHT ) ) {
+			$args['fit']     = 'pad';
+			$args['sharpen'] = 2;
+		}
+
+		// Match the w/h if we've altered them.
+		$data['logo']['width']  = $args['width'];
+		$data['logo']['height'] = $args['height'];
 
 		// Allow for filtering the args.
 		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
 
 		// Convert the image src to a edge SRC.
-		$data['logo']['url']        = Helpers::edge_src( $data['logo']['contentUrl'], $args );
+		$data['logo']['url']        = Helpers::edge_src( $image[0], $args );
 		$data['logo']['contentUrl'] = $data['logo']['url'];
+
+		wp_cache_set( $cache_key, $data['logo'], self::CACHE_GROUP, 86400 );
 
 		return $data;
 	}

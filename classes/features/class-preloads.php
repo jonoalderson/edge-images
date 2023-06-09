@@ -37,13 +37,8 @@ class Preloads {
 			return;
 		}
 
-		// Bail if there aren't any images.
-		if ( empty( $images ) ) {
-			return;
-		}
-
 		// Remove any duplicate entries.
-		$images = array_unique( $images, SORT_REGULAR );
+		$images = array_unique( $images );
 
 		// Iterate through the images.
 		foreach ( $images as $image ) {
@@ -74,11 +69,8 @@ class Preloads {
 
 		echo sprintf(
 			'<link rel="preload" as="image" imagesrcset="%s" imagesizes="%s" fetchpriority="high">',
-			implode(
-				', ',
-				esc_url_raw( $image->attrs['srcset'] ),
-				esc_attr( $image->attrs['sizes'] ),
-			)
+			esc_attr( Helpers::srcset_array_to_string( $image->attrs['srcset'] ) ),
+			esc_attr( $image->attrs['sizes'] ),
 		) . PHP_EOL;
 
 	}
