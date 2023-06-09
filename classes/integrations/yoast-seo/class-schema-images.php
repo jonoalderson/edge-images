@@ -127,7 +127,7 @@ class Schema_Images {
 		$data['width']      = self::SCHEMA_WIDTH;
 		$data['height']     = self::SCHEMA_HEIGHT;
 
-		set_transient( $cache_key, $data, 3600 );
+		set_transient( $cache_key, $data, 86400 );
 
 		return $data;
 
@@ -205,7 +205,7 @@ class Schema_Images {
 		$data['logo']['url']        = Helpers::edge_src( $image[0], $args );
 		$data['logo']['contentUrl'] = $data['logo']['url'];
 
-		set_transient( $cache_key, $data, 3600 );
+		set_transient( $cache_key, $data, 86400 );
 
 		return $data;
 	}
