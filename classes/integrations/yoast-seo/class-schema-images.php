@@ -39,7 +39,7 @@ class Schema_Images {
 
 		// Bail if these filters shouldn't run.
 		if ( ! $instance->should_filter() ) {
-			// return;
+			return;
 		}
 
 		add_filter( 'wpseo_schema_imageobject', array( $instance, 'edge_primary_image' ) );
@@ -60,7 +60,7 @@ class Schema_Images {
 		}
 
 		// Bail if schema image filtering is disabled.
-		$disable_feature = apply_filters( 'edge_images_yoast_ydisable_schema_images', false );
+		$disable_feature = apply_filters( 'edge_images_yoast_disable_schema_images', false );
 		if ( $disable_feature ) {
 			return false;
 		}
@@ -76,6 +76,14 @@ class Schema_Images {
 	 * @return array       The modified properties
 	 */
 	public function edge_primary_image( $data ) : array {
+
+		$cache_key = 'edge_images_primary_schema_image';
+
+		// See if we can get this from cache.
+		$data = get_transient( $cache_key );
+		if ( $data ) {
+			return $data;
+		}
 
 		// Bail if $data isn't an array.
 		if ( ! is_array( $data ) ) {
@@ -114,6 +122,8 @@ class Schema_Images {
 		$data['width']      = self::SCHEMA_WIDTH;
 		$data['height']     = self::SCHEMA_HEIGHT;
 
+		set_transient( $cache_key, $data, 3600 );
+
 		return $data;
 
 	}
@@ -126,6 +136,14 @@ class Schema_Images {
 	 * @return array       The modified properties
 	 */
 	public function edge_organization_logo( $data ) : array {
+
+		$cache_key = 'edge_images_organization_logo_schema';
+
+		// See if we can get this from cache.
+		$data = get_transient( $cache_key );
+		if ( $data ) {
+			return $data;
+		}
 
 		// Bail if $data isn't an array.
 		if ( ! is_array( $data ) ) {
@@ -181,6 +199,8 @@ class Schema_Images {
 		// Convert the image src to a edge SRC.
 		$data['logo']['url']        = Helpers::edge_src( $image[0], $args );
 		$data['logo']['contentUrl'] = $data['logo']['url'];
+
+		set_transient( $cache_key, $data, 3600 );
 
 		return $data;
 	}
