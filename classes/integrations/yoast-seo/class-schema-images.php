@@ -80,9 +80,9 @@ class Schema_Images {
 		$cache_key = 'edge_images_primary_schema_image';
 
 		// See if we can get this from cache.
-		$data = get_transient( $cache_key );
-		if ( $data ) {
-			return $data;
+		$cached = get_transient( $cache_key );
+		if ( $cached ) {
+			return $cached;
 		}
 
 		// Bail if $data isn't an array.
@@ -140,9 +140,9 @@ class Schema_Images {
 		$cache_key = 'edge_images_organization_logo_schema';
 
 		// See if we can get this from cache.
-		$data = get_transient( $cache_key );
-		if ( $data ) {
-			return $data;
+		$cached = get_transient( $cache_key );
+		if ( $cached ) {
+			return $cached;
 		}
 
 		// Bail if $data isn't an array.
