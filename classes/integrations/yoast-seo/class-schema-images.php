@@ -29,6 +29,13 @@ class Schema_Images {
 	const SCHEMA_HEIGHT = 675;
 
 	/**
+	 * The cache group to use
+	 *
+	 * @var string
+	 */
+	public const CACHE_GROUP = 'edge_images';
+
+	/**
 	 * Register the integration
 	 *
 	 * @return void
@@ -95,7 +102,7 @@ class Schema_Images {
 		$cache_key = 'edge_images_primary_schema_image_' . $post->ID;
 
 		// See if we can get this from cache.
-		$cached = get_transient( $cache_key );
+		$cached = wp_cache_get( $cache_key, self::CACHE_GROUP );
 		if ( $cached ) {
 			return $cached;
 		}
@@ -127,7 +134,7 @@ class Schema_Images {
 		$data['width']      = self::SCHEMA_WIDTH;
 		$data['height']     = self::SCHEMA_HEIGHT;
 
-		set_transient( $cache_key, $data, 86400 );
+		wp_cache_set( $cache_key, $data, self::CACHE_GROUP, 86400 );
 
 		return $data;
 
@@ -145,9 +152,10 @@ class Schema_Images {
 		$cache_key = 'edge_images_organization_logo_schema';
 
 		// See if we can get this from cache.
-		$cached = get_transient( $cache_key );
-		if ( $cached ) {
-			return $cached;
+		$cached_logo = wp_cache_get( $cache_key, self::CACHE_GROUP );
+		if ( $cached_logo ) {
+			$data['logo'] = $cached_logo; // Set the logo from the cached data.
+			return $data;
 		}
 
 		// Bail if $data isn't an array.
@@ -205,7 +213,7 @@ class Schema_Images {
 		$data['logo']['url']        = Helpers::edge_src( $image[0], $args );
 		$data['logo']['contentUrl'] = $data['logo']['url'];
 
-		set_transient( $cache_key, $data, 86400 );
+		wp_cache_set( $cache_key, $data['logo'], self::CACHE_GROUP, 86400 );
 
 		return $data;
 	}

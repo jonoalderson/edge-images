@@ -37,13 +37,8 @@ class Preloads {
 			return;
 		}
 
-		// Bail if there aren't any images.
-		if ( empty( $images ) ) {
-			return;
-		}
-
 		// Remove any duplicate entries.
-		$images = array_unique( $images, SORT_REGULAR );
+		$images = array_unique( $images );
 
 		// Iterate through the images.
 		foreach ( $images as $image ) {
