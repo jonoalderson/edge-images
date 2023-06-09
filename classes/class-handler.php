@@ -399,7 +399,7 @@ class Handler {
 	 *
 	 * @return string       The modified HTML
 	 */
-	private static function maybe_wrap_image_in_container( int $attachment_id, string $html, array $attr ) : string {
+	private static function wrap_image_in_container( int $attachment_id, string $html, array $attr ) : string {
 
 		// Bail if image wrapping is disabled.
 		if ( apply_filters( 'edge_images_disable_container_wrap', false ) === true ) {
