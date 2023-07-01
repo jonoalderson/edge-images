@@ -522,6 +522,7 @@ class Image {
 				'edge-images-container',
 				'picture-' . $size_class,
 				isset( $this->attrs['layout'] ) ? $this->attrs['layout'] : null,
+				isset( $this->attrs['fit'] ) ? $this->attrs['fit'] : null,
 			)
 		);
 		$this->attrs['container-class'] = array_unique( $this->attrs['container-class'] );

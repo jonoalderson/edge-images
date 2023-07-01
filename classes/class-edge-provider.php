@@ -101,27 +101,41 @@ class Edge_Provider {
 	 * @return void
 	 */
 	private function normalize_args() : void {
-		$args = $this->args;
 
 		// Convert 'format' to 'f'.
-		if ( isset( $args['format'] ) ) {
-			$args['f'] = $args['format'];
-			unset( $args['format'] );
+		if ( isset( $this->args['format'] ) ) {
+			$this->args['f'] = $this->args['format'];
+			unset( $this->args['format'] );
 		}
 
 		// Convert 'gravity' to 'g'.
-		if ( isset( $args['gravity'] ) ) {
-			$args['g'] = $args['gravity'];
-			unset( $args['gravity'] );
+		if ( isset( $this->args['gravity'] ) ) {
+			$this->args['g'] = $this->args['gravity'];
+			unset( $this->args['gravity'] );
 		}
 
 		// Convert 'quality' to 'q'.
-		if ( isset( $args['quality'] ) ) {
-			$args['q'] = $args['quality'];
-			unset( $args['quality'] );
+		if ( isset( $this->args['quality'] ) ) {
+			$this->args['q'] = $this->args['quality'];
+			unset( $this->args['quality'] );
 		}
 
-		$this->args = array_filter( $args );
+		// Align loading and fetchpriority values.
+		$this->align_loading_and_fetchpriority();
+
+		// Tidy up our array.
+		$this->args = array_filter( $this->args );
+	}
+
+	/**
+	 * If loading is set to eager, set fetchpriority to high
+	 *
+	 * @return void
+	 */
+	private function align_loading_and_fetchpriority() : void {
+		if ( isset( $this->$args['loading'] ) && ( $this->$args['loading'] === 'eager' ) ) {
+			$this->args['fetchpriority'] = 'high';
+		}
 	}
 
 
