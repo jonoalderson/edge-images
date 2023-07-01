@@ -48,7 +48,7 @@ class Edge_Provider {
 				'dpr'      => 1,
 				'sharpen'  => null,
 				'blur'     => null,
-				'gravity'  => null,
+				'gravity'  => 'auto',
 				'onerror'  => null,
 				'metadata' => null,
 			)
