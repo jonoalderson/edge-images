@@ -133,7 +133,7 @@ class Edge_Provider {
 	 * @return void
 	 */
 	private function align_loading_and_fetchpriority() : void {
-		if ( isset( $this->$args['loading'] ) && ( $this->$args['loading'] === 'eager' ) ) {
+		if ( isset( $this->args['loading'] ) && ( $this->args['loading'] === 'eager' ) ) {
 			$this->args['fetchpriority'] = 'high';
 		}
 	}
