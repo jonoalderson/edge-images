@@ -168,7 +168,7 @@ class Helpers {
 
 		// Fall back to the WP content_width var, or our default.
 		global $content_width;
-		if ( ! $content_width || $content_width > self::CONTENT_WIDTH ) {
+		if ( ! $content_width ) {
 			$content_width = self::CONTENT_WIDTH;
 		}
 		return $content_width;
