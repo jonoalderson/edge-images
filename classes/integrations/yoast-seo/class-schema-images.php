@@ -177,10 +177,18 @@ class Schema_Images {
 			return $data;
 		}
 
-		// Get the image ID.
-		$image_id = Helpers::get_attachment_id_from_url( $data['logo']['contentUrl'] );
+		// Try to get the image ID from cache.
+		$image_id = get_transient( 'edge_images_organization_logo_id' );
+
 		if ( ! $image_id ) {
-			return $data; // Bail if there's no image ID.
+			// Get the image ID from the URL.
+			$image_id = Helpers::get_attachment_id_from_url( $data['logo']['contentUrl'] );
+			if ( ! $image_id ) {
+				return $data; // Bail if there's no image ID.
+			}
+
+			// Cache the results for a week.
+			set_transient( 'edge_images_organization_logo_id', $image_id, WEEK_IN_SECONDS );
 		}
 
 		// Get the image.
