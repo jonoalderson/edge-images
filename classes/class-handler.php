@@ -119,6 +119,11 @@ class Handler {
 			return $pre_render;
 		}
 
+		// Bail if this is in a gallery block.
+		if ( $parent_block['blockName'] !== 'core/gallery' ) {
+			return $pre_render;
+		}
+
 		// Bail if we're in the admin, but not the post editor.
 		if ( Helpers::in_admin_but_not_post_editor() ) {
 			return $pre_render;
