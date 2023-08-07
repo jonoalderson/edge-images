@@ -134,26 +134,31 @@ class Social_Images {
 			return $output;
 		}
 
-		// Baul if $presenter isn't a presenter.
+		// Bail if $presenter isn't a presenter.
 		if ( ! is_a( $presenter, 'Yoast\WP\SEO\Presentations\Indexable_Post_Type_Presentation' ) ) {
 			return $output;
 		}
 
 		// Get the image ID.
 		$image_id = $presenter->model->open_graph_image_id;
+
+		// If there's no image, fall back to the site logo.
 		if ( ! $image_id ) {
-			// If there's no image, fall back to the site logo.
 			$logo = $this->transform_image_without_scaling();
 			if ( $logo ) {
 				return $logo;
 			}
-			return $output; // Bail if there's no image ID.
+
+			// Bail if we didn't get the site logo.
+			return $output;
 		}
 
 		// Get the image.
 		$image = wp_get_attachment_image_src( $image_id, 'full' );
+
+		// Bail if there's no image.
 		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
-			return $output; // Bail if there's no image.
+			return $output;
 		}
 
 		$image = $this->transform_image_with_scaling( $image );

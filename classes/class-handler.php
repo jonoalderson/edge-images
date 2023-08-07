@@ -120,7 +120,7 @@ class Handler {
 		}
 
 		// Bail if this is in a gallery block.
-		if ( $parent_block->name === 'core/gallery' ) {
+		if ( isset( $parent_block->name ) && $parent_block->name === 'core/gallery' ) {
 			return $pre_render;
 		}
 
