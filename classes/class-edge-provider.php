@@ -48,7 +48,7 @@ class Edge_Provider {
 				'dpr'      => 1,
 				'sharpen'  => null,
 				'blur'     => null,
-				'gravity'  => 'auto',
+				'gravity'  => null,
 				'onerror'  => null,
 				'metadata' => null,
 			)
@@ -73,7 +73,7 @@ class Edge_Provider {
 			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : null,
 			'sharpen' => ( isset( $this->args['sharpen'] ) ) ? $this->args['sharpen'] : null,
 			'blur'    => ( isset( $this->args['blur'] ) ) ? $this->args['blur'] : null,
-			'gravity' => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : 'auto',
+			'gravity' => ( isset( $this->args['gravity'] ) ) ? $this->args['gravity'] : null,
 		);
 
 		// Unset any empty/null properties.
