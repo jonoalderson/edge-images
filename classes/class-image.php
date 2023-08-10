@@ -57,12 +57,6 @@ class Image {
 	 */
 	private function init() : void {
 
-		// Try and init this from cache.
-		$cached = $this->init_from_cache();
-		if ( $cached ) {
-			return;
-		}
-
 		// Get the normalized size string.
 		$size = Helpers::normalize_size_attr( $this->get_size() );
 
@@ -85,79 +79,6 @@ class Image {
 		$this->init_srcset();
 		$this->init_sizes();
 		$this->init_classes();
-
-		// Cache the result.
-		$this->cache();
-	}
-
-	/**
-	 * Init the image from cache
-	 *
-	 * @return void
-	 */
-	private function init_from_cache() : void {
-
-		// Get the cache key. Bail if we couldn't.
-		$key = $this->get_cache_key();
-		if ( ! $key ) {
-			return;
-		}
-
-		// Get the cached image, bail if it wasn't found.
-		$cache = wp_cache_get( $key, Helpers::CACHE_GROUP );
-		if ( ! $cache ) {
-			return;
-		}
-
-		// Set the properties.
-		foreach ( $cache as $key => $val ) {
-			$this->$key = $val;
-		}
-	}
-
-	/**
-	 * Cache the image
-	 *
-	 * @return void
-	 */
-	private function cache() : void {
-
-		// Get the cache key. Bail if we couldn't.
-		$key = $this->get_cache_key();
-		if ( ! $key ) {
-			return;
-		}
-
-		// Cache the image.
-		wp_cache_set( $key, $this->attrs, Helpers::CACHE_GROUP, 30 );
-	}
-
-	/**
-	 * Construct and return a cache key
-	 *
-	 * @return false|string The cache key, or FALSE
-	 */
-	private function get_cache_key() {
-
-		// Bail if we don't have an ID.
-		if ( ! $this->id ) {
-			return false;
-		}
-
-		// Bail if we don't have a size.
-		if ( ! $this->has_size() ) {
-			return false;
-		}
-
-		// Construct the key string.
-		$key = sprintf(
-			'image_%d_%s',
-			(int) $this->id,
-			Helpers::normalize_size_attr( $this->get_size() )
-		);
-
-		return $key;
-
 	}
 
 	/**
