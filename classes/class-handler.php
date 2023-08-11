@@ -52,9 +52,9 @@ class Handler {
 		if ( isset( $attr['max-width'] ) ) {
 			$styles[] = sprintf( '--max-width:%dpx', $attr['max-width'] );
 		}
-		if ( isset( $attr['max-height'] ) ) {
-			$styles[] = sprintf( '--max-height:%dpx', $attr['max-height'] );
-		}
+		// if ( isset( $attr['max-height'] ) ) {
+		// $styles[] = sprintf( '--max-height:%dpx', $attr['max-height'] );
+		// }
 
 		// Add height and width inline styles if this is a fixed image.
 		if ( isset( $attr['layout'] ) && $attr['layout'] === 'fixed' ) {
