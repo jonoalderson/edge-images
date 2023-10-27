@@ -46,7 +46,7 @@ class Handler {
 
 		// Add the aspect ratio.
 		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : self::get_default_ratio( $attr );
-		$ratio    = str_replace( 'px', '' );
+		$ratio    = str_replace( 'px', '', $ratio );
 		$styles[] = '--aspect-ratio:' . $ratio;
 
 		// Add max height and width inline styles if defined.
