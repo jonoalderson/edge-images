@@ -32,6 +32,21 @@ class Handler {
 		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
 		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ), 10, 1 );
 		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
+		add_filter( 'attachment_updated', array( $instance, 'purge_image_cache_on_attachment_update' ), 10, 3 );
+	}
+
+	/**
+	 * Purge the image cache when an image is saved (or replaced)
+	 *
+	 * @param int      $post_id The attachment post ID.
+	 * @param \WP_Post $post_after Post object following the update.
+	 * @param \WP_Post $post_before Post object before the update.
+	 *
+	 * @return void
+	 */
+	public function purge_image_cache_on_attachment_update( $post_id, $post_after, $post_before ) : void {
+		wp_cache_flush_group( 'edge_images' );
+		wp_cache_flush_group( 'edge_images_image' );
 	}
 
 	/**
