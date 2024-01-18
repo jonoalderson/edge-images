@@ -120,8 +120,8 @@ class Image {
 
 		$size                  = $this->get_size();
 		$sizes                 = Helpers::get_sizes_from_size( $size );
-		$this->attrs['width']  = $sizes['width'];
-		$this->attrs['height'] = $sizes['height'];
+		$this->attrs['width']  = (int) $sizes['width'];
+		$this->attrs['height'] = (int) $sizes['height'];
 	}
 
 	/**
