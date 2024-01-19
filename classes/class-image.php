@@ -158,7 +158,7 @@ class Image {
 		if ( ! isset( $ratio[0] ) || ! isset( $ratio[1] ) ) {
 			return false;
 		}
-		if ( ! $ratio[0] || ! $ratio[1] ) {
+		if ( ! $ratio[0] || ! $ratio[1] || ! $width ) {
 			return false;
 		}
 
