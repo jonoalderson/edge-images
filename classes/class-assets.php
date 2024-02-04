@@ -28,6 +28,7 @@ class Assets {
 
 		$instance = new self();
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
+		add_action( 'admin_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_js' ), 2 );
 	}
 
