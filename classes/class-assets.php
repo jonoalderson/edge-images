@@ -28,7 +28,7 @@ class Assets {
 
 		$instance = new self();
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
-		add_action( 'admin_enqueue_scripts', array( $instance, 'enqueue_css' ), 1 );
+		add_action( 'admin_enqueue_scripts', array( $instance, 'enqueue_admin_css' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_js' ), 2 );
 	}
 
@@ -52,6 +52,27 @@ class Assets {
 		// Output the stylesheet inline.
 		$stylesheet = file_get_contents( $stylesheet_path );
 		wp_add_inline_style( 'edge-images', $stylesheet );
+	}
+
+	public function enqueue_admin_css() : void {
+
+		// Enqueue our normal CSS.
+		$this->enqueue_css();
+
+		// Get our admin stylesheet.
+		$stylesheet_path = Helpers::STYLES_PATH . '/admin.min.css';
+		if ( ! file_exists( $stylesheet_path ) ) {
+			return; // Bail if we couldn't find it.
+		}
+
+		// Enqueue a dummy style to attach our inline styles to.
+		wp_register_style( 'edge-images-admin', false, array(), EDGE_IMAGES_VERSION );
+		wp_enqueue_style( 'edge-images-admin' );
+
+		// Output the stylesheet inline.
+		$stylesheet = file_get_contents( $stylesheet_path );
+		wp_add_inline_style( 'edge-images-admin', $stylesheet );
+
 	}
 
 	/**
