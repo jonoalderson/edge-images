@@ -1,6 +1,16 @@
-#postimagediv .inside img.edge-images-img {
-	position: relative !important;
-	&:before {
-		display: none;
+
+#postimagediv {
+
+	// Unset absolute positioning.
+	.inside img.edge-images-img {
+		position: relative !important;
 	}
+
+	// Remove the :before pseudo-element. 
+	.edge-images-container {
+		&:before {
+			display: none;
+		}
+	}
+
 }
