@@ -250,6 +250,11 @@ class Image {
 			return;
 		}
 
+		// Bail if we're missing a width.
+		if ( ! isset( $this->attrs['width'] ) || ! $this->attrs['width'] ) {
+			return;
+		}
+
 		// Bail if this is an SVG.
 		if ( Helpers::is_svg( $this->attrs['src'] ) ) {
 			unset( $this->attrs['srcset'] ); // SVGs don't need/support this.

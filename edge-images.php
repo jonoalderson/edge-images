@@ -16,7 +16,7 @@
  * Donate link: https://www.jonoalderson.com
  * Contributors: jonoaldersonwp
  *
- * Version: 3.3.1
+ * Version: 3.3.2
  * Requires at least: 6.0
  * Tested up to: 6.1.1
  * Stable tag: 3.1
@@ -48,7 +48,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '3.3.1' );
+	define( 'EDGE_IMAGES_VERSION', '3.3.2' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
