@@ -55,7 +55,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init() : void {
+	private function init(): void {
 
 		// Get the normalized size string.
 		$size = Helpers::normalize_size_attr( $this->get_size() );
@@ -87,7 +87,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init_layout() : void {
+	private function init_layout(): void {
 
 		// Bail if a layout is already set.
 		if ( $this->has_attr( 'layout' ) ) {
@@ -102,7 +102,7 @@ class Image {
 	 *
 	 * @return int
 	 */
-	public function get_id() : int {
+	public function get_id(): int {
 		return $this->id;
 	}
 
@@ -111,7 +111,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init_dimensions() : void {
+	private function init_dimensions(): void {
 
 		// Bail if w/h values are already set.
 		if ( $this->has_dimensions() ) {
@@ -129,7 +129,7 @@ class Image {
 	 *
 	 * @return bool bool
 	 */
-	private function has_dimensions() : bool {
+	private function has_dimensions(): bool {
 		if ( ! isset( $this->attrs['width'] ) || ! isset( $this->attrs['height'] ) ) {
 			return false;
 		}
@@ -162,8 +162,13 @@ class Image {
 			return false;
 		}
 
+		// Bail if the width or ratio components aren't numeric.
+		if ( ! is_numeric( $width ) || ! is_numeric( $ratio[0] ) || ! is_numeric( $ratio[1] ) ) {
+			return false;
+		}
+
 		// Divide the width by the ratio to get the height.
-		return ceil( $width / ( $ratio[0] / $ratio[1] ) );
+		return ceil( (int) $width / ( (int) $ratio[0] / (int) $ratio[1] ) );
 	}
 
 	/**
@@ -171,7 +176,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init_ratio() : void {
+	private function init_ratio(): void {
 		if ( isset( $this->attrs['ratio'] ) && $this->attrs['ratio'] ) {
 			return; // Bail if already set.
 		}
@@ -192,7 +197,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init_src() : void {
+	private function init_src(): void {
 
 		// Get the full-sized image.
 		$full_image = wp_get_attachment_image_src( $this->id, 'full' );
@@ -223,7 +228,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function convert_src_to_edge() : void {
+	private function convert_src_to_edge(): void {
 		$edge_src = Helpers::edge_src( $this->attrs['full-src'], $this->get_attrs() );
 
 		if ( ! $edge_src ) {
@@ -238,7 +243,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init_srcset() : void {
+	private function init_srcset(): void {
 
 		// Bail if we're missing an SRC.
 		if ( ! isset( $this->attrs['src'] ) || ! $this->attrs['src'] ) {
@@ -279,7 +284,7 @@ class Image {
 	 *
 	 * @return array The srcset values
 	 */
-	private function get_generic_srcset_sizes() : array {
+	private function get_generic_srcset_sizes(): array {
 		$srcset     = array();
 		$args       = $this->get_attrs();
 		$max_width  = min( 2 * $args['width'], Helpers::get_image_max_width(), $args['full-width'] );
@@ -304,7 +309,7 @@ class Image {
 	 *
 	 * @return array The srcset values
 	 */
-	private function get_dpx_srcset_sizes() : array {
+	private function get_dpx_srcset_sizes(): array {
 		$attrs = $this->get_attrs();
 		$args  = $attrs;
 
@@ -321,7 +326,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init_sizes() : void {
+	private function init_sizes(): void {
 		$sizes = $this->get_attr( 'sizes' );
 		if ( ! $sizes ) {
 			$width = $this->attrs['width'];
@@ -337,7 +342,7 @@ class Image {
 	 *
 	 * @return self
 	 */
-	private function set_size( $size ) : self {
+	private function set_size( $size ): self {
 		$this->size = $size;
 		return $this;
 	}
@@ -359,7 +364,7 @@ class Image {
 	 *
 	 * @return bool
 	 */
-	protected function has_size() : bool {
+	protected function has_size(): bool {
 		if ( ! isset( $this->size ) || $this->size === '' ) {
 			return false;
 		}
@@ -373,7 +378,7 @@ class Image {
 	 *
 	 * @return string The <img> el
 	 */
-	public function construct_img_el( $decorate = false ) : string {
+	public function construct_img_el( $decorate = false ): string {
 
 		// srcset attributes need special treatment to comma-separate values.
 		if ( isset( $this->attrs['srcset'] ) && ! empty( $this->attrs['srcset'] ) ) {
@@ -419,7 +424,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	private function init_classes() : void {
+	private function init_classes(): void {
 
 		// Get the size class(es).
 		$size_class = Helpers::normalize_size_attr( $this->get_size() );
@@ -468,7 +473,7 @@ class Image {
 	 *
 	 * @return array The attributes
 	 */
-	private function get_attrs() : array {
+	private function get_attrs(): array {
 		return $this->attrs;
 	}
 
@@ -479,7 +484,7 @@ class Image {
 	 *
 	 * @return bool
 	 */
-	public function has_attr( string $val ) : bool {
+	public function has_attr( string $val ): bool {
 		if ( ! isset( $this->attrs[ $val ] ) || ! $this->attrs[ $val ] ) {
 			return false;
 		}
@@ -496,7 +501,7 @@ class Image {
 	 *
 	 * @return array The srcset attr
 	 */
-	public function get_srcset_sizes_from_context( string $src ) : array {
+	public function get_srcset_sizes_from_context( string $src ): array {
 
 		$sizes = array();
 
@@ -542,7 +547,7 @@ class Image {
 	 *
 	 * @return void
 	 */
-	public function flatten_array_properties() : void {
+	public function flatten_array_properties(): void {
 
 		// Convert the class to a string.
 		if ( $this->has_attr( 'class' ) ) {
@@ -559,5 +564,4 @@ class Image {
 			$this->attrs['srcset'] = Helpers::srcset_array_to_string( $this->attrs['srcset'] );
 		}
 	}
-
 }

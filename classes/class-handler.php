@@ -19,7 +19,7 @@ class Handler {
 	 *
 	 * @return void
 	 */
-	public static function register() : void {
+	public static function register(): void {
 
 		// Bail if we shouldn't be transforming images.
 		if ( ! Helpers::should_transform_images() ) {
@@ -44,7 +44,7 @@ class Handler {
 	 *
 	 * @return void
 	 */
-	public function purge_image_cache_on_attachment_update( $post_id, $post_after, $post_before ) : void {
+	public function purge_image_cache_on_attachment_update( $post_id, $post_after, $post_before ): void {
 		wp_cache_flush_group( 'edge_images' );
 		wp_cache_flush_group( 'edge_images_image' );
 	}
@@ -55,7 +55,7 @@ class Handler {
 	 * @param  array $attr The image attributes.
 	 * @return string      The style attribute values
 	 */
-	private static function get_container_styles( $attr ) : string {
+	private static function get_container_styles( $attr ): string {
 
 		$styles = array();
 
@@ -92,7 +92,7 @@ class Handler {
 	 *
 	 * @return string The ratio string
 	 */
-	private static function get_default_ratio( $attr ) : string {
+	private static function get_default_ratio( $attr ): string {
 		if ( ! isset( $attr['width'] ) || ! isset( $attr['height'] ) ) {
 			return '1/1';
 		}
@@ -106,7 +106,7 @@ class Handler {
 	 *
 	 * @return array         The filtered styles
 	 */
-	public function allow_container_ratio_style( $styles ) : array {
+	public function allow_container_ratio_style( $styles ): array {
 
 		// Bail if $styles isn't an array.
 		if ( ! is_array( $styles ) ) {
@@ -136,9 +136,9 @@ class Handler {
 		}
 
 		// Bail if this is in a gallery block.
-		if ( isset( $parent_block->name ) && $parent_block->name === 'core/gallery' ) {
-			return $pre_render;
-		}
+		// if ( isset( $parent_block->name ) && $parent_block->name === 'core/gallery' ) {
+		// return $pre_render;
+		// }
 
 		// Bail if we're in the admin, but not the post editor.
 		if ( Helpers::in_admin_but_not_post_editor() ) {
@@ -169,7 +169,7 @@ class Handler {
 	 *
 	 * @return array               The image atts array
 	 */
-	private function get_image_atts( array $parsed_block ) : array {
+	private function get_image_atts( array $parsed_block ): array {
 		$atts  = array();
 		$attrs = $parsed_block['attrs'];
 
@@ -217,7 +217,7 @@ class Handler {
 	 *
 	 * @return string              The image link
 	 */
-	private function get_image_link( array $parsed_block ) : string {
+	private function get_image_link( array $parsed_block ): string {
 		switch ( $parsed_block['attrs']['linkDestination'] ) {
 			case 'custom':
 				$href = Helpers::get_link_from_img_el( $parsed_block['innerHTML'] );
@@ -305,7 +305,7 @@ class Handler {
 	 *
 	 * @return string                   The modified HTML.
 	 */
-	public static function decorate_edge_image( $html = '', $attachment_id = 0, $size = false, $icon = false, $attr = array() ) : string {
+	public static function decorate_edge_image( $html = '', $attachment_id = 0, $size = false, $icon = false, $attr = array() ): string {
 
 		// Bail if there's no HTML.
 		if ( ! $html ) {
@@ -340,7 +340,7 @@ class Handler {
 	 *
 	 * @return array                    The modified $attr array
 	 */
-	public static function maybe_backfill_missing_dimensions( $html, $size, $attr ) : array {
+	public static function maybe_backfill_missing_dimensions( $html, $size, $attr ): array {
 
 		// Bail if the height and width are set (because then we know we have a valid image).
 		if ( isset( $attr['height'] ) && isset( $attr['width'] ) ) {
@@ -370,7 +370,7 @@ class Handler {
 	 *
 	 * @return string       The modified HTML
 	 */
-	private static function maybe_wrap_image_in_link( string $html, array $attr ) : string {
+	private static function maybe_wrap_image_in_link( string $html, array $attr ): string {
 
 		// Bail if there's no link.
 		if ( ! isset( $attr['href'] ) || ! $attr['href'] ) {
@@ -394,7 +394,7 @@ class Handler {
 	 *
 	 * @return string       The modified HTML
 	 */
-	private static function maybe_add_caption( string $html, array $attr ) : string {
+	private static function maybe_add_caption( string $html, array $attr ): string {
 
 		// Bail if there's no link.
 		if ( ! isset( $attr['caption'] ) || ! $attr['caption'] ) {
@@ -419,7 +419,7 @@ class Handler {
 	 *
 	 * @return string       The modified HTML
 	 */
-	private static function maybe_wrap_image_in_container( int $attachment_id, string $html, array $attr ) : string {
+	private static function maybe_wrap_image_in_container( int $attachment_id, string $html, array $attr ): string {
 
 		// Bail if image wrapping is disabled.
 		if ( apply_filters( 'edge_images_disable_container_wrap', false ) === true ) {
@@ -447,7 +447,7 @@ class Handler {
 	 *
 	 * @return string       The modified tag
 	 */
-	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ) : string {
+	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ): string {
 
 		// Bail if there's no HTML.
 		if ( ! $html || $html === '' ) {
@@ -476,7 +476,7 @@ class Handler {
 	 *
 	 * @return bool
 	 */
-	public function image_should_use_edge( int $id ) : bool {
+	public function image_should_use_edge( int $id ): bool {
 
 		// Bail if we shouldn't be transforming any images.
 		if ( ! Helpers::should_transform_images() ) {
@@ -500,7 +500,7 @@ class Handler {
 	 *
 	 * @return array             The modified image attributes
 	 */
-	public function route_images_through_edge( $attrs, $attachment, $size ) : array {
+	public function route_images_through_edge( $attrs, $attachment, $size ): array {
 
 		// Bail if $attrs isn't an array, or if it's empty.
 		if ( ! is_array( $attrs ) || empty( $attrs ) ) {
@@ -530,5 +530,4 @@ class Handler {
 
 		return $image->attrs;
 	}
-
 }
