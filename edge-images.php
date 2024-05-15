@@ -16,7 +16,7 @@
  * Donate link: https://www.jonoalderson.com
  * Contributors: jonoaldersonwp
  *
- * Version: 3.3
+ * Version: 3.3.1
  * Requires at least: 6.0
  * Tested up to: 6.1.1
  * Stable tag: 3.1
@@ -48,7 +48,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Set our constants.
 if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
-	define( 'EDGE_IMAGES_VERSION', '3.3' );
+	define( 'EDGE_IMAGES_VERSION', '3.3.1' );
 }
 
 if ( ! defined( 'EDGE_IMAGES_PLUGIN_DIR' ) ) {
@@ -66,7 +66,7 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
 /**
  * Init the plugin
  */
-( function() {
+( function () {
 
 	// Load our autoloaders.
 	require_once 'autoload.php';
@@ -97,8 +97,7 @@ if ( ! defined( 'EDGE_IMAGES_PLUGIN_FILE' ) ) {
  *
  * @return void
  */
-function activate_plugin() : void {
-
+function activate_plugin(): void {
 }
 
 /**
@@ -106,8 +105,7 @@ function activate_plugin() : void {
  *
  * @return void
  */
-function deactivate_plugin() : void {
-
+function deactivate_plugin(): void {
 }
 
 /**
