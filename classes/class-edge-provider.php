@@ -48,7 +48,7 @@ class Edge_Provider {
 				'dpr'      => 1,
 				'sharpen'  => null,
 				'blur'     => null,
-				'gravity'  => null,
+				'gravity'  => 'auto',
 				'onerror'  => null,
 				'metadata' => null,
 			)
@@ -62,7 +62,7 @@ class Edge_Provider {
 	 *
 	 * @return array The args.
 	 */
-	protected function get_transform_args() : array {
+	protected function get_transform_args(): array {
 
 		$args = array(
 			'width'   => ( isset( $this->args['width'] ) ) ? $this->args['width'] : null,
@@ -100,7 +100,7 @@ class Edge_Provider {
 	 *
 	 * @return void
 	 */
-	private function normalize_args() : void {
+	private function normalize_args(): void {
 
 		// Convert 'format' to 'f'.
 		if ( isset( $this->args['format'] ) ) {
@@ -132,11 +132,9 @@ class Edge_Provider {
 	 *
 	 * @return void
 	 */
-	private function align_loading_and_fetchpriority() : void {
+	private function align_loading_and_fetchpriority(): void {
 		if ( isset( $this->args['loading'] ) && ( $this->args['loading'] === 'eager' ) ) {
 			$this->args['fetchpriority'] = 'high';
 		}
 	}
-
-
 }

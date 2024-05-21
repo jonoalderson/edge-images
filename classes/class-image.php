@@ -72,8 +72,8 @@ class Image {
 		ksort( $this->attrs );
 
 		// Init all of the attributes.
-		$this->init_dimensions();
 		$this->init_src();
+		$this->init_dimensions();
 		$this->init_ratio();
 		$this->init_layout();
 		$this->init_srcset();
@@ -118,10 +118,16 @@ class Image {
 			return;
 		}
 
-		$size                  = $this->get_size();
-		$sizes                 = Helpers::get_sizes_from_size( $size );
-		$this->attrs['width']  = (int) $sizes['width'];
-		$this->attrs['height'] = (int) $sizes['height'];
+		$size = $this->get_size();
+
+		if ( $size === 'full' ) {
+			$this->attrs['width']  = $this->attrs['full-width'];
+			$this->attrs['height'] = $this->attrs['full-height'];
+		} else {
+			$sizes                 = Helpers::get_sizes_from_size( $size );
+			$this->attrs['width']  = (int) $sizes['width'];
+			$this->attrs['height'] = (int) $sizes['height'];
+		}
 	}
 
 	/**

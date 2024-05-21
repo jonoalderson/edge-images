@@ -92,7 +92,7 @@ class Helpers {
 	 *
 	 * @return string      The modified SRC attr.
 	 */
-	public static function edge_src( string $src, array $args ) : string {
+	public static function edge_src( string $src, array $args ): string {
 
 		// Bail if we shouldn't transform the image based on the src.
 		if ( ! self::should_transform_image_src() ) {
@@ -128,7 +128,7 @@ class Helpers {
 	 *
 	 * @return string      The normalized size
 	 */
-	public static function normalize_size_attr( $size ) : string {
+	public static function normalize_size_attr( $size ): string {
 		if ( is_array( $size ) ) {
 			return implode( 'x', $size );
 		}
@@ -143,7 +143,7 @@ class Helpers {
 	 *
 	 * @return string   The srcset value
 	 */
-	public static function create_srcset_val( string $src, $args ) : string {
+	public static function create_srcset_val( string $src, $args ): string {
 		return sprintf(
 			'%s %dw',
 			self::edge_src(
@@ -159,7 +159,7 @@ class Helpers {
 	 *
 	 * @return int The content width value
 	 */
-	public static function get_content_width() : int {
+	public static function get_content_width(): int {
 		// See if there's a filtered width.
 		$filtered_width = (int) apply_filters( 'edge_images_content_width', 0 );
 		if ( $filtered_width ) {
@@ -179,7 +179,7 @@ class Helpers {
 	 *
 	 * @return int The image quality value
 	 */
-	public static function get_image_quality_default() : int {
+	public static function get_image_quality_default(): int {
 		return (int) apply_filters( 'edge_images_quality', self::IMAGE_QUALITY_DEFAULT );
 	}
 
@@ -188,7 +188,7 @@ class Helpers {
 	 *
 	 * @return int The image step value
 	 */
-	public static function get_width_step() : int {
+	public static function get_width_step(): int {
 		return (int) apply_filters( 'edge_images_step_value', self::WIDTH_STEP );
 	}
 
@@ -197,7 +197,7 @@ class Helpers {
 	 *
 	 * @return int The image min width value
 	 */
-	public static function get_image_min_width() : int {
+	public static function get_image_min_width(): int {
 		return (int) apply_filters( 'edge_images_min_width', self::WIDTH_MIN );
 	}
 
@@ -206,7 +206,7 @@ class Helpers {
 	 *
 	 * @return int The image max width value
 	 */
-	public static function get_image_max_width() : int {
+	public static function get_image_max_width(): int {
 		return (int) apply_filters( 'edge_images_max_width', self::WIDTH_MAX );
 	}
 
@@ -248,7 +248,7 @@ class Helpers {
 	 *
 	 * @return array       The array of values
 	 */
-	public static function normalize_attr_array( $attr ) : array {
+	public static function normalize_attr_array( $attr ): array {
 		if ( ! $attr ) {
 			return array();
 		}
@@ -272,7 +272,7 @@ class Helpers {
 
 		if ( is_array( $classes ) ) {
 			$classes = array_map(
-				function( $class ) {
+				function ( $class ) {
 					return sanitize_html_class( $class );
 				},
 				$classes
@@ -307,7 +307,7 @@ class Helpers {
 	 *
 	 * @return bool
 	 */
-	public static function should_transform_images() : bool {
+	public static function should_transform_images(): bool {
 
 		// If we're debugging, always return true.
 		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE === true ) {
@@ -333,7 +333,7 @@ class Helpers {
 	 *
 	 * @return boolean
 	 */
-	public static function in_admin_but_not_post_editor() : bool {
+	public static function in_admin_but_not_post_editor(): bool {
 		// Check that we're able to get the current screen.
 		if ( ! function_exists( 'get_current_screen' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/screen.php';
@@ -353,7 +353,7 @@ class Helpers {
 	 *
 	 * @return bool
 	 */
-	public static function should_transform_image( int $id ) : bool {
+	public static function should_transform_image( int $id ): bool {
 
 		// If we're debugging, always return true.
 		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE === true ) {
@@ -379,7 +379,7 @@ class Helpers {
 	 *
 	 * @return bool
 	 */
-	public static function should_transform_image_src() : bool {
+	public static function should_transform_image_src(): bool {
 
 		// If we're debugging, always return true.
 		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE === true ) {
@@ -403,7 +403,7 @@ class Helpers {
 	 *
 	 * @return bool
 	 */
-	public static function is_svg( string $src ) : bool {
+	public static function is_svg( string $src ): bool {
 		if ( strpos( $src, '.svg' ) !== false ) {
 			return true;
 		}
@@ -415,7 +415,7 @@ class Helpers {
 	 *
 	 * @return string The domain
 	 */
-	public static function get_rewrite_domain() : string {
+	public static function get_rewrite_domain(): string {
 		return apply_filters( 'edge_images_domain', get_site_url() );
 	}
 
@@ -424,7 +424,7 @@ class Helpers {
 	 *
 	 * @return array The attributes
 	 */
-	public static function allowed_img_attrs() : array {
+	public static function allowed_img_attrs(): array {
 		return array(
 			'src'           => array(),
 			'width'         => array(),
@@ -444,7 +444,7 @@ class Helpers {
 	 *
 	 * @return array The attributes
 	 */
-	public static function allowed_container_attrs() : array {
+	public static function allowed_container_attrs(): array {
 		return array(
 			'style' => array(),
 			'class' => array(),
@@ -456,7 +456,7 @@ class Helpers {
 	 *
 	 * @return array The image sizes
 	 */
-	public static function get_wp_image_sizes() : array {
+	public static function get_wp_image_sizes(): array {
 
 		$cache_key = 'image_sizes';
 
@@ -500,7 +500,7 @@ class Helpers {
 	 *
 	 * @return array The width and height values
 	 */
-	public static function constrain_image_to_content_width( int $w, int $h ) : array {
+	public static function constrain_image_to_content_width( int $w, int $h ): array {
 		$content_width = self::get_content_width();
 
 		// Calculate the ratio and constrain the width.
@@ -523,7 +523,7 @@ class Helpers {
 	 *
 	 * @return string        The alt attribute
 	 */
-	public static function get_alt_from_img_el( string $html ) : string {
+	public static function get_alt_from_img_el( string $html ): string {
 		$alt = '';
 		$re  = '/(alt)=("[^"]*")/';
 		preg_match_all( $re, $html, $matches );
@@ -540,7 +540,7 @@ class Helpers {
 	 *
 	 * @return string        The href value
 	 */
-	public static function get_link_from_img_el( string $html ) : string {
+	public static function get_link_from_img_el( string $html ): string {
 		$alt = '';
 		$re  = '/(href)=("[^"]*")/';
 		preg_match_all( $re, $html, $matches );
@@ -557,7 +557,7 @@ class Helpers {
 	 *
 	 * @return string        The href value
 	 */
-	public static function get_caption_from_img_el( string $html ) : string {
+	public static function get_caption_from_img_el( string $html ): string {
 		$caption = '';
 		$re      = '/<figcaption>(.*?)<\/figcaption>/s';
 		preg_match_all( $re, $html, $matches );
@@ -606,7 +606,7 @@ class Helpers {
 	 *
 	 * @return array Array with default properties.
 	 */
-	public static function get_default_image_attrs() : array {
+	public static function get_default_image_attrs(): array {
 		$width  = self::get_content_width();
 		$height = $width * 0.75;
 		$attrs  = array(
@@ -630,7 +630,7 @@ class Helpers {
 	 *
 	 * @return string       The sanitized HTML
 	 */
-	public static function sanitize_image_html( string $html ) : string {
+	public static function sanitize_image_html( string $html ): string {
 		$html = wp_kses(
 			$html,
 			array(
@@ -695,8 +695,4 @@ class Helpers {
 
 		return false;
 	}
-
-
-
-
 }

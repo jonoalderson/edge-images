@@ -68,9 +68,6 @@ class Handler {
 		if ( isset( $attr['max-width'] ) ) {
 			$styles[] = sprintf( '--max-width:%dpx', $attr['max-width'] );
 		}
-		// if ( isset( $attr['max-height'] ) ) {
-		// $styles[] = sprintf( '--max-height:%dpx', $attr['max-height'] );
-		// }
 
 		// Add height and width inline styles if this is a fixed image.
 		if ( isset( $attr['layout'] ) && $attr['layout'] === 'fixed' ) {
@@ -135,11 +132,6 @@ class Handler {
 			return $pre_render;
 		}
 
-		// Bail if this is in a gallery block.
-		// if ( isset( $parent_block->name ) && $parent_block->name === 'core/gallery' ) {
-		// return $pre_render;
-		// }
-
 		// Bail if we're in the admin, but not the post editor.
 		if ( Helpers::in_admin_but_not_post_editor() ) {
 			return $pre_render;
@@ -150,8 +142,19 @@ class Handler {
 			return $pre_render;
 		}
 
+		// Get our image atts.
+		$atts = $this->get_image_atts( $parsed_block );
+
+		// Intervene if this is in a gallery block.
+		// if ( isset( $parent_block->name ) && $parent_block->name === 'core/gallery' ) {
+		// print_r( $atts );
+		// die;
+		// print_r( $parsed_block );
+		// die;
+		// return $pre_render;
+		// }
+
 		// Build our image.
-		$atts  = $this->get_image_atts( $parsed_block );
 		$image = $this->get_content_image( $parsed_block['attrs']['id'], $atts );
 
 		// Bail if we didn't get an image; fall back to the original block.
