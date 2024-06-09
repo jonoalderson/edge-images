@@ -684,6 +684,11 @@ class Helpers {
 
 				$meta = wp_get_attachment_metadata( $post_id );
 
+				// Bail if we don't have the meta we need.
+				if ( ! isset( $meta['file'] ) || ! isset( $meta['sizes'] ) || ! is_array( $meta['sizes'] ) ) {
+					continue;
+				}
+
 				$original_file       = basename( $meta['file'] );
 				$cropped_image_files = wp_list_pluck( $meta['sizes'], 'file' );
 
