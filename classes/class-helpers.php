@@ -487,7 +487,7 @@ class Helpers {
 			}
 		}
 
-		wp_cache_set( $cache_key, $image_sizes, self::CACHE_GROUP, HOUR_IN_SECONDS );
+		wp_cache_set( $cache_key, $image_sizes, self::CACHE_GROUP, HOUR_IN_SECONDS * 24 );
 
 		return $image_sizes;
 	}

@@ -172,7 +172,7 @@ function get_edge_image_object( int $id, array $atts = array(), $size = 'large' 
 
 	// Try to get this from the cache.
 	$cache_group = 'edge_images_image';
-	$cache_key   = base64_encode(
+	$cache_key   = sanitize_title(
 		wp_json_encode(
 			array(
 				$id,
