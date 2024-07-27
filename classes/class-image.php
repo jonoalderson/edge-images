@@ -296,8 +296,19 @@ class Image {
 	 * @return array The srcset values
 	 */
 	private function get_generic_srcset_sizes(): array {
-		$srcset     = array();
-		$args       = $this->get_attrs();
+		$srcset = array();
+		$args   = $this->get_attrs();
+
+		// Bail if there's no width or full width.
+		if ( ! isset( $args['width'] ) || ! isset( $args['full-width'] ) ) {
+			return $srcset;
+		}
+
+		// Bail if the width or full width aren't integers.
+		if ( ! is_int( $args['width'] ) || ! is_int( $args['full-width'] ) ) {
+			return $srcset;
+		}
+
 		$max_width  = min( 2 * $args['width'], Helpers::get_image_max_width(), $args['full-width'] );
 		$width_step = Helpers::get_width_step();
 
@@ -323,6 +334,16 @@ class Image {
 	private function get_dpx_srcset_sizes(): array {
 		$attrs = $this->get_attrs();
 		$args  = $attrs;
+
+		// Bail if there's no width.
+		if ( ! isset( $attrs['width'] ) ) {
+			return array();
+		}
+
+		// Bail if the width isn't an integer.
+		if ( ! is_int( $attrs['width'] ) ) {
+			return array();
+		}
 
 		// 2x.
 		$args['width']  = $attrs['width'] * 2;
