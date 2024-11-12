@@ -19,10 +19,9 @@ if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
  *
  * @param string $class_name The name of the requested class.
  *
- * @return bool              Whether or not the requested class was found.
+ * @return bool Whether or not the requested class was found.
  */
-function autoloader( string $class_name ) : bool {
-
+function autoloader( string $class_name ): bool {
 	// Bail if the class isn't in our namespace.
 	if ( strpos( $class_name, __NAMESPACE__ ) !== 0 ) {
 		return false;
@@ -52,6 +51,8 @@ function autoloader( string $class_name ) : bool {
 		return true;
 	}
 
-	// Bail if the class wasn't found.
 	return false;
 }
+
+// Register the autoloader.
+spl_autoload_register( __NAMESPACE__ . '\autoloader' );

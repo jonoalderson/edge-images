@@ -29,6 +29,19 @@ class Edge_Provider {
 	public string $path;
 
 	/**
+	 * Default edge transformation arguments.
+	 *
+	 * @var array
+	 */
+	protected array $default_edge_args = [
+		'fit' => 'cover',
+		'dpr' => 1, 
+		'f' => 'auto',
+		'gravity' => 'auto',
+		'q' => 85
+	];
+
+	/**
 	 * Create the provider
 	 *
 	 * @param string $path The path to the image.
@@ -37,20 +50,21 @@ class Edge_Provider {
 	public function __construct( string $path, array $args = array() ) {
 		$this->path = $path;
 
+		global $content_width;
+		if ( ! $content_width ) {
+			$content_width = 600;
+		}
+
 		$this->args = wp_parse_args(
 			$args,
-			array(
-				'width'    => Helpers::get_content_width(),
-				'height'   => null,
-				'fit'      => 'cover',
-				'f'        => null,
-				'q'        => Helpers::get_image_quality_default(),
-				'dpr'      => 1,
-				'sharpen'  => null,
-				'blur'     => null,
-				'gravity'  => 'auto',
-				'onerror'  => null,
-				'metadata' => null,
+			array_merge(
+				$this->default_edge_args,
+				[
+					'width'    => $content_width,
+					'height'   => null,
+					'metadata' => null,
+					'onerror'  => null,
+				]
 			)
 		);
 
@@ -136,5 +150,23 @@ class Edge_Provider {
 		if ( isset( $this->args['loading'] ) && ( $this->args['loading'] === 'eager' ) ) {
 			$this->args['fetchpriority'] = 'high';
 		}
+	}
+
+	/**
+	 * Get the URL pattern used to identify transformed images
+	 *
+	 * @return string The URL pattern
+	 */
+	public static function get_url_pattern(): string {
+		return '/cdn-cgi/';
+	}
+
+	/**
+	 * Get default edge transformation arguments
+	 *
+	 * @return array The default arguments
+	 */
+	public function get_default_args(): array {
+		return $this->default_edge_args;
 	}
 }

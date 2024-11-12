@@ -7,12 +7,34 @@
 
 namespace Edge_Images;
 
-use Edge_Images\{Helpers, Image};
-
 /**
- * Filters wp_get_attachment_image and related functions to use the edge.
+ * Filters image attributes to use the edge provider.
  */
 class Handler {
+
+	// TODO:
+	// 1. SRCSET values should be derived from the sizes attribute.
+	// 2.Options pages
+	
+	/**
+	 * Default edge transformation arguments.
+	 *
+	 * @var array
+	 */
+	private array $default_edge_args = [
+		'fit' => 'cover',
+		'dpr' => 1, 
+		'f' => 'auto',
+		'gravity' => 'auto',
+		'q' => 85
+	];
+
+	/**
+	 * Whether the handler has been registered.
+	 *
+	 * @var bool
+	 */
+	private static bool $registered = false;
 
 	/**
 	 * Register the integration
@@ -21,512 +43,725 @@ class Handler {
 	 */
 	public static function register(): void {
 
-		// Bail if we shouldn't be transforming images.
+		// Prevent multiple registrations
+		if ( self::$registered ) {
+			return;
+		}
+
+		// Bail if we shouldn't be transforming images
 		if ( ! Helpers::should_transform_images() ) {
 			return;
 		}
 
+		// Create an instance of the class to work with
 		$instance = new self();
-		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'route_images_through_edge' ), 100, 3 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'remove_dimension_attributes' ), 10, 5 );
-		add_filter( 'wp_get_attachment_image', array( $instance, 'decorate_edge_image' ), 100, 5 );
-		add_filter( 'safe_style_css', array( $instance, 'allow_container_ratio_style' ), 10, 1 );
-		add_filter( 'pre_render_block', array( $instance, 'alter_image_block_rendering' ), 10, 3 );
-		add_filter( 'attachment_updated', array( $instance, 'purge_image_cache_on_attachment_update' ), 10, 3 );
+
+		// Transform images in templates - run at priority 1 to ensure we run before other plugins
+		add_filter( 'wp_get_attachment_image_attributes', array( $instance, 'transform_attachment_image' ), 1, 3 );
+		add_filter( 'wp_get_attachment_image', array( $instance, 'wrap_attachment_image' ), 1, 5 );
+
+		// Transform images in content
+		add_filter( 'wp_img_tag_add_width_and_height_attr', array( $instance, 'transform_image' ), 5, 4 );
+		add_filter( 'render_block', array( $instance, 'transform_block_images' ), 5, 2 );
+
+		// Ensure WordPress's default dimension handling still runs
+		add_filter( 'wp_img_tag_add_width_and_height_attr', '__return_true', 999 );
+
+		// Enqueue styles
+		add_action( 'wp_enqueue_scripts', array( $instance, 'enqueue_styles' ) );
+
+		self::$registered = true;
 	}
 
 	/**
-	 * Purge the image cache when an image is saved (or replaced)
+	 * Transform attachment image attributes
 	 *
-	 * @param int      $post_id The attachment post ID.
-	 * @param \WP_Post $post_after Post object following the update.
-	 * @param \WP_Post $post_before Post object before the update.
-	 *
-	 * @return void
+	 * @param array   $attr       Array of attribute values for the image markup.
+	 * @param WP_Post $attachment Image attachment post.
+	 * @param string  $size       Requested size.
+	 * 
+	 * @return array Modified attributes
 	 */
-	public function purge_image_cache_on_attachment_update( $post_id, $post_after, $post_before ): void {
-		wp_cache_flush_group( 'edge_images' );
-		wp_cache_flush_group( 'edge_images_image' );
-	}
-
-	/**
-	 * Get the inline styles for the container tag
-	 *
-	 * @param  array $attr The image attributes.
-	 * @return string      The style attribute values
-	 */
-	private static function get_container_styles( $attr ): string {
-
-		$styles = array();
-
-		// Add the aspect ratio.
-		$ratio    = isset( $attr['ratio'] ) ? $attr['ratio'] : self::get_default_ratio( $attr );
-		$ratio    = str_replace( 'px', '', $ratio );
-		$styles[] = '--aspect-ratio:' . $ratio;
-
-		// Add max height and width inline styles if defined.
-		if ( isset( $attr['max-width'] ) ) {
-			$styles[] = sprintf( '--max-width:%dpx', $attr['max-width'] );
-		}
-
-		// Add height and width inline styles if this is a fixed image.
-		if ( isset( $attr['layout'] ) && $attr['layout'] === 'fixed' ) {
-			if ( isset( $attr['width'] ) && $attr['width'] ) {
-				$styles[] = sprintf( '--max-width:%dpx', $attr['width'] );
-			}
-			if ( isset( $attr['height'] ) && $attr['height'] ) {
-				$styles[] = sprintf( '--max-height:%dpx', $attr['height'] );
-			}
-		}
-
-		return implode( ';', $styles );
-	}
-
-	/**
-	 * Build a default ratio based on attrs
-	 *
-	 * @param  array $attr The image attributes.
-	 *
-	 * @return string The ratio string
-	 */
-	private static function get_default_ratio( $attr ): string {
-		if ( ! isset( $attr['width'] ) || ! isset( $attr['height'] ) ) {
-			return '1/1';
-		}
-		return $attr['width'] . '/' . $attr['height'];
-	}
-
-	/**
-	 * Adds our aspect ratio variable as a safe style
-	 *
-	 * @param  array $styles The safe styles.
-	 *
-	 * @return array         The filtered styles
-	 */
-	public function allow_container_ratio_style( $styles ): array {
-
-		// Bail if $styles isn't an array.
-		if ( ! is_array( $styles ) ) {
-			return $styles;
-		}
-
-		$styles[] = '--aspect-ratio';
-		$styles[] = '--max-width';
-		$styles[] = '--max-height';
-		return $styles;
-	}
-
-	/**
-	 * Alter block editor image rendering, and return the modified image HTML
-	 *
-	 * @param string|null   $pre_render   The pre-rendered content.
-	 * @param array         $parsed_block The parsed block's properties.
-	 * @param WP_Block|null $parent_block The parent block.
-	 *
-	 * @return string|null                The modified HTML content
-	 */
-	public function alter_image_block_rendering( $pre_render, array $parsed_block, $parent_block ) {
-
-		// Bail if this isn't an image block.
-		if ( $parsed_block['blockName'] !== 'core/image' ) {
-			return $pre_render;
-		}
-
-		// Bail if we're in the admin, but not the post editor.
-		if ( Helpers::in_admin_but_not_post_editor() ) {
-			return $pre_render;
-		}
-
-		// Bail if there's no image ID set.
-		if ( ! isset( $parsed_block['attrs']['id'] ) ) {
-			return $pre_render;
-		}
-
-		// Get our image atts.
-		$atts = $this->get_image_atts( $parsed_block );
-
-		// Bail if this is in a gallery block.
-		if ( isset( $parent_block->name ) && $parent_block->name === 'core/gallery' ) {
-			return $pre_render;
-		}
-
-		// Build our image.
-		$image = $this->get_content_image( $parsed_block['attrs']['id'], $atts );
-
-		// Bail if we didn't get an image; fall back to the original block.
-		if ( ! $image ) {
-			return $pre_render;
-		}
-
-		return $image;
-	}
-
-	/**
-	 * Gets atts from the <img> to pass to the edge <img>
-	 *
-	 * @param  array $parsed_block The parsed block's properties.
-	 *
-	 * @return array               The image atts array
-	 */
-	private function get_image_atts( array $parsed_block ): array {
-		$atts  = array();
-		$attrs = $parsed_block['attrs'];
-
-		// Get the alt attribute if it's set.
-		$atts['alt'] = Helpers::get_alt_from_img_el( $parsed_block['innerHTML'] );
-
-		// Get the link destination if it's set.
-		if ( isset( $attrs['linkDestination'] ) ) {
-			$atts['href'] = $this->get_image_link( $parsed_block );
-		}
-
-		// Get the caption if there's one present.
-		$caption = Helpers::get_caption_from_img_el( $parsed_block['innerHTML'] );
-		if ( $caption && $caption !== '' ) {
-			$atts['caption'] = $caption;
-		}
-
-		// Get the width from the attrs.
-		if ( isset( $attrs['width'] ) ) {
-			$atts['width'] = $attrs['width'];
-		}
-
-		// Get the height from the attrs.
-		if ( isset( $attrs['height'] ) ) {
-			$atts['height'] = $attrs['height'];
-		}
-
-		// Get the size from the attrs.
-		if ( isset( $attrs['sizeSlug'] ) ) {
-			$atts['size'] = $attrs['sizeSlug'];
-		}
-
-		// Get the alignment from the attrs.
-		if ( isset( $attrs['align'] ) ) {
-			$atts['align'] = $attrs['align'];
-		}
-
-		return $atts;
-	}
-
-	/**
-	 * Get the image link
-	 *
-	 * @param  array $parsed_block The parsed block's properties.
-	 *
-	 * @return string              The image link
-	 */
-	private function get_image_link( array $parsed_block ): string {
-		switch ( $parsed_block['attrs']['linkDestination'] ) {
-			case 'custom':
-				$href = Helpers::get_link_from_img_el( $parsed_block['innerHTML'] );
-				break;
-			case 'attachment':
-				$href = get_attachment_link( $parsed_block['attrs']['id'] );
-				break;
-			case 'media':
-				$image = get_edge_image_object( $parsed_block['attrs']['id'], array(), 'full' );
-				if ( ! $image ) {
-					break;
-				}
-				$href = ( isset( $image->attrs['src'] ) ) ? $image->attrs['src'] : '';
-				break;
-			default:
-				$href = '';
-		}
-		return $href;
-	}
-
-	/**
-	 * Gets an image sized for display in the_content.
-	 *
-	 * @param  int   $id The attachment ID.
-	 * @param array $atts The image attributes.
-	 *
-	 * @return false|Image The Edge Image
-	 */
-	private function get_content_image( int $id, array $atts = array() ) {
-
-		// Get the size, or fall back to 'full'.
-		$size = ( isset( $atts['size'] ) ) ? $atts['size'] : 'full';
-
-		// Get the full-sized image.
-		$image = wp_get_attachment_image_src( $id, $size );
-
-		// Bail if the image doesn't exist.
-		if ( ! $image ) {
-			return false;
-		}
-
-		// If there's no specific size, constrain our image to the maximum content width, based on the ratio.
-		if ( ! ( isset( $atts['width'] ) && isset( $atts['height'] ) ) ) {
-			$atts = array_merge( $atts, Helpers::constrain_image_to_content_width( $image[1], $image[2] ) );
-		}
-
-		// If there's a specific size set, use this for our max height/width.
-		if ( isset( $atts['width'] ) ) {
-			$atts['max-width'] = $atts['width'];
-		}
-		if ( isset( $atts['height'] ) ) {
-			$atts['max-height'] = $atts['height'];
-		}
-
-		// Add WP's native block class(es).
-		if ( ! isset( $atts['container-class'] ) ) {
-			$atts['container-class'] = array();
-		}
-		$atts['container-class'][] = 'wp-block-image';
-
-		// Add alignment.
-		if ( isset( $atts['align'] ) ) {
-			$atts['container-class'][] = 'align' . $atts['align'];
-		}
-
-		// Get our transformed image.
-		$image = get_edge_image( $id, $atts, 'content', false );
-
-		// Bail if we didn't get an image.
-		if ( ! $image ) {
-			return false;
-		}
-
-		return $image;
-	}
-
-	/**
-	 * Decorate our edge image with appropriate atts and markup
-	 *
-	 * @param  string $html             The <img> HTML.
-	 * @param  int    $attachment_id    The attachment ID.
-	 * @param  mixed  $size             The image size.
-	 * @param  bool   $icon             Whether to use an icon.
-	 * @param  array  $attr             The image attributes.
-	 *
-	 * @return string                   The modified HTML.
-	 */
-	public static function decorate_edge_image( $html = '', $attachment_id = 0, $size = false, $icon = false, $attr = array() ): string {
-
-		// Bail if there's no HTML.
-		if ( ! $html ) {
-			return '';
-		}
-
-		// Bail if there's no attachment ID.
-		if ( ! $attachment_id ) {
-			return $html;
-		}
-
-		// Bail if this image has been excluded via a filter.
-		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
-			return $html;
-		}
-
-		$attr = self::maybe_backfill_missing_dimensions( $html, $size, $attr );
-		$html = self::maybe_wrap_image_in_link( $html, $attr );
-		$html = self::maybe_add_caption( $html, $attr );
-		$html = self::maybe_wrap_image_in_container( $attachment_id, $html, $attr );
-		$html = Helpers::sanitize_image_html( $html );
-
-		return $html;
-	}
-
-	/**
-	 * Construct a viable <picture> even when dimensions are missing.
-	 *
-	 * @param  string $html             The <img> HTML.
-	 * @param  mixed  $size             The image size.
-	 * @param  array  $attr             The image attributes.
-	 *
-	 * @return array                    The modified $attr array
-	 */
-	public static function maybe_backfill_missing_dimensions( $html, $size, $attr ): array {
-
-		// Bail if the height and width are set (because then we know we have a valid image).
-		if ( isset( $attr['height'] ) && isset( $attr['width'] ) ) {
+	public function transform_attachment_image( array $attr, $attachment, $size ): array {
+		// Skip if already processed
+		if ( isset( $attr['class'] ) && strpos( $attr['class'], 'edge-images-processed' ) !== false ) {
 			return $attr;
 		}
 
-		// Get the normalized size string.
-		$normalized_size = Helpers::normalize_size_attr( $size );
+		// Add our classes
+		$attr['class'] = isset( $attr['class'] ) 
+			? $attr['class'] . ' edge-images-img edge-images-processed' 
+			: 'edge-images-img edge-images-processed';
 
-		// Get the edge image sizes array.
-		$sizes = apply_filters( 'edge_images_sizes', Helpers::get_wp_image_sizes() );
+		// Add attachment ID as data attribute
+		$attr['data-attachment-id'] = $attachment->ID;
 
-		// Grab the attrs for the image size, or continue with defaults.
-		if ( array_key_exists( $normalized_size, $sizes ) ) {
-			$attr = wp_parse_args( $sizes[ $normalized_size ], Helpers::get_default_image_attrs() );
+		// Get dimensions
+		$width = $attr['width'] ?? null;
+		$height = $attr['height'] ?? null;
+
+		// If no dimensions in attributes, try to get from attachment
+		if ( ! $width || ! $height ) {
+			$metadata = wp_get_attachment_metadata( $attachment->ID );
+			if ( $metadata ) {
+				if ( $size === 'full' ) {
+					$width = $metadata['width'];
+					$height = $metadata['height'];
+				} elseif ( isset( $metadata['sizes'][$size] ) ) {
+					$width = $metadata['sizes'][$size]['width'];
+					$height = $metadata['sizes'][$size]['height'];
+				}
+				$attr['width'] = (string) $width;
+				$attr['height'] = (string) $height;
+			}
+		}
+
+		if ( $width && $height ) {
+			global $content_width;
+			if ( $content_width && (int) $width > $content_width ) {
+				$ratio = (int) $height / (int) $width;
+				$width = (string) $content_width;
+				$height = (string) round( $content_width * $ratio );
+				$attr['width'] = $width;
+				$attr['height'] = $height;
+			}
+		}
+
+		// Transform src
+		if ( isset( $attr['src'] ) ) {
+			$edge_args = array_merge(
+				$this->default_edge_args,
+				array_filter([
+					'width' => $width,
+					'height' => $height,
+				])
+			);
+			$attr['src'] = Helpers::edge_src( $attr['src'], $edge_args );
+		}
+
+		// Transform srcset
+		if ( isset( $attr['srcset'] ) ) {
+			$attr['srcset'] = $this->transform_srcset( $attr['srcset'], $edge_args );
+		}
+
+		// Add flag for wrapping
+		$attr['data-wrap-in-picture'] = 'true';
+
+		// Preserve the sizes attribute if it exists
+		if ( isset( $attr['sizes'] ) ) {
+			$attr['sizes'] = $attr['sizes'];
+		} else {
+			// Set a default sizes attribute if not present
+			$attr['sizes'] = '(max-width: ' . $attr['width'] . 'px) 100vw, ' . $attr['width'] . 'px';
 		}
 
 		return $attr;
 	}
 
-
 	/**
-	 * Maybe wrap the image in a link.
+	 * Wrap attachment image in picture element
 	 *
-	 * @param  string $html The image HTML.
-	 * @param  array  $attr The image attributes.
-	 *
-	 * @return string       The modified HTML
+	 * @param string  $html        The HTML img element markup.
+	 * @param int     $attachment_id Image attachment ID.
+	 * @param string  $size        Size of image.
+	 * @param bool    $icon        Whether the image should be treated as an icon.
+	 * @param array   $attr        Array of image attributes.
+	 * 
+	 * @return string Modified HTML
 	 */
-	private static function maybe_wrap_image_in_link( string $html, array $attr ): string {
-
-		// Bail if there's no link.
-		if ( ! isset( $attr['href'] ) || ! $attr['href'] ) {
+	public function wrap_attachment_image( string $html, int $attachment_id, string $size, bool $icon, array $attr ): string {
+		// Skip if already wrapped or if we shouldn't wrap
+		if ( 
+			strpos( $html, '<picture' ) !== false || 
+			! isset( $attr['data-wrap-in-picture'] ) ||
+			! isset( $attr['width'], $attr['height'] )
+		) {
 			return $html;
 		}
 
-		$html = sprintf(
-			'<a href="%s">%s</a>',
-			$attr['href'],
-			$html
-		);
+		$dimensions = [
+			'width' => $attr['width'],
+			'height' => $attr['height']
+		];
 
-		return $html;
+		return $this->create_picture_element( $html, $dimensions );
 	}
 
 	/**
-	 * Maybe add a caption.
+	 * Transform an image tag
 	 *
-	 * @param  string $html The image HTML.
-	 * @param  array  $attr The image attributes.
-	 *
-	 * @return string       The modified HTML
+	 * @param string|bool $value         The filtered value.
+	 * @param string     $image_html    The HTML image tag.
+	 * @param string     $context       The context (header, content, etc).
+	 * @param int        $attachment_id The attachment ID.
+	 * 
+	 * @return string The transformed image HTML
 	 */
-	private static function maybe_add_caption( string $html, array $attr ): string {
-
-		// Bail if there's no link.
-		if ( ! isset( $attr['caption'] ) || ! $attr['caption'] ) {
-			return $html;
+	public function transform_image( $value, string $image_html, string $context, $attachment_id ): string {
+		// Skip if already processed
+		if ( strpos( $image_html, 'edge-images-processed' ) !== false ) {
+			return $image_html;
 		}
 
-		$html = sprintf(
-			'%s<figcaption>%s</figcaption>',
-			$html,
-			$attr['caption']
-		);
+		$processor = new \WP_HTML_Tag_Processor( $image_html );
+		if ( ! $processor->next_tag( 'img' ) ) {
+			return $image_html;
+		}
 
-		return $html;
+		// Transform the image
+		$processor = $this->transform_image_tag( $processor, $attachment_id, $image_html );
+		$transformed = $processor->get_updated_html();
+
+		// Get dimensions for the picture element
+		$dimensions = $this->get_dimensions_from_html( new \WP_HTML_Tag_Processor( $transformed ) );
+		if ( ! $dimensions ) {
+			return $transformed;
+		}
+
+		// If we have a figure, replace it with picture
+		if ( strpos( $image_html, '<figure' ) !== false ) {
+			$figure_classes = $this->extract_figure_classes( $image_html, [] );
+			$img_html = $this->extract_img_tag( $transformed );
+			
+			return $this->create_picture_element( $img_html, $dimensions, $figure_classes );
+		}
+
+		// Otherwise create picture element with just the image
+		return $this->create_picture_element( $transformed, $dimensions );
 	}
 
 	/**
-	 * Maybe wrap the image in a container.
+	 * Transform an image tag with processor
 	 *
-	 * @param  int    $attachment_id The attachment ID.
-	 * @param  string $html The image HTML.
-	 * @param  array  $attr The image attributes.
-	 *
-	 * @return string       The modified HTML
+	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
+	 * @param int|null              $attachment_id The attachment ID.
+	 * @param string               $original_html  The original HTML.
+	 * 
+	 * @return \WP_HTML_Tag_Processor The modified processor
 	 */
-	private static function maybe_wrap_image_in_container( int $attachment_id, string $html, array $attr ): string {
-
-		// Bail if image wrapping is disabled.
-		if ( apply_filters( 'edge_images_disable_container_wrap', false ) === true ) {
-			return $html;
+	private function transform_image_tag( \WP_HTML_Tag_Processor $processor, ?int $attachment_id, string $original_html = '' ): \WP_HTML_Tag_Processor {
+		// Get dimensions
+		$dimensions = $this->get_image_dimensions( $processor, $attachment_id );
+		if ( $dimensions ) {
+			$processor->set_attribute( 'width', $dimensions['width'] );
+			$processor->set_attribute( 'height', $dimensions['height'] );
 		}
 
-		$html = sprintf(
-			'<picture style="%s" class="%s %s">%s</picture>',
-			self::get_container_styles( $attr ),
-			( isset( $attr['container-class'] ) ) ? Helpers::classes_array_to_string( $attr['container-class'] ) : null,
-			'image-id-' . $attachment_id,
-			$html,
-		);
-		return $html;
-	}
+		// Add our classes
+		$this->add_image_classes( $processor );
 
-	/**
-	 * Remove the height and width attrs from <img> markup, so that we can replace them with our customized values
-	 *
-	 * @param  string $html             The <img> HTML.
-	 * @param  int    $attachment_id    The attachment ID.
-	 * @param  mixed  $size             The image size.
-	 * @param  bool   $icon             Whether to use an icon.
-	 * @param  array  $attr             The image attributes.
-	 *
-	 * @return string       The modified tag
-	 */
-	public function remove_dimension_attributes( $html, $attachment_id, $size = false, $icon = false, $attr = array() ): string {
-
-		// Bail if there's no HTML.
-		if ( ! $html || $html === '' ) {
-			return '';
-		}
-
-		// Bail if there's no attachment ID.
+		// Get attachment ID if not provided
 		if ( ! $attachment_id ) {
-			return $html;
+			$attachment_id = $this->get_attachment_id_from_classes( $processor );
 		}
 
-		// Bail if this image has been excluded via a filter.
-		if ( ! Helpers::should_transform_image( $attachment_id ) ) {
-			return $html;
+		// Add srcset if we have an attachment ID
+		if ( $attachment_id ) {
+			$srcset = wp_get_attachment_image_srcset( $attachment_id );
+			
+			if ( $srcset ) {
+				$processor->set_attribute( 'srcset', $srcset );
+			}
 		}
 
-		// Strip the attributes.
-		$html = preg_replace( '/(width|height)="\d*"\s/', '', $html, 2 );
-		return $html;
+		// Transform URLs
+		$this->transform_image_urls( $processor, $dimensions ?? null, $original_html );
+
+		// Preserve the sizes attribute if it exists
+		$sizes = $processor->get_attribute( 'sizes' );
+		if ( $sizes ) {
+			$processor->set_attribute( 'sizes', $sizes );
+		} else {
+			// Set a default sizes attribute if not present
+			$width = $dimensions['width'] ?? '100%';
+			$default_sizes = is_numeric($width) 
+				? "(max-width: {$width}px) 100vw, {$width}px"
+				: '100vw';
+			$processor->set_attribute( 'sizes', $default_sizes );
+		}
+
+		return $processor;
 	}
 
 	/**
-	 * Check whether an image should use the edge
+	 * Add required classes to image
 	 *
-	 * @param int $id The attachment ID.
-	 *
-	 * @return bool
+	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
+	 * 
+	 * @return void
 	 */
-	public function image_should_use_edge( int $id ): bool {
-
-		// Bail if we shouldn't be transforming any images.
-		if ( ! Helpers::should_transform_images() ) {
-			return false;
-		}
-
-		// Bail if we shouldn't be transforming this image.
-		if ( ! Helpers::should_transform_image( $id ) ) {
-			return false;
-		}
-
-		return true;
+	private function add_image_classes( \WP_HTML_Tag_Processor $processor ): void {
+		$classes = $processor->get_attribute( 'class' );
+		$classes = $classes ? $classes . ' edge-images-img edge-images-processed' : 'edge-images-img edge-images-processed';
+		$processor->set_attribute( 'class', $classes );
 	}
 
 	/**
-	 * Alter an image to use the edge
+	 * Transform image URLs (src and srcset)
 	 *
-	 * @param array        $attrs      The attachment attributes.
-	 * @param \WP_Post     $attachment The attachment.
-	 * @param string|array $size       The attachment size.
-	 *
-	 * @return array             The modified image attributes
+	 * @param \WP_HTML_Tag_Processor $processor  The HTML processor.
+	 * @param array|null            $dimensions Optional dimensions.
+	 * @param string               $original_html The original HTML.
+	 * 
+	 * @return void
 	 */
-	public function route_images_through_edge( $attrs, $attachment, $size ): array {
-
-		// Bail if $attrs isn't an array, or if it's empty.
-		if ( ! is_array( $attrs ) || empty( $attrs ) ) {
-			return $attrs;
+	private function transform_image_urls( 
+		\WP_HTML_Tag_Processor $processor, 
+		?array $dimensions, 
+		string $original_html = ''
+	): void {
+		// Transform src
+		$src = $processor->get_attribute( 'src' );
+		if ( $src ) {
+			$edge_args = array_merge(
+				$this->default_edge_args,
+				array_filter([
+					'width' => $dimensions['width'] ?? null,
+					'height' => $dimensions['height'] ?? null,
+				])
+			);
+			$transformed_src = Helpers::edge_src( $src, $edge_args );
+			$processor->set_attribute( 'src', $transformed_src );
 		}
 
-		// Bail if $attachment isn't a WP_POST.
-		if ( ! is_a( $attachment, '\WP_POST' ) ) {
-			return $attrs;
+		// Transform srcset
+		$srcset = $processor->get_attribute( 'srcset' );
+
+		if ( $srcset && $dimensions ) {
+			$transformed_srcset = Srcset_Transformer::transform( $srcset, $dimensions );
+			$processor->set_attribute( 'srcset', $transformed_srcset );
 		}
-
-		// Bail if $size isn't a string or an array.
-		if ( ! ( is_string( $size ) || is_array( $size ) ) ) {
-			return $attrs;
-		}
-
-		// Bail if this image shouldn't use the edge.
-		if ( ! $this->image_should_use_edge( $attachment->ID ) ) {
-			return $attrs;
-		}
-
-		// Get the image object.
-		$image = new Image( $attachment->ID, $attrs, $size );
-
-		// Flatten the array properties.
-		$image->flatten_array_properties();
-
-		return $image->attrs;
 	}
+
+	/**
+	 * Transform images in block content
+	 *
+	 * @param string $block_content The block content.
+	 * @param array  $block         The block data.
+	 * 
+	 * @return string The transformed block content
+	 */
+	public function transform_block_images( string $block_content, array $block ): string {
+
+		// Bail if we don't have any images
+		if ( ! str_contains( $block_content, '<img' ) ) {
+			return $block_content;
+		}
+
+		// First pass: transform figures with images
+		if ( preg_match_all( '/<figure[^>]*>.*?<\/figure>/s', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
+			$offset_adjustment = 0;
+
+			foreach ( $matches[0] as $match ) {
+				$figure_html = $match[0];
+
+				if ( str_contains( $figure_html, '<img' ) && ! str_contains( $figure_html, '<picture' ) ) {
+
+					$transformed_html = $this->transform_figure_block( $figure_html, $block );
+
+					$block_content = substr_replace(
+						$block_content,
+						$transformed_html,
+						$match[1] + $offset_adjustment,
+						strlen( $figure_html )
+					);
+					$offset_adjustment += strlen( $transformed_html ) - strlen( $figure_html );
+				}
+			}
+		}
+
+		// Second pass: transform standalone images
+		if ( preg_match_all( '/<img[^>]*>/', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
+			$offset_adjustment = 0;
+			foreach ( $matches[0] as $match ) {
+				$img_html = $match[0];
+				// Skip if already processed or if inside a picture/figure element
+				if ( ! str_contains( $img_html, 'edge-images-processed' ) && 
+					 ! str_contains( substr( $block_content, 0, $match[1] ), '<picture' ) &&
+					 ! str_contains( substr( $block_content, 0, $match[1] ), '<figure' ) ) {
+					
+					$transformed_html = $this->transform_image( true, $img_html, 'block', 0 );
+					$block_content = substr_replace(
+						$block_content,
+						$transformed_html,
+						$match[1] + $offset_adjustment,
+						strlen( $img_html )
+					);
+					$offset_adjustment += strlen( $transformed_html ) - strlen( $img_html );
+				}
+			}
+		}
+
+		return $block_content;
+	}
+
+	/**
+	 * Get the HTML for a tag from the processor
+	 *
+	 * @param string                $content   The full HTML content.
+	 * @param \WP_HTML_Tag_Processor $processor The tag processor.
+	 * 
+	 * @return string The tag's HTML
+	 */
+	private function get_tag_html( string $content, \WP_HTML_Tag_Processor $processor ): string {
+		$tag = $processor->get_tag();
+		$attrs = '';
+		
+		foreach ( $processor->get_attribute_names() as $name ) {
+			$value = $processor->get_attribute( $name );
+			$attrs .= ' ' . $name . '="' . esc_attr( $value ) . '"';
+		}
+
+		return "<{$tag}{$attrs}>";
+	}
+
+	/**
+	 * Check if an element has a picture element as a parent
+	 *
+	 * @param string $content The HTML content.
+	 * @param int    $position The position of the element.
+	 * 
+	 * @return bool Whether the element has a picture parent
+	 */
+	private function has_picture_parent( string $content, int $position ): bool {
+		$before_content = substr( $content, 0, $position );
+		$picture_count = substr_count( $before_content, '<picture' );
+		$picture_close_count = substr_count( $before_content, '</picture>' );
+		
+		return $picture_count > $picture_close_count;
+	}
+
+	/**
+	 * Extract HTML for a specific tag
+	 *
+	 * @param string $content The full HTML content.
+	 * @param int    $offset  The tag offset.
+	 * @param int    $length  The tag length.
+	 * 
+	 * @return string The extracted HTML
+	 */
+	private function extract_tag_html( string $content, int $offset, int $length ): string {
+		return substr( $content, $offset, $length );
+	}
+
+	/**
+	 * Extract figure classes from block content and attributes
+	 *
+	 * @param string $block_content The block content.
+	 * @param array  $block         The block data.
+	 * 
+	 * @return string The combined classes
+	 */
+	private function extract_figure_classes( string $block_content, array $block ): string {
+		// Extract classes from figure element
+		preg_match('/<figure[^>]*class=["\']([^"\']*)["\']/', $block_content, $matches);
+		$figure_classes = $matches[1] ?? '';
+
+		// Add alignment if present in block attributes
+		$alignment = $block['attrs']['align'] ?? '';
+		if ( $alignment ) {
+			$figure_classes .= " align{$alignment}";
+		}
+
+		return trim( $figure_classes );
+	}
+
+	/**
+	 * Transform image and get its dimensions
+	 *
+	 * @param string $img_html The image HTML.
+	 * 
+	 * @return array|null Array with transformed HTML and dimensions, or null if failed
+	 */
+	private function transform_and_get_dimensions( string $img_html ): ?array {
+		// First get dimensions from the original image
+		$processor = new \WP_HTML_Tag_Processor( $img_html );
+		if ( ! $processor->next_tag( 'img' ) ) {
+			return null;
+		}
+
+		// If image is already processed, get dimensions directly
+		if ( str_contains( $processor->get_attribute( 'class' ) ?? '', 'edge-images-processed' ) ) {
+			$width = $processor->get_attribute( 'width' );
+			$height = $processor->get_attribute( 'height' );
+			
+			if ( $width && $height ) {
+				return [
+					'html' => $img_html,
+					'dimensions' => [
+						'width' => $width,
+						'height' => $height
+					]
+				];
+			}
+		}
+
+		// Otherwise transform the image
+		$transformed_img = $this->transform_image( true, $img_html, 'block', 0 );
+		
+		$processor = new \WP_HTML_Tag_Processor( $transformed_img );
+		if ( ! $processor->next_tag( 'img' ) ) {
+			return null;
+		}
+
+		$width = $processor->get_attribute( 'width' );
+		$height = $processor->get_attribute( 'height' );
+
+		return [
+			'html' => $transformed_img,
+			'dimensions' => [
+				'width' => $width,
+				'height' => $height
+			]
+		];
+	}
+
+	/**
+	 * Transform a figure block containing an image
+	 *
+	 * @param string $block_content The block content.
+	 * @param array  $block         The block data.
+	 * 
+	 * @return string The transformed block content
+	 */
+	private function transform_figure_block( string $block_content, array $block ): string {
+		// Extract necessary components
+		$figure_classes = $this->extract_figure_classes( $block_content, $block );
+		$img_html = $this->extract_img_tag( $block_content );
+		
+		if ( ! $img_html ) {
+			return $block_content;
+		}
+
+		// Transform the image and get dimensions
+		$transformed_data = $this->transform_and_get_dimensions( $img_html );
+		if ( ! $transformed_data ) {
+			return $block_content;
+		}
+
+		// Always create a picture element, even if the image is already processed
+		$picture = sprintf(
+			'<picture class="edge-images-container %s" style="aspect-ratio: %d/%d;">%s</picture>',
+			esc_attr( $figure_classes ),
+			$transformed_data['dimensions']['width'],
+			$transformed_data['dimensions']['height'],
+			$transformed_data['html']
+		);
+
+		return $picture;
+	}
+
+	/**
+	 * Create picture element with given components
+	 *
+	 * @param string $img_html      The image HTML.
+	 * @param array  $dimensions    The image dimensions.
+	 * @param string $extra_classes Additional classes to add.
+	 * 
+	 * @return string The picture element HTML
+	 */
+	private function create_picture_element( string $img_html, array $dimensions, string $extra_classes = '' ): string {
+		$classes = trim( 'edge-images-container ' . $extra_classes );
+		
+		return sprintf(
+			'<picture class="%s" style="aspect-ratio: %d/%d;">%s</picture>',
+			esc_attr( $classes ),
+			$dimensions['width'],
+			$dimensions['height'],
+			$img_html
+		);
+	}
+
+	/**
+	 * Extract img tag from HTML
+	 *
+	 * @param string $html The HTML containing the img tag.
+	 * 
+	 * @return string|null The img tag HTML or null if not found
+	 */
+	private function extract_img_tag( string $html ): ?string {
+		if ( preg_match( '/<img[^>]*>/', $html, $matches ) ) {
+			return $matches[0];
+		}
+		return null;
+	}
+
+	/**
+	 * Enqueue required styles
+	 *
+	 * @return void
+	 */
+	public function enqueue_styles(): void {
+		wp_enqueue_style(
+			'edge-images',
+			plugins_url( 'assets/css/images.min.css', dirname( __FILE__ ) ),
+			[],
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/images.min.css' )
+		);
+
+		// Add inline script to wrap template images
+		wp_add_inline_script( 'wp-embed', '
+			document.addEventListener("DOMContentLoaded", function() {
+				document.querySelectorAll("img[data-edge-wrap=\'true\']").forEach(function(img) {
+					if (!img.parentElement.matches("picture")) {
+						const picture = document.createElement("picture");
+						picture.className = "edge-images-container";
+						if (img.width && img.height) {
+							picture.style.aspectRatio = img.width + "/" + img.height;
+						}
+						img.parentNode.insertBefore(picture, img);
+						picture.appendChild(img);
+					}
+				});
+			});
+		');
+	}
+
+	/**
+	 * Get dimensions from HTML attributes
+	 *
+	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
+	 * 
+	 * @return array|null Array with width and height, or null if not found
+	 */
+	private function get_dimensions_from_html( \WP_HTML_Tag_Processor $processor ): ?array {
+		$width = $processor->get_attribute( 'width' );
+		$height = $processor->get_attribute( 'height' );
+
+		if ( ! $width || ! $height ) {
+			return null;
+		}
+
+		return [
+			'width' => (string) $width,
+			'height' => (string) $height,
+		];
+	}
+
+	/**
+	 * Get attachment ID from image classes
+	 *
+	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
+	 * 
+	 * @return int|null Attachment ID or null if not found
+	 */
+	private function get_attachment_id_from_classes( \WP_HTML_Tag_Processor $processor ): ?int {
+		$classes = $processor->get_attribute( 'class' );
+		if ( ! $classes || ! preg_match( '/wp-image-(\d+)/', $classes, $matches ) ) {
+			return null;
+		}
+
+		$attachment_id = (int) $matches[1];
+		return $attachment_id;
+	}
+
+	/**
+	 * Get dimensions from attachment metadata
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 * 
+	 * @return array|null Array with width and height, or null if not found
+	 */
+	private function get_dimensions_from_attachment( int $attachment_id ): ?array {
+		$metadata = wp_get_attachment_metadata( $attachment_id );
+
+		if ( ! $metadata || ! isset( $metadata['width'], $metadata['height'] ) ) {
+			return null;
+		}
+
+		return [
+			'width' => (string) $metadata['width'],
+			'height' => (string) $metadata['height'],
+		];
+	}
+
+	/**
+	 * Get image dimensions, trying multiple sources
+	 *
+	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
+	 * @param int|null              $attachment_id The attachment ID.
+	 * 
+	 * @return array|null Array with width and height, or null if not found
+	 */
+	private function get_image_dimensions( \WP_HTML_Tag_Processor $processor, ?int $attachment_id = null ): ?array {
+		// Try HTML first
+		$dimensions = $this->get_dimensions_from_html( $processor );
+		if ( $dimensions ) {
+			return $dimensions;
+		}
+
+		// Try attachment ID from parameter
+		if ( $attachment_id ) {
+			$dimensions = $this->get_dimensions_from_attachment( $attachment_id );
+			if ( $dimensions ) {
+				return $dimensions;
+			}
+		}
+
+		// Try getting attachment ID from classes
+		$found_id = $this->get_attachment_id_from_classes( $processor );
+		if ( $found_id ) {
+			$dimensions = $this->get_dimensions_from_attachment( $found_id );
+			if ( $dimensions ) {
+				return $dimensions;
+			}
+		}
+
+		// Try getting the ID from the URL.
+		$src = $processor->get_attribute( 'src' );
+		if ( $src ) {
+			$attachment_id = attachment_url_to_postid( $src );
+			if ( $attachment_id ) {
+				$dimensions = $this->get_dimensions_from_attachment( $attachment_id );
+			}
+		}
+
+		// Try getting the dimensions from the image file.
+		$dimensions = $this->get_dimensions_from_image_file( $src );
+		if ( $dimensions ) {
+			return $dimensions;
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Get dimensions from image file
+	 *
+	 * @param string $src The image URL.
+	 * 
+	 * @return array|null Array with width and height, or null if failed
+	 */
+	private function get_dimensions_from_image_file( string $src ): ?array {
+		// Get the relative path from the URL
+		$path = parse_url( $src, PHP_URL_PATH );
+		if ( ! $path ) {
+			return null;
+		}
+
+		// Convert URL path to filesystem path
+		$base_path = wp_parse_url( get_site_url(), PHP_URL_PATH ) ?: '';
+		$relative_path = preg_replace( '#^' . preg_quote( $base_path ) . '#', '', $path );
+		$file_path = ABSPATH . ltrim( $relative_path, '/' );
+
+		// Check if file exists and is readable
+		if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+			return null;
+		}
+
+		// Get image dimensions
+		$dimensions = @getimagesize( $file_path );
+		if ( ! $dimensions ) {
+			return null;
+		}
+
+		return [
+			'width' => (string) $dimensions[0],
+			'height' => (string) $dimensions[1]
+		];
+	}
+
 }
+
+
+
