@@ -684,6 +684,7 @@ class Handler {
 	 * @return array|null Array with width and height, or null if not found
 	 */
 	private function get_image_dimensions( \WP_HTML_Tag_Processor $processor, ?int $attachment_id = null ): ?array {
+
 		// Try HTML first
 		$dimensions = $this->get_dimensions_from_html( $processor );
 		if ( $dimensions ) {
@@ -733,16 +734,27 @@ class Handler {
 	 * @return array|null Array with width and height, or null if failed
 	 */
 	private function get_dimensions_from_image_file( string $src ): ?array {
-		// Get the relative path from the URL
-		$path = parse_url( $src, PHP_URL_PATH );
-		if ( ! $path ) {
-			return null;
+		
+		// Get upload directory info
+		$upload_dir = wp_get_upload_dir();
+		
+		// First try to handle upload directory URLs
+		if ( strpos( $src, $upload_dir['baseurl'] ) !== false ) {
+			$file_path = str_replace( 
+				$upload_dir['baseurl'], 
+				$upload_dir['basedir'], 
+				$src 
+			);
+		} 
+		// Then try theme/plugin URLs
+		else {
+			$relative_path = str_replace( 
+				site_url('/'), 
+				'', 
+				$src 
+			);
+			$file_path = ABSPATH . wp_normalize_path( $relative_path );
 		}
-
-		// Convert URL path to filesystem path
-		$base_path = wp_parse_url( get_site_url(), PHP_URL_PATH ) ?: '';
-		$relative_path = preg_replace( '#^' . preg_quote( $base_path ) . '#', '', $path );
-		$file_path = ABSPATH . ltrim( $relative_path, '/' );
 
 		// Check if file exists and is readable
 		if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {

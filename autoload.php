@@ -1,8 +1,16 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Edge Images plugin autoloader file.
  *
- * @package Edge_Images
+ * @package    Edge_Images
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @copyright  2024 Jono Alderson
+ * @license    GPL-2.0-or-later
+ * @since      1.0.0
+ *
+ * This file handles the autoloading of all plugin classes.
+ * It follows PSR-4 autoloading standards and converts namespace paths
+ * to file paths according to WordPress coding standards.
  */
 
 namespace Edge_Images;
@@ -17,8 +25,9 @@ if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
 /**
  * An autoloader for the plugin's classes
  *
+ * @since 1.0.0
+ * 
  * @param string $class_name The name of the requested class.
- *
  * @return bool Whether or not the requested class was found.
  */
 function autoloader( string $class_name ): bool {
