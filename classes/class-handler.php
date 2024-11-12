@@ -311,8 +311,20 @@ class Handler {
 		string $original_html = ''
 	): void {
 		// Transform src
-		$src = $processor->get_attribute( 'src' );
-		if ( $src ) {
+		$src = $processor->get_attribute('src');
+		if ($src && $dimensions) {
+			// Get attachment ID for full size dimensions
+			$attachment_id = $this->get_attachment_id_from_classes($processor);
+			if (!$attachment_id) {
+				$attachment_id = attachment_url_to_postid($src);
+			}
+
+			// Get full size dimensions and URL
+			$full_dimensions = $attachment_id ? $this->get_full_size_dimensions($attachment_id) : null;
+			$max_dimensions = $full_dimensions ?? $dimensions;
+			$full_src = $this->get_full_size_url($src, $attachment_id);
+
+			// Transform src with requested dimensions
 			$edge_args = array_merge(
 				$this->default_edge_args,
 				array_filter([
@@ -320,17 +332,66 @@ class Handler {
 					'height' => $dimensions['height'] ?? null,
 				])
 			);
-			$transformed_src = Helpers::edge_src( $src, $edge_args );
-			$processor->set_attribute( 'src', $transformed_src );
+			$transformed_src = Helpers::edge_src($src, $edge_args);
+			$processor->set_attribute('src', $transformed_src);
+
+			// Get sizes attribute
+			$sizes = $processor->get_attribute('sizes');
+			if (!$sizes) {
+				// Set a default sizes attribute if not present
+				$width = $dimensions['width'];
+				$sizes = is_numeric($width) 
+					? "(max-width: {$width}px) 100vw, {$width}px"
+					: '100vw';
+				$processor->set_attribute('sizes', $sizes);
+			}
+
+			// Always generate our own srcset based on the full-size image
+			$srcset = $this->generate_srcset($full_src, $max_dimensions, $sizes);
+			if ($srcset) {
+				$processor->set_attribute('srcset', $srcset);
+			}
+		}
+	}
+
+	/**
+	 * Transform an existing srcset string
+	 *
+	 * @param string $srcset     The original srcset string.
+	 * @param array  $dimensions The image dimensions.
+	 * @param string $full_src   The full size image URL.
+	 * 
+	 * @return string The transformed srcset
+	 */
+	private function transform_existing_srcset(string $srcset, array $dimensions, string $full_src): string {
+		$srcset_parts = explode(',', $srcset);
+		$transformed_parts = [];
+
+		foreach ($srcset_parts as $part) {
+			$part = trim($part);
+			if (preg_match('/^(.+)\s+(\d+w)$/', $part, $matches)) {
+				$width_descriptor = $matches[2];
+				
+				// Extract width from descriptor
+				$width = (int)str_replace('w', '', $width_descriptor);
+				$height = round($width * ($dimensions['height'] / $dimensions['width']));
+				
+				$edge_args = array_merge(
+					$this->default_edge_args,
+					[
+						'width' => $width,
+						'height' => $height,
+						'dpr' => 1,
+					]
+				);
+				
+				// Use full size URL as base
+				$transformed_url = Helpers::edge_src($full_src, $edge_args);
+				$transformed_parts[] = "$transformed_url $width_descriptor";
+			}
 		}
 
-		// Transform srcset
-		$srcset = $processor->get_attribute( 'srcset' );
-
-		if ( $srcset && $dimensions ) {
-			$transformed_srcset = Srcset_Transformer::transform( $srcset, $dimensions );
-			$processor->set_attribute( 'srcset', $transformed_srcset );
-		}
+		return implode(', ', $transformed_parts);
 	}
 
 	/**
@@ -596,7 +657,7 @@ class Handler {
 			'edge-images',
 			plugins_url( 'assets/css/images.min.css', dirname( __FILE__ ) ),
 			[],
-			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/images.min.css' )
+			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/images.min.css')
 		);
 
 		// Add inline script to wrap template images
@@ -771,6 +832,168 @@ class Handler {
 			'width' => (string) $dimensions[0],
 			'height' => (string) $dimensions[1]
 		];
+	}
+
+	/**
+	 * Fill gaps in srcset widths array
+	 *
+	 * @param array $widths Array of widths.
+	 * @param int   $max_gap Maximum allowed gap between widths.
+	 * 
+	 * @return array Modified array of widths
+	 */
+	private function fill_srcset_gaps(array $widths, int $max_gap = 200): array {
+		$filled = [];
+		$count = count($widths);
+		
+		for ($i = 0; $i < $count - 1; $i++) {
+			$filled[] = $widths[$i];
+			$gap = $widths[$i + 1] - $widths[$i];
+			
+			// If gap is larger than max_gap, add intermediate values
+			if ($gap > $max_gap) {
+				$steps = ceil($gap / $max_gap);
+				$step_size = $gap / $steps;
+				
+				for ($j = 1; $j < $steps; $j++) {
+					$intermediate = round($widths[$i] + ($j * $step_size));
+					$filled[] = $intermediate;
+				}
+			}
+		}
+		
+		// Add the last width
+		$filled[] = end($widths);
+		
+		return $filled;
+	}
+
+	/**
+	 * Get srcset widths and DPR variants based on sizes attribute
+	 *
+	 * @param string $sizes    The sizes attribute value.
+	 * @param int    $max_width The maximum width of the image.
+	 * 
+	 * @return array Array of widths for srcset
+	 */
+	private function get_srcset_widths_from_sizes( string $sizes, int $max_width ): array {
+		// Get DPR multipliers from Srcset_Transformer
+		$dprs = Srcset_Transformer::$width_multipliers;
+		
+		// Generate variants based on the original width
+		$variants = [];
+
+		// Always include minimum width if the image is large enough
+		if ($max_width >= Srcset_Transformer::$min_srcset_width * 2) {
+			$variants[] = Srcset_Transformer::$min_srcset_width;
+		}
+		
+		foreach ($dprs as $dpr) {
+			$scaled_width = round($max_width * $dpr);
+			
+			// If scaled width would exceed max_srcset_width
+			if ($scaled_width > Srcset_Transformer::$max_srcset_width) {
+				// Add max_srcset_width if we don't already have it
+				if (!in_array(Srcset_Transformer::$max_srcset_width, $variants)) {
+					$variants[] = Srcset_Transformer::$max_srcset_width;
+				}
+			} 
+			// Otherwise add the scaled width if it meets our min/max criteria
+			elseif ($scaled_width >= Srcset_Transformer::$min_srcset_width) {
+				$variants[] = $scaled_width;
+			}
+		}
+
+		// Sort and remove duplicates
+		$variants = array_unique($variants);
+		sort($variants);
+
+		// Fill in any large gaps
+		$variants = $this->fill_srcset_gaps($variants);
+
+		return $variants;
+	}
+
+	/**
+	 * Generate srcset string based on image dimensions and sizes
+	 *
+	 * @param string $src     Original image URL.
+	 * @param array  $dimensions Image dimensions.
+	 * @param string $sizes    The sizes attribute value.
+	 * 
+	 * @return string Generated srcset
+	 */
+	private function generate_srcset( string $src, array $dimensions, string $sizes ): string {
+		$max_width = (int) $dimensions['width'];
+		$ratio = $dimensions['height'] / $dimensions['width'];
+		
+		$widths = $this->get_srcset_widths_from_sizes($sizes, $max_width);
+		
+		$srcset_parts = [];
+		foreach ($widths as $width) {
+			$height = round($width * $ratio);
+			$edge_args = array_merge(
+				$this->default_edge_args,
+				[
+					'width' => $width,
+					'height' => $height,
+					'dpr' => 1 // Always set dpr to 1
+				]
+			);
+			$edge_url = Helpers::edge_src($src, $edge_args);
+			$srcset_parts[] = "$edge_url {$width}w";
+		}
+		
+		return implode(', ', $srcset_parts);
+	}
+
+	/**
+	 * Get full size image dimensions
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 * 
+	 * @return array|null Array with width and height, or null if not found
+	 */
+	private function get_full_size_dimensions(int $attachment_id): ?array {
+		$metadata = wp_get_attachment_metadata($attachment_id);
+		
+		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
+			return null;
+		}
+
+		return [
+			'width' => (string) $metadata['width'],
+			'height' => (string) $metadata['height']
+		];
+	}
+
+	/**
+	 * Get full size image URL
+	 *
+	 * @param string   $src          The current image URL.
+	 * @param int|null $attachment_id Optional attachment ID.
+	 * 
+	 * @return string The full size image URL
+	 */
+	private function get_full_size_url(string $src, ?int $attachment_id = null): string {
+		if ($attachment_id) {
+			$full_url = wp_get_attachment_image_url($attachment_id, 'full');
+			if ($full_url) {
+				return $full_url;
+			}
+		}
+		
+		// Try to convert the current URL to a full size URL
+		$url_parts = explode('-', pathinfo($src, PATHINFO_FILENAME));
+		if (count($url_parts) > 1 && is_numeric(end($url_parts))) {
+			array_pop($url_parts);
+			$base_filename = implode('-', $url_parts);
+			$extension = pathinfo($src, PATHINFO_EXTENSION);
+			$dir = pathinfo($src, PATHINFO_DIRNAME);
+			return $dir . '/' . $base_filename . '.' . $extension;
+		}
+		
+		return $src;
 	}
 
 }

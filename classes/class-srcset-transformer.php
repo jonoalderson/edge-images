@@ -12,16 +12,25 @@ namespace Edge_Images;
  */
 class Srcset_Transformer {
     /**
-     * Width multipliers for srcset
+     * Width multipliers for srcset generation.
      *
      * @var array
      */
-    private static array $width_multipliers = [
-        0.5,  // 0.5x version
-        1.0,  // 1x version
-        2.0,  // 2x version
-        2.5,  // 2.5x version
-    ];
+    public static array $width_multipliers = [0.25, 0.5, 1, 1.5, 2, 2.5];
+
+    /**
+     * Maximum width for srcset values.
+     *
+     * @var int
+     */
+    public static int $max_srcset_width = 2400;
+
+    /**
+     * Minimum width for srcset values.
+     *
+     * @var int
+     */
+    public static int $min_srcset_width = 300;
 
     /**
      * Transform a srcset string
