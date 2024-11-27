@@ -1,1 +1,1 @@
-.edge-images-container{display:block;position:relative}.edge-images-container img{height:auto;display:block}.edge-images-container.contain img{object-fit:contain}
+.edge-images-container{display:block;position:relative;max-width:min();margin-inline:auto}.edge-images-container img{height:auto;display:block;max-width:100%}.edge-images-container.contain img{object-fit:contain}.edge-images-container.cover img{object-fit:cover}

@@ -49,7 +49,7 @@ class Accelerated_Domains extends Edge_Provider {
 	 *
 	 * @return string The URL pattern
 	 */
-	public function get_url_pattern(): string {
+	public static function get_url_pattern(): string {
 		return self::EDGE_ROOT;
 	}
 

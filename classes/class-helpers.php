@@ -36,11 +36,24 @@ class Helpers {
 	public const SCRIPTS_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/js';
 
 	/**
-	 * The default edge provider.
+	 * Get the configured edge provider name
 	 *
-	 * @var string
+	 * @return string The provider name
 	 */
-	private const DEFAULT_PROVIDER = 'cloudflare';
+	private static function get_provider_name(): string {
+		// Get the provider from options
+		$provider = get_option( 'edge_images_provider', Provider_Registry::DEFAULT_PROVIDER );
+		
+		// Allow filtering
+		$provider = apply_filters( 'edge_images_provider', $provider );
+		
+		// Validate provider name
+		if ( ! Provider_Registry::is_valid_provider( $provider ) ) {
+			return Provider_Registry::DEFAULT_PROVIDER;
+		}
+		
+		return $provider;
+	}
 
 	/**
 	 * Replace a SRC string with an edge version
@@ -51,17 +64,23 @@ class Helpers {
 	 * @return string      The modified SRC attr.
 	 */
 	public static function edge_src( string $src, array $args ): string {
-		
 		// Don't transform SVGs
 		if ( self::is_svg( $src ) ) {
 			return $src;
 		}
 
-		// Get the provider class.
-		$provider       = apply_filters( 'edge_images_provider', self::DEFAULT_PROVIDER );
-		$provider_class = 'Edge_Images\Edge_Providers\\' . ucfirst( $provider );
+		// Get the provider name
+		$provider = self::get_provider_name();
+		
+		// If provider is 'none', return original src
+		if ( $provider === 'none' ) {
+			return $src;
+		}
 
-		// Bail if we can't find one.
+		// Get the provider class
+		$provider_class = Provider_Registry::get_provider_class( $provider );
+
+		// Bail if we can't find one
 		if ( ! class_exists( $provider_class ) ) {
 			return $src;
 		}
@@ -77,15 +96,15 @@ class Helpers {
 			}
 		}
 
-		// Get the image path from the URL.
+		// Get the image path from the URL
 		$url  = wp_parse_url( $src );
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
-		// Create our provider.
-		$provider = new $provider_class( $path, $args );
+		// Create our provider
+		$provider_instance = new $provider_class( $path, $args );
 
-		// Get the edge URL.
-		return $provider->get_edge_url();
+		// Get the edge URL
+		return $provider_instance->get_edge_url();
 	}
 
 	/**
@@ -146,8 +165,8 @@ class Helpers {
 	 * @return Edge_Provider The provider instance
 	 */
 	public static function get_edge_provider( string $path = '', array $args = [] ): Edge_Provider {
-		$provider       = apply_filters( 'edge_images_provider', self::DEFAULT_PROVIDER );
-		$provider_class = 'Edge_Images\Edge_Providers\\' . ucfirst( $provider );
+		$provider = self::get_provider_name();
+		$provider_class = Provider_Registry::get_provider_class( $provider );
 
 		if ( ! class_exists( $provider_class ) ) {
 			$provider_class = Edge_Provider::class;

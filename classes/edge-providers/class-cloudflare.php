@@ -23,18 +23,21 @@ class Cloudflare extends Edge_Provider {
 
 	/**
 	 * Get the edge URL
-	 * E.g., https://staging.prosettings.net/cdn-cgi/image/f=auto%2Cfit=cover[...]path-to-image.jpg
 	 *
 	 * @return string The edge URL.
 	 */
-	public function get_edge_url() : string {
+	public function get_edge_url(): string {
 		$edge_prefix = Helpers::get_rewrite_domain() . self::EDGE_ROOT;
+		
+		// Get transform args and ensure they're properly formatted
+		$transform_args = $this->get_transform_args();
 
 		$edge_url = $edge_prefix . http_build_query(
-			$this->get_transform_args(),
+			$transform_args,
 			'',
-			'%2C' // comma.
+			'%2C' // comma
 		);
+		
 		return $edge_url . $this->path;
 	}
 
@@ -44,7 +47,7 @@ class Cloudflare extends Edge_Provider {
 	 * @return string The URL pattern
 	 */
 	public static function get_url_pattern(): string {
-		return '/cdn-cgi/image/';
+		return self::EDGE_ROOT;
 	}
 
 }

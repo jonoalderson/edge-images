@@ -1,16 +1,146 @@
+// Variables
+@primary-color: #2271b1;
+@border-radius: 8px;
+@transition-speed: 0.2s;
 
-#postimagediv {
+// Main container
+.edge-images-wrap {
+    max-width: 800px;
+    margin: 20px 0;
 
-	// Unset absolute positioning.
-	.inside img.edge-images-img {
-		position: relative !important;
-	}
-
-	// Remove the :before pseudo-element. 
-	.edge-images-container {
-		&:before {
-			display: none;
-		}
-	}
-
+    h1 {
+        margin-bottom: 1.5em;
+        padding-bottom: 1em;
+        border-bottom: 1px solid #eee;
+    }
 }
+
+// Settings container
+.edge-images-container {
+    background: #fff;
+    padding: 2em;
+    border-radius: @border-radius;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+// Provider selector
+.edge-images-provider-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+    margin-bottom: 2em;
+}
+
+.edge-images-provider-option {
+    display: block;
+    cursor: pointer;
+
+    input[type="radio"] {
+        display: none;
+    }
+
+    .edge-images-provider-card {
+        display: block;
+        padding: 1.5em;
+        background: #f8f9fa;
+        border: 2px solid #e2e4e7;
+        border-radius: @border-radius;
+        transition: all @transition-speed ease;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+
+        &:hover {
+            border-color: @primary-color;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        // Provider icon placeholder
+        &::before {
+            content: "";
+            display: block;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            background: #e2e4e7;
+            border-radius: 50%;
+            transition: background @transition-speed ease;
+        }
+    }
+
+    input[type="radio"]:checked + .edge-images-provider-card {
+        background: #fff;
+        border-color: @primary-color;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+        &::before {
+            background: @primary-color;
+        }
+
+        &::after {
+            content: "✓";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: @primary-color;
+            font-weight: bold;
+        }
+    }
+}
+
+.edge-images-provider-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1d2327;
+}
+
+// Settings fields
+.edge-images-settings-field {
+    margin: 2em 0;
+    padding: 1.5em;
+    background: #f8f9fa;
+    border-radius: @border-radius;
+    border: 1px solid #e2e4e7;
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5em;
+    }
+
+    .description {
+        margin-top: 0.75em;
+        color: #666;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    // Checkbox styling
+    input[type="checkbox"] {
+        margin-right: 8px;
+    }
+}
+
+// Submit button area
+.submit {
+    margin: 2em 0 0;
+    padding: 1.5em 0 0;
+    border-top: 1px solid #eee;
+}
+
+// Responsive adjustments
+@media screen and (max-width: 782px) {
+    .edge-images-provider-selector {
+        grid-template-columns: 1fr;
+    }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+    .edge-images-provider-option .edge-images-provider-card {
+        transition: none;
+        transform: none !important;
+    }
+} 

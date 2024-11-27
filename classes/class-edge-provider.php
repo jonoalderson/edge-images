@@ -7,26 +7,60 @@
 
 namespace Edge_Images;
 
-use Edge_Images\Helpers;
-
 /**
  * Describes an edge provider.
  */
 class Edge_Provider {
 
 	/**
-	 * The args to set for images.
+	 * List of all valid edge transformation arguments and their aliases.
+	 * Key is the canonical (short) form, value is array of aliases or null if no aliases.
 	 *
 	 * @var array
 	 */
-	public array $args = array();
-
-	/**
-	 * The image path
-	 *
-	 * @var string
-	 */
-	public string $path;
+	protected static array $valid_args = [
+		// Core parameters
+		'w' => ['width'],              // Width of the image, in pixels
+		'h' => ['height'],             // Height of the image, in pixels
+		'dpr' => null,                 // Device Pixel Ratio (1-3)
+		'fit' => null,                 // Resizing behavior: scale-down, contain, cover, crop, pad
+		'g' => ['gravity'],            // Gravity/crop position: auto, north, south, east, west, center
+		'q' => ['quality'],            // Quality (1-100)
+		'f' => ['format'],             // Output format: auto, webp, json, jpeg, png, gif, avif
+		
+		// Advanced parameters
+		'metadata' => null,            // Keep or strip metadata: keep, copyright, none
+		'onerror' => null,            // Error handling: redirect, 404
+		'anim' => null,               // Whether to preserve animation frames
+		'blur' => null,               // Blur radius (1-250)
+		'brightness' => null,         // Adjust brightness (-100 to 100)
+		'contrast' => null,          // Adjust contrast (-100 to 100)
+		'gamma' => null,             // Adjust gamma (1-100)
+		'sharpen' => null,          // Sharpen radius (1-100)
+		'trim' => null,             // Trim edges by color (1-100)
+		
+		// Background and border
+		'bg' => ['background'],     // Background color for 'pad' fit
+		'border' => null,          // Border width and color
+		'pad' => null,            // Padding when using 'pad' fit
+		
+		// Rotation and flipping
+		'rot' => ['rotate'],      // Rotation angle (multiple of 90)
+		'flip' => null,          // Flip image: h, v, hv
+		
+		// Text and watermarks
+		'txt' => null,          // Text to render
+		'txt-color' => null,    // Text color
+		'txt-align' => null,    // Text alignment
+		'txt-font' => null,     // Text font family
+		'txt-size' => null,     // Text size
+		'txt-pad' => null,      // Text padding
+		'txt-line' => null,     // Text line height
+		'txt-width' => null,    // Text box width
+		
+		// Optimization
+		'strip' => null,        // Strip metadata: all, color, none
+	];
 
 	/**
 	 * Default edge transformation arguments.
@@ -37,9 +71,40 @@ class Edge_Provider {
 		'fit' => 'cover',
 		'dpr' => 1, 
 		'f' => 'auto',
-		'gravity' => 'auto',
-		'q' => 85
+		'g' => 'auto',
+		'q' => 85,
+		'w' => null,
+		'h' => null,
 	];
+
+	/**
+	 * Value mappings for specific parameters
+	 *
+	 * @var array
+	 */
+	protected static array $value_mappings = [
+		'g' => [
+			'top' => 'north',
+			'bottom' => 'south',
+			'left' => 'west',
+			'right' => 'east',
+			'center' => 'center',
+	 ],
+	];
+
+	/**
+	 * The args to set for images.
+	 *
+	 * @var array
+	 */
+	public array $args = [];
+
+	/**
+	 * The image path
+	 *
+	 * @var string
+	 */
+	public string $path;
 
 	/**
 	 * Create the provider
@@ -47,26 +112,14 @@ class Edge_Provider {
 	 * @param string $path The path to the image.
 	 * @param array  $args The arguments.
 	 */
-	public function __construct( string $path, array $args = array() ) {
+	public function __construct( string $path, array $args = [] ) {
 		$this->path = $path;
+		$this->args = $args;
 
 		global $content_width;
 		if ( ! $content_width ) {
 			$content_width = 600;
 		}
-
-		$this->args = wp_parse_args(
-			$args,
-			array_merge(
-				$this->default_edge_args,
-				[
-					'width'    => $content_width,
-					'height'   => null,
-					'metadata' => null,
-					'onerror'  => null,
-				]
-			)
-		);
 
 		$this->normalize_args();
 	}
@@ -77,34 +130,29 @@ class Edge_Provider {
 	 * @return array The args.
 	 */
 	protected function get_transform_args(): array {
-
-		$args = array(
-			'width'   => ( isset( $this->args['width'] ) ) ? $this->args['width'] : null,
-			'height'  => ( isset( $this->args['height'] ) ) ? $this->args['height'] : null,
-			'fit'     => ( isset( $this->args['fit'] ) ) ? $this->args['fit'] : null,
-			'f'       => ( isset( $this->args['f'] ) ) ? $this->args['f'] : 'auto',
-			'q'       => ( isset( $this->args['q'] ) ) ? $this->args['q'] : null,
-			'dpr'     => ( isset( $this->args['dpr'] ) ) ? $this->args['dpr'] : null,
-			'sharpen' => ( isset( $this->args['sharpen'] ) ) ? $this->args['sharpen'] : null,
-			'blur'    => ( isset( $this->args['blur'] ) ) ? $this->args['blur'] : null,
-			'gravity' => ( isset( $this->args['g'] ) && $this->args['g'] !== false ) ? $this->args['g'] : null,
+		$args = array_merge(
+			$this->default_edge_args,
+			array_filter([
+				'w' => $this->args['w'] ?? null,
+				'h' => $this->args['h'] ?? null,
+				'fit' => $this->args['fit'] ?? 'cover',
+				'f' => $this->args['f'] ?? 'auto',
+				'q' => $this->args['q'] ?? 85,
+				'dpr' => $this->args['dpr'] ?? 1,
+				'g' => $this->args['g'] ?? 'auto',
+				'sharpen' => $this->args['sharpen'] ?? null,
+				'blur' => $this->args['blur'] ?? null,
+				// Add other parameters as needed
+			])
 		);
 
-		// Unset any empty/null properties.
-		foreach ( $args as $k => $v ) {
-			if (
-				! $v ||
-				is_null( $v ) ||
-				( is_array( $v ) && empty( $v ) ) ||
-				( is_string( $v ) && $v === '' )
-				) {
-					unset( $args[ $k ] );
-			}
-		}
+		// Remove empty/null properties
+		$args = array_filter($args, function($value) {
+			return !is_null($value) && $value !== '';
+		});
 
-		// Remove empty values and sort our array.
-		$args = array_filter( $args );
-		ksort( $args );
+		// Sort our array
+		ksort($args);
 
 		return $args;
 	}
@@ -115,30 +163,19 @@ class Edge_Provider {
 	 * @return void
 	 */
 	private function normalize_args(): void {
-
-		// Convert 'format' to 'f'.
-		if ( isset( $this->args['format'] ) ) {
-			$this->args['f'] = $this->args['format'];
-			unset( $this->args['format'] );
+		$normalized = [];
+		
+		foreach ($this->args as $key => $value) {
+			$canonical = self::get_canonical_arg($key);
+			if ($canonical) {
+				// Map the value if needed, but only if it's not null
+				$normalized[$canonical] = $value !== null ? self::get_mapped_value($canonical, (string)$value) : null;
+			}
 		}
 
-		// Convert 'gravity' to 'g'.
-		if ( isset( $this->args['gravity'] ) ) {
-			$this->args['g'] = $this->args['gravity'];
-			unset( $this->args['gravity'] );
-		}
-
-		// Convert 'quality' to 'q'.
-		if ( isset( $this->args['quality'] ) ) {
-			$this->args['q'] = $this->args['quality'];
-			unset( $this->args['quality'] );
-		}
-
-		// Align loading and fetchpriority values.
-		$this->align_loading_and_fetchpriority();
-
-		// Tidy up our array.
-		$this->args = array_filter( $this->args );
+		$this->args = array_filter($normalized, function($value) {
+			return $value !== null && $value !== '';
+		});
 	}
 
 	/**
@@ -158,7 +195,7 @@ class Edge_Provider {
 	 * @return string The URL pattern
 	 */
 	public static function get_url_pattern(): string {
-		return '/cdn-cgi/';
+		return '/';
 	}
 
 	/**
@@ -168,5 +205,52 @@ class Edge_Provider {
 	 */
 	public function get_default_args(): array {
 		return $this->default_edge_args;
+	}
+
+	/**
+	 * Get all valid edge arguments
+	 *
+	 * @return array Array of all valid arguments and their aliases
+	 */
+	public static function get_valid_args(): array {
+		return self::$valid_args;
+	}
+
+	/**
+	 * Get canonical form of an argument
+	 *
+	 * @param string $arg The argument name to check.
+	 * 
+	 * @return string|null The canonical form or null if not valid
+	 */
+	public static function get_canonical_arg(string $arg): ?string {
+		// If it's already a canonical form
+		if (isset(self::$valid_args[$arg])) {
+			return $arg;
+		}
+
+		// Search through aliases
+		foreach (self::$valid_args as $canonical => $aliases) {
+			if (is_array($aliases) && in_array($arg, $aliases)) {
+				return $canonical;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get mapped value for a parameter
+	 *
+	 * @param string $param The parameter name.
+	 * @param string $value The value to map.
+	 * 
+	 * @return string The mapped value or original if no mapping exists
+	 */
+	public static function get_mapped_value(string $param, string $value): string {
+		if (isset(self::$value_mappings[$param][$value])) {
+			return self::$value_mappings[$param][$value];
+		}
+		return $value;
 	}
 }
