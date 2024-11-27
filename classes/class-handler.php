@@ -60,17 +60,30 @@ class Handler {
 		add_action('wp_enqueue_scripts', array($instance, 'enqueue_styles'));
 
 		// Prevent WordPress from scaling images
-		add_filter('big_image_size_threshold', function($threshold, $imagesize, $file, $attachment_id) {
-			if (isset($imagesize[0]) && isset($imagesize[1])) {
-				return max($imagesize[0], $imagesize[1]);
-			}
-			return $threshold;
-		}, 10, 4);
+		add_filter('big_image_size_threshold', array($instance, 'adjust_image_size_threshold'), 10, 4);
 
 		// Add a final filter to fix the width attribute in the HTML
 		add_filter('wp_get_attachment_image', array($instance, 'cleanup_image_html'), PHP_INT_MAX, 5);
 
 		self::$registered = true;
+	}
+
+	/**
+	 * Adjusts the threshold for big image scaling.
+	 * Makes sure that we don't scale images that are already big enough.
+	 *
+	 * @param int|bool   $threshold     The threshold value in pixels.
+	 * @param array|null $imagesize     Indexed array of width and height values in pixels.
+	 * @param string     $file          Full path to the uploaded image file.
+	 * @param int        $attachment_id Attachment post ID.
+	 * 
+	 * @return int|bool The adjusted threshold
+	 */
+	public function adjust_image_size_threshold( $threshold, $imagesize, string $file, int $attachment_id ) {
+		if ( isset( $imagesize[0] ) && isset( $imagesize[1] ) ) {
+			return max( $imagesize[0], $imagesize[1] );
+		}
+		return $threshold;
 	}
 
 	/**
