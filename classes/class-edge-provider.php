@@ -1,22 +1,30 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Base edge provider class.
  *
- * @package Edge_Images
+ * Provides core functionality for transforming image URLs through edge providers.
+ * All specific provider implementations should extend this class.
+ *
+ * @package    Edge_Images
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @since      1.0.0
  */
 
 namespace Edge_Images;
 
 /**
- * Describes an edge provider.
+ * Abstract base class for edge providers.
+ *
+ * @since 4.0.0
  */
-class Edge_Provider {
+abstract class Edge_Provider {
 
 	/**
 	 * List of all valid edge transformation arguments and their aliases.
 	 * Key is the canonical (short) form, value is array of aliases or null if no aliases.
 	 *
-	 * @var array
+	 * @since 4.0.0
+	 * @var array<string,array|null>
 	 */
 	protected static array $valid_args = [
 		// Core parameters
@@ -65,7 +73,8 @@ class Edge_Provider {
 	/**
 	 * Default edge transformation arguments.
 	 *
-	 * @var array
+	 * @since 4.0.0
+	 * @var array<string,mixed>
 	 */
 	protected array $default_edge_args = [
 		'fit' => 'cover',
@@ -80,7 +89,8 @@ class Edge_Provider {
 	/**
 	 * Value mappings for specific parameters
 	 *
-	 * @var array
+	 * @since 4.0.0
+	 * @var array<string,array>
 	 */
 	protected static array $value_mappings = [
 		'g' => [
@@ -95,22 +105,26 @@ class Edge_Provider {
 	/**
 	 * The args to set for images.
 	 *
-	 * @var array
+	 * @since 4.0.0
+	 * @var array<string,mixed>
 	 */
 	public array $args = [];
 
 	/**
 	 * The image path
 	 *
+	 * @since 4.0.0
 	 * @var string
 	 */
 	public string $path;
 
 	/**
-	 * Create the provider
+	 * Create a new edge provider instance.
 	 *
+	 * @since 4.0.0
+	 * 
 	 * @param string $path The path to the image.
-	 * @param array  $args The arguments.
+	 * @param array  $args The transformation arguments.
 	 */
 	public function __construct( string $path, array $args = [] ) {
 		$this->path = $path;
@@ -125,9 +139,11 @@ class Edge_Provider {
 	}
 
 	/**
-	 * Get the args
+	 * Get the transformation arguments.
 	 *
-	 * @return array The args.
+	 * @since 4.0.0
+	 * 
+	 * @return array<string,mixed> The transformation arguments.
 	 */
 	protected function get_transform_args(): array {
 		$args = array_merge(
@@ -142,13 +158,12 @@ class Edge_Provider {
 				'g' => $this->args['g'] ?? 'auto',
 				'sharpen' => $this->args['sharpen'] ?? null,
 				'blur' => $this->args['blur'] ?? null,
-				// Add other parameters as needed
 			])
 		);
 
 		// Remove empty/null properties
 		$args = array_filter($args, function($value) {
-			return !is_null($value) && $value !== '';
+			return $value !== null && $value !== '';
 		});
 
 		// Sort our array
@@ -158,8 +173,10 @@ class Edge_Provider {
 	}
 
 	/**
-	 * Normalize our argument values.
+	 * Normalize argument values.
 	 *
+	 * @since 4.0.0
+	 * 
 	 * @return void
 	 */
 	private function normalize_args(): void {
@@ -179,49 +196,52 @@ class Edge_Provider {
 	}
 
 	/**
-	 * If loading is set to eager, set fetchpriority to high
+	 * Get the URL pattern used to identify transformed images.
 	 *
-	 * @return void
+	 * @since 4.0.0
+	 * 
+	 * @return string The URL pattern.
 	 */
-	private function align_loading_and_fetchpriority(): void {
-		if ( isset( $this->args['loading'] ) && ( $this->args['loading'] === 'eager' ) ) {
-			$this->args['fetchpriority'] = 'high';
-		}
-	}
+	abstract public static function get_url_pattern(): string;
 
 	/**
-	 * Get the URL pattern used to identify transformed images
+	 * Get the edge URL for the image.
 	 *
-	 * @return string The URL pattern
+	 * @since 4.0.0
+	 * 
+	 * @return string The transformed edge URL.
 	 */
-	public static function get_url_pattern(): string {
-		return '/';
-	}
+	abstract public function get_edge_url(): string;
 
 	/**
-	 * Get default edge transformation arguments
+	 * Get default edge transformation arguments.
 	 *
-	 * @return array The default arguments
+	 * @since 4.0.0
+	 * 
+	 * @return array<string,mixed> The default arguments.
 	 */
 	public function get_default_args(): array {
 		return $this->default_edge_args;
 	}
 
 	/**
-	 * Get all valid edge arguments
+	 * Get all valid edge arguments.
 	 *
-	 * @return array Array of all valid arguments and their aliases
+	 * @since 4.0.0
+	 * 
+	 * @return array<string,array|null> Array of all valid arguments and their aliases.
 	 */
 	public static function get_valid_args(): array {
 		return self::$valid_args;
 	}
 
 	/**
-	 * Get canonical form of an argument
+	 * Get canonical form of an argument.
 	 *
-	 * @param string $arg The argument name to check.
+	 * @since 4.0.0
 	 * 
-	 * @return string|null The canonical form or null if not valid
+	 * @param string $arg The argument name to check.
+	 * @return string|null The canonical form or null if not valid.
 	 */
 	public static function get_canonical_arg(string $arg): ?string {
 		// If it's already a canonical form
@@ -240,12 +260,13 @@ class Edge_Provider {
 	}
 
 	/**
-	 * Get mapped value for a parameter
+	 * Get mapped value for a parameter.
 	 *
+	 * @since 4.0.0
+	 * 
 	 * @param string $param The parameter name.
 	 * @param string $value The value to map.
-	 * 
-	 * @return string The mapped value or original if no mapping exists
+	 * @return string The mapped value or original if no mapping exists.
 	 */
 	public static function get_mapped_value(string $param, string $value): string {
 		if (isset(self::$value_mappings[$param][$value])) {

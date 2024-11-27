@@ -321,6 +321,7 @@ class Handler {
 	 * @return array|null The dimensions or null if not found
 	 */
 	private function get_size_dimensions($size, int $attachment_id): ?array {
+
 		// If size is an array, use those dimensions
 		if (is_array($size) && isset($size[0], $size[1])) {
 			return [
@@ -380,6 +381,7 @@ class Handler {
 	 * @return string Modified HTML
 	 */
 	public function wrap_attachment_image( string $html, int $attachment_id, $size, bool $icon, array $attr ): string {
+
 		// Skip if already wrapped or if we shouldn't wrap
 		if ( 
 			strpos( $html, '<picture' ) !== false || 
@@ -409,6 +411,7 @@ class Handler {
 	 * @return string The transformed image HTML
 	 */
 	public function transform_image( $value, string $image_html, string $context, $attachment_id ): string {
+
 		// Skip if already processed
 		if ( strpos( $image_html, 'edge-images-processed' ) !== false ) {
 			return $image_html;
@@ -456,6 +459,7 @@ class Handler {
 	 * @return \WP_HTML_Tag_Processor The modified processor
 	 */
 	private function transform_image_tag( \WP_HTML_Tag_Processor $processor, ?int $attachment_id, string $original_html = '' ): \WP_HTML_Tag_Processor {
+		
 		// Get dimensions
 		$dimensions = $this->get_image_dimensions( $processor, $attachment_id );
 		if ( $dimensions ) {
@@ -526,6 +530,7 @@ class Handler {
 		?array $dimensions, 
 		string $original_html = ''
 	): void {
+
 		// Transform src
 		$src = $processor->get_attribute('src');
 		
@@ -580,6 +585,7 @@ class Handler {
 	 * @return string The transformed srcset
 	 */
 	private function transform_existing_srcset(string $srcset, array $dimensions, string $full_src): string {
+	
 		$srcset_parts = explode(',', $srcset);
 		$transformed_parts = [];
 
@@ -624,74 +630,161 @@ class Handler {
 			return $block_content;
 		}
 
-		// Check if picture wrapping is disabled
-		$disable_picture_wrap = get_option( 'edge_images_disable_picture_wrap', false );
+		// Transform figures with images first
+		$block_content = $this->transform_figures_in_block( $block_content );
 
-		// First pass: transform figures with images
-		if ( preg_match_all( '/<figure[^>]*>.*?<\/figure>/s', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
-			$offset_adjustment = 0;
+		// Then transform standalone images
+		$block_content = $this->transform_standalone_images_in_block( $block_content );
 
-			foreach ( $matches[0] as $match ) {
-				$figure_html = $match[0];
+		return $block_content;
+	}
 
-				if ( str_contains( $figure_html, '<img' ) && ! str_contains( $figure_html, '<picture' ) ) {
-					// Extract figure classes before transformation
-					$figure_classes = [];
-					if ( preg_match( '/class=["\']([^"\']*)["\']/', $figure_html, $class_matches ) ) {
-						$figure_classes = explode( ' ', $class_matches[1] );
-					}
-
-					// Transform the image
-					if ($disable_picture_wrap) {
-						// Just transform the image without wrapping
-						$img_html = $this->extract_img_tag($figure_html);
-						if ($img_html) {
-							$transformed_html = $this->transform_image(true, $img_html, 'block', 0);
-							// Replace only the img tag within the figure
-							$transformed_html = str_replace($img_html, $transformed_html, $figure_html);
-						} else {
-							$transformed_html = $figure_html;
-						}
-					} else {
-						// Transform with picture wrapping
-						$transformed_html = $this->transform_figure_block($figure_html, $figure_classes);
-					}
-
-					$block_content = substr_replace(
-						$block_content,
-						$transformed_html,
-						$match[1] + $offset_adjustment,
-						strlen( $figure_html )
-					);
-					$offset_adjustment += strlen( $transformed_html ) - strlen( $figure_html );
-				}
-			}
+	/**
+	 * Transform figures containing images in block content
+	 *
+	 * @param string $block_content The block content.
+	 * 
+	 * @return string Modified block content
+	 */
+	private function transform_figures_in_block( string $block_content ): string {
+		if ( ! preg_match_all( '/<figure[^>]*>.*?<\/figure>/s', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return $block_content;
 		}
 
-		// Second pass: transform standalone images
-		if ( preg_match_all( '/<img[^>]*>/', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
-			$offset_adjustment = 0;
-			foreach ( $matches[0] as $match ) {
-				$img_html = $match[0];
-				// Skip if already processed or if inside a picture/figure element
-				if ( ! str_contains( $img_html, 'edge-images-processed' ) && 
-					 ! str_contains( substr( $block_content, 0, $match[1] ), '<picture' ) &&
-					 ! str_contains( substr( $block_content, 0, $match[1] ), '<figure' ) ) {
-					
-					// Transform the image with or without picture wrapping
-					$transformed_html = $this->transform_image( true, $img_html, 'block', 0 );
-					$block_content = substr_replace(
-						$block_content,
-						$transformed_html,
-						$match[1] + $offset_adjustment,
-						strlen( $img_html )
-					);
-					$offset_adjustment += strlen( $transformed_html ) - strlen( $img_html );
-				}
+		$disable_picture_wrap = get_option( 'edge_images_disable_picture_wrap', false );
+		$offset_adjustment = 0;
+
+		foreach ( $matches[0] as $match ) {
+			$figure_html = $match[0];
+
+			if ( ! $this->should_transform_figure( $figure_html ) ) {
+				continue;
 			}
+
+			$transformed_html = $this->transform_figure_content( 
+				$figure_html, 
+				$disable_picture_wrap 
+			);
+
+			$block_content = $this->replace_content_at_offset(
+				$block_content,
+				$transformed_html,
+				$match[1] + $offset_adjustment,
+				strlen( $figure_html )
+			);
+			
+			$offset_adjustment += strlen( $transformed_html ) - strlen( $figure_html );
 		}
 
 		return $block_content;
+	}
+
+	/**
+	 * Transform standalone images in block content
+	 *
+	 * @param string $block_content The block content.
+	 * 
+	 * @return string Modified block content
+	 */
+	private function transform_standalone_images_in_block( string $block_content ): string {
+		if ( ! preg_match_all( '/<img[^>]*>/', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return $block_content;
+		}
+
+		$offset_adjustment = 0;
+
+		foreach ( $matches[0] as $match ) {
+			$img_html = $match[0];
+			
+			if ( ! $this->should_transform_standalone_image( $img_html, $block_content, $match[1] ) ) {
+				continue;
+			}
+
+			$transformed_html = $this->transform_image( true, $img_html, 'block', 0 );
+			
+			$block_content = $this->replace_content_at_offset(
+				$block_content,
+				$transformed_html,
+				$match[1] + $offset_adjustment,
+				strlen( $img_html )
+			);
+			
+			$offset_adjustment += strlen( $transformed_html ) - strlen( $img_html );
+		}
+
+		return $block_content;
+	}
+
+	/**
+	 * Check if a figure should be transformed
+	 *
+	 * @param string $figure_html The figure HTML.
+	 * 
+	 * @return bool Whether the figure should be transformed
+	 */
+	private function should_transform_figure( string $figure_html ): bool {
+		return str_contains( $figure_html, '<img' ) && 
+			   ! str_contains( $figure_html, '<picture' );
+	}
+
+	/**
+	 * Check if a standalone image should be transformed
+	 *
+	 * @param string $img_html      The image HTML.
+	 * @param string $block_content The full block content.
+	 * @param int    $position      The position of the image in the content.
+	 * 
+	 * @return bool Whether the image should be transformed
+	 */
+	private function should_transform_standalone_image( string $img_html, string $block_content, int $position ): bool {
+		return ! str_contains( $img_html, 'edge-images-processed' ) && 
+			   ! str_contains( substr( $block_content, 0, $position ), '<picture' ) &&
+			   ! str_contains( substr( $block_content, 0, $position ), '<figure' );
+	}
+
+	/**
+	 * Transform figure content
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @param string $figure_html         The figure HTML.
+	 * @param bool   $disable_picture_wrap Whether picture wrapping is disabled.
+	 * @return string Transformed HTML.
+	 */
+	private function transform_figure_content( string $figure_html, bool $disable_picture_wrap ): string {
+		// Extract figure classes, passing empty array as second parameter
+		$figure_classes = $this->extract_figure_classes( $figure_html );
+
+		if ( $disable_picture_wrap ) {
+			$img_html = $this->extract_img_tag( $figure_html );
+			if ( ! $img_html ) {
+				return $figure_html;
+			}
+
+			$transformed_img = $this->transform_image( true, $img_html, 'block', 0 );
+			return str_replace( $img_html, $transformed_img, $figure_html );
+		}
+
+		return $this->transform_figure_block( $figure_html, $figure_classes );
+	}
+
+	/**
+	 * Replace content at a specific offset
+	 *
+	 * @param string $content     The original content.
+	 * @param string $new_content The new content.
+	 * @param int    $offset      The offset position.
+	 * @param int    $length      The length of content to replace.
+	 * 
+	 * @return string Modified content
+	 */
+	private function replace_content_at_offset( string $content, string $new_content, int $offset, int $length ): string {
+		return substr_replace(
+			$content,
+			$new_content,
+			$offset,
+			$length
+		);
 	}
 
 	/**
@@ -740,25 +833,28 @@ class Handler {
 	}
 
 	/**
-	 * Extract figure classes from block content and attributes
+	 * Extract figure classes from block content and attributes.
 	 *
-	 * @param string $block_content The block content.
-	 * @param array  $block         The block data.
+	 * @since 4.0.0
 	 * 
-	 * @return string The combined classes
+	 * @param string $block_content The block content.
+	 * @param array  $block         Optional block data.
+	 * @return array The combined classes.
 	 */
-	private function extract_figure_classes( string $block_content, array $block ): string {
+	private function extract_figure_classes( string $block_content, array $block = [] ): array {
 		// Extract classes from figure element
 		preg_match('/<figure[^>]*class=["\']([^"\']*)["\']/', $block_content, $matches);
 		$figure_classes = $matches[1] ?? '';
 
 		// Add alignment if present in block attributes
-		$alignment = $block['attrs']['align'] ?? '';
-		if ( $alignment ) {
-			$figure_classes .= " align{$alignment}";
+		if ( isset( $block['attrs']['align'] ) ) {
+			$figure_classes .= " align{$block['attrs']['align']}";
 		}
 
-		return trim( $figure_classes );
+		// Convert to array and clean up
+		$classes = array_filter( explode( ' ', $figure_classes ) );
+
+		return array_unique( $classes );
 	}
 
 	/**
@@ -1260,11 +1356,14 @@ class Handler {
 			return $img_html;
 		}
 
+		// Get reduced aspect ratio
+		$ratio = Image_Dimensions::reduce_ratio($width, $height);
+
 		return sprintf(
 			'<picture class="%s" style="aspect-ratio: %d/%d; --max-width: %dpx;">%s</picture>',
 			esc_attr( implode(' ', $classes) ),
-			$width,
-			$height,
+			$ratio['width'],
+			$ratio['height'],
 			$width,
 			$img_html
 		);

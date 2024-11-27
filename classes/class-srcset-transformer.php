@@ -1,26 +1,41 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Srcset transformation functionality.
  *
- * @package Edge_Images
+ * Handles the generation of responsive image srcset values by creating
+ * multiple image variants at different sizes through edge providers.
+ *
+ * @package    Edge_Images
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @since      1.0.0
  */
 
 namespace Edge_Images;
 
 /**
  * Handles srcset transformations.
+ *
+ * @since 4.0.0
  */
 class Srcset_Transformer {
+
     /**
      * Width multipliers for srcset generation.
      *
-     * @var array
+     * These values determine the relative sizes of images in the srcset.
+     * For example, 0.5 creates an image at half the original width.
+     *
+     * @since 4.0.0
+     * @var array<float>
      */
     public static array $width_multipliers = [0.25, 0.5, 1, 1.5, 2, 2.5];
 
     /**
      * Maximum width for srcset values.
      *
+     * Prevents generation of unnecessarily large images.
+     *
+     * @since 4.0.0
      * @var int
      */
     public static int $max_srcset_width = 2400;
@@ -28,6 +43,9 @@ class Srcset_Transformer {
     /**
      * Minimum width for srcset values.
      *
+     * Prevents generation of unnecessarily small images.
+     *
+     * @since 4.0.0
      * @var int
      */
     public static int $min_srcset_width = 300;
@@ -35,7 +53,8 @@ class Srcset_Transformer {
     /**
      * Default edge transformation arguments.
      *
-     * @var array
+     * @since 4.0.0
+     * @var array<string,mixed>
      */
     private static array $default_edge_args = [
         'fit' => 'cover',
@@ -46,14 +65,18 @@ class Srcset_Transformer {
     ];
 
     /**
-     * Transform a URL into a srcset string
+     * Transform a URL into a srcset string.
      *
-     * @param string $src        The source URL.
-     * @param array  $dimensions The image dimensions.
-     * @param string $sizes      The sizes attribute value.
-     * @param array  $transform_args Additional transformation arguments.
+     * Generates a set of image variants at different sizes and creates
+     * a srcset string suitable for responsive images.
+     *
+     * @since 4.0.0
      * 
-     * @return string The transformed srcset
+     * @param string $src           The source URL.
+     * @param array  $dimensions    The image dimensions.
+     * @param string $sizes         The sizes attribute value.
+     * @param array  $transform_args Additional transformation arguments.
+     * @return string The transformed srcset.
      */
     public static function transform(
         string $src, 
@@ -61,30 +84,30 @@ class Srcset_Transformer {
         string $sizes,
         array $transform_args = []
     ): string {
-        // Bail if SVG
+        // Bail if SVG.
         if (Helpers::is_svg($src)) {
             return '';
         }
        
-        // Bail if no dimensions
+        // Bail if no dimensions.
         if (!isset($dimensions['width'], $dimensions['height'])) {
             return '';
         }
 
-        // Get original dimensions
+        // Get original dimensions.
         $original_width = (int) $dimensions['width'];
         $original_height = (int) $dimensions['height'];
         $aspect_ratio = $original_height / $original_width;
 
-        // Calculate srcset widths
+        // Calculate srcset widths.
         $widths = [];
         
-        // Always include 300px version if image is large enough
+        // Always include 300px version if image is large enough.
         if ($original_width >= 150) {
             $widths[] = 300;
         }
         
-        // Add standard responsive widths
+        // Add standard responsive widths.
         foreach (self::$width_multipliers as $multiplier) {
             $width = round($original_width * $multiplier);
             
@@ -93,16 +116,16 @@ class Srcset_Transformer {
             }
         }
 
-        // Add original width if not already included
+        // Add original width if not already included.
         if (!in_array($original_width, $widths)) {
             $widths[] = $original_width;
         }
 
-        // Sort and remove duplicates
+        // Sort and remove duplicates.
         $widths = array_unique($widths);
         sort($widths);
 
-        // Get the original URL from the upload path
+        // Get the original URL from the upload path.
         $upload_dir = wp_get_upload_dir();
         $upload_path = str_replace(site_url('/'), '', $upload_dir['baseurl']);
         if (preg_match('#' . preg_quote($upload_path) . '/.*$#', $src, $matches)) {
@@ -111,12 +134,12 @@ class Srcset_Transformer {
             $original_src = $src;
         }
 
-        // Generate srcset entries
+        // Generate srcset entries.
         $srcset_parts = [];
         foreach ($widths as $width) {
             $height = round($width * $aspect_ratio);
             
-            // Build edge arguments
+            // Build edge arguments.
             $edge_args = array_merge(
                 self::$default_edge_args,
                 $transform_args,
@@ -126,7 +149,7 @@ class Srcset_Transformer {
                 ]
             );
             
-            // Generate transformed URL
+            // Generate transformed URL.
             $transformed_url = Helpers::edge_src($original_src, $edge_args);
             $srcset_parts[] = "{$transformed_url} {$width}w";
         }

@@ -1,41 +1,51 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Yoast SEO social images integration.
  *
- * @package Edge_Images\Integrations
+ * Handles the transformation of images in Yoast SEO's social media tags.
+ * Ensures that og:image and twitter:image tags use optimized edge versions.
+ *
+ * @package    Edge_Images\Integrations
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @since      4.0.0
  */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
 use Yoast\WP\SEO\Presenters\Open_Graph\Image_Presenter;
-use Edge_Images\Helpers;
+use Edge_Images\{Helpers, Image_Dimensions};
 
 /**
- * Configures the og:image to use the edge.
+ * Configures the og:image to use the edge provider.
+ *
+ * @since 4.0.0
  */
 class Social_Images {
 
 	/**
-	 * The og:width value
+	 * The og:width value.
 	 *
-	 * @var integer
+	 * @since 4.0.0
+	 * @var int
 	 */
-	const OG_WIDTH = 1200;
+	public const OG_WIDTH = 1200;
 
 	/**
-	 * The og:height value
+	 * The og:height value.
 	 *
-	 * @var integer
+	 * @since 4.0.0
+	 * @var int
 	 */
-	const OG_HEIGHT = 675;
+	public const OG_HEIGHT = 675;
 
 	/**
-	 * Register the integration
+	 * Register the integration.
 	 *
+	 * @since 4.0.0
+	 * 
 	 * @return void
 	 */
-	public static function register() : void {
-
+	public static function register(): void {
 		$instance = new self();
 
 		// Bail if these filters shouldn't run.
@@ -43,28 +53,24 @@ class Social_Images {
 			return;
 		}
 
-		add_filter( 'wpseo_opengraph_image_size', array( $instance, 'set_full_size_og_image' ) );
-		add_filter( 'wpseo_opengraph_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
-		add_filter( 'wpseo_twitter_image', array( $instance, 'route_image_through_edge' ), 10, 2 );
-		add_filter( 'wpseo_frontend_presentation', array( $instance, 'set_image_dimensions' ), 30, 1 );
+		// Add filters for all possible hooks
+		add_filter( 'wpseo_opengraph_image_url', [ $instance, 'route_image_through_edge' ], 10, 2 );
+		add_filter( 'wpseo_twitter_image_url', [ $instance, 'route_image_through_edge' ], 10, 2 );
+		add_filter( 'wpseo_opengraph_image_size', [ $instance, 'set_full_size_og_image' ] );
+		add_filter( 'wpseo_frontend_presentation', [ $instance, 'set_image_dimensions' ], 30, 1 );
 	}
 
 	/**
 	 * Checks if these filters should run.
 	 *
-	 * @return bool
+	 * @since 4.0.0
+	 * 
+	 * @return bool Whether the filters should run.
 	 */
-	private function should_filter() : bool {
+	private function should_filter(): bool {
 
-		// Bail if the Yoast SEO integration is disabled.
-		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
-		if ( $disable_integration ) {
-			return false;
-		}
-
-		// Bail if schema image filtering is disabled.
-		$disable_feature = apply_filters( 'edge_images_yoast_disable_social_images', false );
-		if ( $disable_feature ) {
+		// Check if the provider is properly configured
+		if ( ! Helpers::is_provider_configured() ) {
 			return false;
 		}
 
@@ -72,14 +78,14 @@ class Social_Images {
 	}
 
 	/**
-	 * Manage the og:image:width and og:image:height
+	 * Manage the og:image:width and og:image:height.
 	 *
-	 * @param object $presentation The presentation.
-	 *
-	 * @return object The modified presentation
+	 * @since 4.0.0
+	 * 
+	 * @param object $presentation The presentation object.
+	 * @return object The modified presentation.
 	 */
 	public function set_image_dimensions( $presentation ) {
-
 		// Bail if there's no open graph image info.
 		if ( ! $presentation->open_graph_images ) {
 			return $presentation;
@@ -99,11 +105,16 @@ class Social_Images {
 		// Get the image ID.
 		$image_id = $presentation->model->open_graph_image_id;
 		if ( ! $image_id ) {
-			return $presentation; // Bail if there's no image ID.
+			return $presentation;
+		}
+
+		// Get dimensions from the image.
+		$dimensions = Image_Dimensions::from_attachment( $image_id );
+		if ( ! $dimensions ) {
+			return $presentation;
 		}
 
 		// Set the width and height based on the image's max dimensions.
-		$image = wp_get_attachment_image_src( $image_id, 'full' );
 		$presentation->open_graph_images[ $key ]['width']  = self::OG_WIDTH;
 		$presentation->open_graph_images[ $key ]['height'] = self::OG_HEIGHT;
 
@@ -111,131 +122,60 @@ class Social_Images {
 	}
 
 	/**
-	 * Set the size of the og:image
+	 * Set the size of the og:image.
 	 *
-	 * @return string The image size to use
+	 * @since 4.0.0
+	 * 
+	 * @return string The image size to use.
 	 */
-	public function set_full_size_og_image() : string {
+	public function set_full_size_og_image(): string {
 		return 'full';
 	}
 
 	/**
-	 * Sets the og:image to the max size
+	 * Sets the og:image to the max size.
 	 *
-	 * @param string          $output    The tag value.
-	 * @param Image_Presenter $presenter The presenter.
-	 *
-	 * @return string The modified string
+	 * @since 4.0.0
+	 * 
+	 * @param string $url       The image URL.
+	 * @param mixed  $presenter The presenter (unused).
+	 * @return string The modified URL.
 	 */
-	public function route_image_through_edge( $output, $presenter ) : string {
-
-		// Bail if $output isn't a string.
-		if ( ! is_string( $output ) ) {
-			return $output;
+	public function route_image_through_edge( $url, $presenter = null ): string {
+		// Bail if URL isn't a string.
+		if ( ! is_string( $url ) || empty( $url ) ) {
+			return $url;
 		}
 
-		// Bail if $presenter isn't a presenter.
-		if ( ! is_a( $presenter, 'Yoast\WP\SEO\Presentations\Indexable_Post_Type_Presentation' ) ) {
-			return $output;
-		}
-
-		// Get the image ID.
-		$image_id = $presenter->model->open_graph_image_id;
-
-		// If there's no image, fall back to the site logo.
+		// Get the image ID from the URL
+		$image_id = attachment_url_to_postid( $url );
 		if ( ! $image_id ) {
-			$logo = $this->transform_image_without_scaling();
-			if ( $logo ) {
-				return $logo;
-			}
-
-			// Bail if we didn't get the site logo.
-			return $output;
+			return $url;
 		}
 
-		// Get the image.
-		$image = wp_get_attachment_image_src( $image_id, 'full' );
-
-		// Bail if there's no image.
-		if ( ! $image || ! isset( $image ) || ! isset( $image[0] ) ) {
-			return $output;
+		// Get dimensions from the image
+		$dimensions = Image_Dimensions::from_attachment( $image_id );
+		if ( ! $dimensions ) {
+			return $url;
 		}
 
-		$image = $this->transform_image_with_scaling( $image );
-
-		// Bail if we couldn't get an SRC.
-		if ( ! $image ) {
-			return $output;
-		}
-
-		return $image;
-	}
-
-	/**
-	 * Transform an image into an edge SRC, and scale it up if necessary
-	 *
-	 * @param  array $image The image.
-	 *
-	 * @return string       The edge SRC
-	 */
-	private function transform_image_with_scaling( array $image ) : string {
-
-		// Set our default args.
-		$args = array(
+		// Set our default args
+		$args = [
 			'width'  => self::OG_WIDTH,
 			'height' => self::OG_HEIGHT,
 			'fit'    => 'cover',
-		);
+		];
 
-		// Tweak the behaviour for small images.
-		if (
-				$image[1] < self::OG_WIDTH ||
-				$image[2] < self::OG_HEIGHT
-		) {
+		// Tweak the behaviour for small images
+		if ( (int) $dimensions['width'] < self::OG_WIDTH || (int) $dimensions['height'] < self::OG_HEIGHT ) {
 			$args['fit']     = 'pad';
 			$args['sharpen'] = 2;
 		}
 
-		// Allow for filtering the args.
+		// Allow for filtering the args
 		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
 
-		// Convert the image src to a edge SRC.
-		$src = Helpers::edge_src( $image[0], $args );
-
-		return $src;
+		// Convert the image src to an edge SRC
+		return Helpers::edge_src( $url, $args );
 	}
-
-	/**
-	 * Transform an image without scaling it
-	 *
-	 * @return string|false The SRC, or FALSE on failure
-	 */
-	private function transform_image_without_scaling() {
-
-		$logo_id = YoastSEO()->meta->for_current_page()->company_logo_id;
-		if ( ! $logo_id ) {
-			return false;
-		}
-
-		$image = wp_get_attachment_image_src( $logo_id, 'full', false );
-		if ( ! $image ) {
-			return false;
-		}
-
-		// Set our default args.
-		$args = array(
-			'width'  => $image[1],
-			'height' => $image[2],
-			'fit'    => 'cover',
-		);
-
-		// Allow for filtering the args.
-		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
-
-		// Convert the image src to a edge SRC.
-		$src = Helpers::edge_src( $image[0], $args );
-
-		return $src;
-	}
-
 }

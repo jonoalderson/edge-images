@@ -1,8 +1,13 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Helper functions for Edge Images.
  *
- * @package Edge_Images
+ * Provides utility functions for URL transformation, provider management,
+ * and general plugin functionality.
+ *
+ * @package    Edge_Images
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @since      1.0.0
  */
 
 namespace Edge_Images;
@@ -10,44 +15,54 @@ namespace Edge_Images;
 use Edge_Images\Edge_Provider;
 
 /**
- * Provides helper methods.
+ * Static helper class for common functionality.
+ *
+ * @since 4.0.0
  */
 class Helpers {
 
 	/**
-	 * The plugin styles URL
+	 * The plugin styles URL.
 	 *
+	 * @since 4.0.0
 	 * @var string
 	 */
 	public const STYLES_URL = EDGE_IMAGES_PLUGIN_URL . 'assets/css';
 
 	/**
-	 * The plugin styles path
+	 * The plugin styles path.
 	 *
+	 * @since 4.0.0
 	 * @var string
 	 */
 	public const STYLES_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/css';
 
 	/**
-	 * The plugin scripts path
+	 * The plugin scripts path.
 	 *
+	 * @since 4.0.0
 	 * @var string
 	 */
 	public const SCRIPTS_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/js';
 
 	/**
-	 * Get the configured edge provider name
+	 * Get the configured edge provider name.
 	 *
-	 * @return string The provider name
+	 * Retrieves the provider name from options and validates it.
+	 * Falls back to the default provider if the configured one is invalid.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return string The provider name.
 	 */
 	private static function get_provider_name(): string {
-		// Get the provider from options
+		// Get the provider from options.
 		$provider = get_option( 'edge_images_provider', Provider_Registry::DEFAULT_PROVIDER );
 		
-		// Allow filtering
+		// Allow filtering.
 		$provider = apply_filters( 'edge_images_provider', $provider );
 		
-		// Validate provider name
+		// Validate provider name.
 		if ( ! Provider_Registry::is_valid_provider( $provider ) ) {
 			return Provider_Registry::DEFAULT_PROVIDER;
 		}
@@ -56,69 +71,78 @@ class Helpers {
 	}
 
 	/**
-	 * Replace a SRC string with an edge version
+	 * Replace a SRC string with an edge version.
 	 *
-	 * @param  string $src The src.
-	 * @param  array  $args The args.
+	 * Takes an image URL and transformation arguments and returns
+	 * a URL that will be processed by the edge provider.
 	 *
-	 * @return string      The modified SRC attr.
+	 * @since 4.0.0
+	 * 
+	 * @param  string $src  The source URL.
+	 * @param  array  $args The transformation arguments.
+	 * @return string      The modified URL.
 	 */
 	public static function edge_src( string $src, array $args ): string {
-		// Don't transform SVGs
+		// Don't transform SVGs.
 		if ( self::is_svg( $src ) ) {
 			return $src;
 		}
 
-		// Get the provider name
+		// Get the provider name.
 		$provider = self::get_provider_name();
 		
-		// If provider is 'none', return original src
+		// If provider is 'none', return original src.
 		if ( $provider === 'none' ) {
 			return $src;
 		}
 
-		// Get the provider class
+		// Get the provider class.
 		$provider_class = Provider_Registry::get_provider_class( $provider );
 
-		// Bail if we can't find one
+		// Bail if we can't find one.
 		if ( ! class_exists( $provider_class ) ) {
 			return $src;
 		}
 
-		// If URL is already transformed, extract the original path
+		// If URL is already transformed, extract the original path.
 		if ( strpos( $src, $provider_class::get_url_pattern() ) !== false ) {
 			$upload_dir = wp_get_upload_dir();
 			$upload_path = str_replace( site_url('/'), '', $upload_dir['baseurl'] );
 			
-			// Extract everything after the upload path
+			// Extract everything after the upload path.
 			if ( preg_match( '#' . preg_quote( $upload_path ) . '/.*$#', $src, $matches ) ) {
 				$src = $matches[0];
 			}
 		}
 
-		// Get the image path from the URL
+		// Get the image path from the URL.
 		$url  = wp_parse_url( $src );
 		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
 
-		// Create our provider
+		// Create our provider instance.
 		$provider_instance = new $provider_class( $path, $args );
 
-		// Get the edge URL
+		// Get the edge URL.
 		return $provider_instance->get_edge_url();
 	}
 
 	/**
-	 * Determines if images should be transformed
+	 * Determines if images should be transformed.
 	 *
-	 * @return bool
+	 * Checks various conditions to determine if image transformation
+	 * should be performed in the current context.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return bool Whether images should be transformed.
 	 */
 	public static function should_transform_images(): bool {
-		// Never transform in admin
+		// Never transform in admin.
 		if ( is_admin() ) {
 			return false;
 		}
 
-		// Never transform in REST API or AJAX requests
+		// Never transform in REST API or AJAX requests.
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return false;
 		}
@@ -142,27 +166,40 @@ class Helpers {
 			return false;
 		}
 
+		// Check if Imgix is selected but not configured
+		$provider = get_option( 'edge_images_provider', Provider_Registry::DEFAULT_PROVIDER );
+		if ( $provider === 'imgix' ) {
+			$subdomain = get_option( 'edge_images_imgix_subdomain', '' );
+			if ( empty( $subdomain ) ) {
+				return false;
+			}
+		}
+
 		return true;
 	}
 
 	/**
 	 * Determines if an image is an SVG.
 	 *
+	 * @since 4.0.0
+	 * 
 	 * @param string $src The image src value.
-	 *
-	 * @return bool
+	 * @return bool Whether the image is an SVG.
 	 */
 	public static function is_svg( string $src ): bool {
 		return strpos( $src, '.svg' ) !== false;
 	}
 
 	/**
-	 * Get an edge provider instance
+	 * Get an edge provider instance.
 	 *
-	 * @param string $path Optional path.
-	 * @param array  $args Optional args.
+	 * Creates and returns a new instance of the configured edge provider.
+	 *
+	 * @since 4.0.0
 	 * 
-	 * @return Edge_Provider The provider instance
+	 * @param string $path Optional path to the image.
+	 * @param array  $args Optional transformation arguments.
+	 * @return Edge_Provider The provider instance.
 	 */
 	public static function get_edge_provider( string $path = '', array $args = [] ): Edge_Provider {
 		$provider = self::get_provider_name();
@@ -176,11 +213,40 @@ class Helpers {
 	}
 
 	/**
-	 * Get the domain to use as the edge rewrite base
+	 * Get the domain to use as the edge rewrite base.
 	 *
-	 * @return string The domain
+	 * @since 4.0.0
+	 * 
+	 * @return string The domain to use for edge URLs.
 	 */
 	public static function get_rewrite_domain(): string {
 		return apply_filters( 'edge_images_domain', get_site_url() );
+	}
+
+	/**
+	 * Check if the current provider is properly configured.
+	 *
+	 * Validates that the selected provider has all required configuration.
+	 * For example, checks if Imgix has a subdomain configured.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @return bool Whether the provider is properly configured.
+	 */
+	public static function is_provider_configured(): bool {
+		$provider = get_option( 'edge_images_provider', 'none' );
+
+		// Check provider-specific requirements
+		switch ( $provider ) {
+			case 'imgix':
+				$subdomain = get_option( 'edge_images_imgix_subdomain', '' );
+				if ( empty( $subdomain ) ) {
+					return false;
+				}
+				break;
+			// Add other provider-specific checks here as needed
+		}
+
+		return true;
 	}
 }

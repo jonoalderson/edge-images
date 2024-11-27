@@ -1,8 +1,13 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Cloudflare edge provider implementation.
  *
- * @package Edge_Images\Edge_Providers
+ * Handles image transformation through Cloudflare's image resizing service.
+ * Documentation: https://developers.cloudflare.com/images/image-resizing/
+ *
+ * @package    Edge_Images\Edge_Providers
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @since      1.0.0
  */
 
 namespace Edge_Images\Edge_Providers;
@@ -10,28 +15,40 @@ namespace Edge_Images\Edge_Providers;
 use Edge_Images\{Edge_Provider, Helpers};
 
 /**
- * Describes the Cloudflare edge provider.
+ * Cloudflare edge provider class.
+ *
+ * @since 4.0.0
  */
 class Cloudflare extends Edge_Provider {
 
 	/**
-	 * The root of the Cloudflare edge URL
+	 * The root of the Cloudflare edge URL.
 	 *
+	 * This path identifies Cloudflare's image transformation endpoint.
+	 *
+	 * @since 4.0.0
 	 * @var string
 	 */
-	const EDGE_ROOT = '/cdn-cgi/image/';
+	public const EDGE_ROOT = '/cdn-cgi/image/';
 
 	/**
-	 * Get the edge URL
+	 * Get the edge URL for an image.
 	 *
-	 * @return string The edge URL.
+	 * Transforms the image URL into a Cloudflare-compatible format with
+	 * transformation parameters. Format:
+	 * /cdn-cgi/image/param1,param2/path-to-image.jpg
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return string The transformed edge URL.
 	 */
 	public function get_edge_url(): string {
 		$edge_prefix = Helpers::get_rewrite_domain() . self::EDGE_ROOT;
 		
-		// Get transform args and ensure they're properly formatted
+		// Get transform args and ensure they're properly formatted.
 		$transform_args = $this->get_transform_args();
 
+		// Build the URL with comma-separated parameters.
 		$edge_url = $edge_prefix . http_build_query(
 			$transform_args,
 			'',
@@ -42,12 +59,15 @@ class Cloudflare extends Edge_Provider {
 	}
 
 	/**
-	 * Get the URL pattern used to identify transformed images
+	 * Get the URL pattern used to identify transformed images.
 	 *
-	 * @return string The URL pattern
+	 * Used to detect if an image has already been transformed by Cloudflare.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return string The URL pattern.
 	 */
 	public static function get_url_pattern(): string {
 		return self::EDGE_ROOT;
 	}
-
 }

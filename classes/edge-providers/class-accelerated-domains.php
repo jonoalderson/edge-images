@@ -1,8 +1,13 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Accelerated Domains edge provider implementation.
  *
- * @package Edge_Images\Edge_Providers
+ * Handles image transformation through Accelerated Domains' image resizing service.
+ * Documentation: https://accelerateddomains.com/docs/image-optimization/
+ *
+ * @package    Edge_Images\Edge_Providers
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @since      1.0.0
  */
 
 namespace Edge_Images\Edge_Providers;
@@ -10,26 +15,37 @@ namespace Edge_Images\Edge_Providers;
 use Edge_Images\{Edge_Provider, Helpers};
 
 /**
- * Describes the Accelerated Domains edge provider.
+ * Accelerated Domains edge provider class.
+ *
+ * @since 4.0.0
  */
 class Accelerated_Domains extends Edge_Provider {
 
 	/**
-	 * The root of the Accelerated Domains edge URL
+	 * The root of the Accelerated Domains edge URL.
 	 *
+	 * This path identifies Accelerated Domains' image transformation endpoint.
+	 *
+	 * @since 4.0.0
 	 * @var string
 	 */
-	const EDGE_ROOT = '/acd-cgi/img/v1';
+	public const EDGE_ROOT = '/acd-cgi/img/v1';
 
 	/**
-	 * Get the edge URL
-	 * E.g., https://www.example.com/acd-cgi/img/v1/path-to-image.jpg?width=200&height=200
+	 * Get the edge URL for an image.
 	 *
-	 * @return string The edge URL.
+	 * Transforms the image URL into an Accelerated Domains-compatible format with
+	 * transformation parameters. Format:
+	 * /acd-cgi/img/v1/path-to-image.jpg?width=200&height=200
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return string The transformed edge URL.
 	 */
-	public function get_edge_url() : string {
+	public function get_edge_url(): string {
 		$edge_prefix = Helpers::get_rewrite_domain() . self::EDGE_ROOT;
 
+		// Build the URL with query parameters.
 		$edge_url = sprintf(
 			'%s%s?%s',
 			$edge_prefix,
@@ -45,12 +61,15 @@ class Accelerated_Domains extends Edge_Provider {
 	}
 
 	/**
-	 * Get the URL pattern used to identify transformed images
+	 * Get the URL pattern used to identify transformed images.
 	 *
-	 * @return string The URL pattern
+	 * Used to detect if an image has already been transformed by Accelerated Domains.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return string The URL pattern.
 	 */
 	public static function get_url_pattern(): string {
 		return self::EDGE_ROOT;
 	}
-
 }
