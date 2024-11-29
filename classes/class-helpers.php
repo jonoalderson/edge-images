@@ -46,6 +46,32 @@ class Helpers {
 	public const SCRIPTS_PATH = EDGE_IMAGES_PLUGIN_DIR . '/assets/js';
 
 	/**
+	 * Valid HTML image attributes.
+	 * 
+	 * @since 4.0.0
+	 * @var array<string>
+	 */
+	public static array $valid_html_attrs = [
+		'alt',
+		'class',
+		'decoding',
+		'height',
+		'id',
+		'loading',
+		'sizes',
+		'src',
+		'srcset',
+		'style',
+		'title',
+		'width',
+		'data-attachment-id',
+		'data-original-width',
+		'data-original-height',
+		'data-wrap-in-picture',
+		'fetchpriority'
+	];
+
+	/**
 	 * Get the configured edge provider name.
 	 *
 	 * Retrieves the provider name from options and validates it.

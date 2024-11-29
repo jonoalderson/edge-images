@@ -162,6 +162,7 @@ class Handler {
 		$dimensions = null;
 		$transform_args = [];
 
+		// First try to get dimensions from registered size
 		if (is_string($size)) {
 			$registered_sizes = wp_get_registered_image_subsizes();
 			if (isset($registered_sizes[$size])) {
@@ -171,32 +172,40 @@ class Handler {
 					'height' => (int) $registered_size['height']
 				];
 				
-				// Only set default transform args if not provided by user
+				// Set transform args for registered size
 				$transform_args = [
 					'w' => $dimensions['width'],
 					'h' => $dimensions['height'],
 					'fit' => isset($attr['fit']) ? $attr['fit'] : ($registered_size['crop'] ? 'cover' : 'contain')
 				];
+
+				// Force these dimensions throughout the process
+				$attr['width'] = (string) $dimensions['width'];
+				$attr['height'] = (string) $dimensions['height'];
+				$attr['data-original-width'] = (string) $dimensions['width'];
+				$attr['data-original-height'] = (string) $dimensions['height'];
 			}
 		}
 
-		// If no registered size dimensions found, get from metadata
+		// Only fall back to metadata if we don't have registered size dimensions
 		if (!$dimensions) {
 			$metadata = wp_get_attachment_metadata($attachment->ID);
 			$dimensions = $metadata['_edge_images_dimensions'] ?? null;
 
-			// Fallback to getting dimensions from size
 			if (!$dimensions) {
 				$dimensions = $this->get_size_dimensions($size, $attachment->ID);
+			}
+
+			if ($dimensions) {
+				$attr['width'] = (string) $dimensions['width'];
+				$attr['height'] = (string) $dimensions['height'];
+				$attr['data-original-width'] = (string) $dimensions['width'];
+				$attr['data-original-height'] = (string) $dimensions['height'];
 			}
 		}
 
 		// List of valid HTML image attributes
-		$valid_html_attrs = [
-			'alt', 'class', 'decoding', 'height', 'id', 'loading', 'sizes', 'src', 'srcset', 
-			'style', 'title', 'width', 'data-attachment-id', 'data-original-width', 
-			'data-original-height', 'data-wrap-in-picture'
-		];
+		$valid_html_attrs = Helpers::$valid_html_attrs;
 		
 		// Move all non-HTML attributes to transform args
 		$filtered_attr = [];
@@ -208,16 +217,6 @@ class Handler {
 			}
 		}
 		$attr = $filtered_attr;
-
-		if ($dimensions) {
-			// Force dimensions in attributes
-			$attr['width'] = (string) $dimensions['width'];
-			$attr['height'] = (string) $dimensions['height'];
-			
-			// Store original dimensions in data attributes
-			$attr['data-original-width'] = (string) $dimensions['width'];
-			$attr['data-original-height'] = (string) $dimensions['height'];
-		}
 
 		// Transform src
 		if (isset($attr['src'])) {
@@ -235,7 +234,7 @@ class Handler {
 			$attr['src'] = Helpers::edge_src($full_src, $edge_args);
 		}
 
-		// Generate srcset
+		// Generate srcset based on the correct dimensions
 		if (isset($attr['src']) && $dimensions) {
 			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
 			$srcset = Srcset_Transformer::transform(
@@ -414,54 +413,59 @@ class Handler {
 			return $html;
 		}
 
-		// Extract image tag from HTML
-		if ( ! preg_match( '/<img[^>]*>/', $html, $matches ) ) {
-			return $html;
+		// Get dimensions from registered size first if it exists
+		$dimensions = null;
+		if (is_string($size)) {
+			$registered_sizes = wp_get_registered_image_subsizes();
+			if (isset($registered_sizes[$size])) {
+				$dimensions = [
+					'width' => (int) $registered_sizes[$size]['width'],
+					'height' => (int) $registered_sizes[$size]['height']
+				];
+			}
 		}
-		$img_html = $matches[0];
 
-		// Create a processor to get dimensions
-		$processor = new \WP_HTML_Tag_Processor( $img_html );
-		if ( ! $processor->next_tag( 'img' ) ) {
-			return $html;
+		// If no registered size dimensions, try to get from metadata
+		if (!$dimensions) {
+			$metadata = wp_get_attachment_metadata($attachment_id);
+			if (isset($metadata['_edge_images_dimensions'])) {
+				$dimensions = $metadata['_edge_images_dimensions'];
+			}
 		}
 
-		// Get dimensions
-		$width = $processor->get_attribute( 'width' );
-		$height = $processor->get_attribute( 'height' );
-
-		// If no dimensions, try to get them from attachment metadata
-		if ( ! $width || ! $height ) {
-			$metadata = wp_get_attachment_metadata( $attachment_id );
-			if ( isset( $metadata['width'], $metadata['height'] ) ) {
-				$width = $metadata['width'];
-				$height = $metadata['height'];
+		// If still no dimensions, try to get from the image tag
+		if (!$dimensions) {
+			$processor = new \WP_HTML_Tag_Processor($html);
+			if ($processor->next_tag('img')) {
+				$width = $processor->get_attribute('width');
+				$height = $processor->get_attribute('height');
+				if ($width && $height) {
+					$dimensions = [
+						'width' => (int) $width,
+						'height' => (int) $height
+					];
+				}
 			}
 		}
 
 		// Return original HTML if we can't get dimensions
-		if ( ! $width || ! $height ) {
+		if (!$dimensions) {
 			return $html;
 		}
 
-		$dimensions = [
-			'width' => $width,
-			'height' => $height
-		];
-
 		// Get any existing figure classes
 		$figure_classes = '';
-		if ( strpos( $html, '<figure' ) !== false ) {
-			preg_match( '/<figure[^>]*class=["\']([^"\']*)["\']/', $html, $matches );
+		if (strpos($html, '<figure') !== false) {
+			preg_match('/<figure[^>]*class=["\']([^"\']*)["\']/', $html, $matches);
 			$figure_classes = $matches[1] ?? '';
 		}
 
 		// Create picture element
-		$picture_html = $this->create_picture_element( $img_html, $dimensions, $figure_classes );
+		$picture_html = $this->create_picture_element($html, $dimensions, $figure_classes);
 
 		// If the original HTML had a figure, replace just the img tag within it
-		if ( strpos( $html, '<figure' ) !== false ) {
-			return preg_replace( '/<img[^>]*>/', $picture_html, $html );
+		if (strpos($html, '<figure') !== false) {
+			return preg_replace('/<img[^>]*>/', $picture_html, $html);
 		}
 
 		return $picture_html;
