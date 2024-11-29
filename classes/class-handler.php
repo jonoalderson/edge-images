@@ -157,14 +157,57 @@ class Handler {
 	 * @return array Modified attributes
 	 */
 	public function transform_attachment_image(array $attr, $attachment, $size): array {
-		// Get dimensions from metadata first
-		$metadata = wp_get_attachment_metadata($attachment->ID);
-		$dimensions = $metadata['_edge_images_dimensions'] ?? null;
+		// Get dimensions and crop setting from the registered size if applicable
+		$registered_size = null;
+		$dimensions = null;
+		$transform_args = [];
 
-		// Fallback to getting dimensions from size
-		if (!$dimensions) {
-			$dimensions = $this->get_size_dimensions($size, $attachment->ID);
+		if (is_string($size)) {
+			$registered_sizes = wp_get_registered_image_subsizes();
+			if (isset($registered_sizes[$size])) {
+				$registered_size = $registered_sizes[$size];
+				$dimensions = [
+					'width' => (int) $registered_size['width'],
+					'height' => (int) $registered_size['height']
+				];
+				
+				// Only set default transform args if not provided by user
+				$transform_args = [
+					'w' => $dimensions['width'],
+					'h' => $dimensions['height'],
+					'fit' => isset($attr['fit']) ? $attr['fit'] : ($registered_size['crop'] ? 'cover' : 'contain')
+				];
+			}
 		}
+
+		// If no registered size dimensions found, get from metadata
+		if (!$dimensions) {
+			$metadata = wp_get_attachment_metadata($attachment->ID);
+			$dimensions = $metadata['_edge_images_dimensions'] ?? null;
+
+			// Fallback to getting dimensions from size
+			if (!$dimensions) {
+				$dimensions = $this->get_size_dimensions($size, $attachment->ID);
+			}
+		}
+
+		// List of valid HTML image attributes
+		$valid_html_attrs = [
+			'alt', 'class', 'decoding', 'height', 'id', 'loading', 'sizes', 'src', 'srcset', 
+			'style', 'title', 'width', 'data-attachment-id', 'data-original-width', 
+			'data-original-height', 'data-wrap-in-picture'
+		];
+		
+		// Move all non-HTML attributes to transform args
+		$filtered_attr = [];
+		foreach ($attr as $key => $value) {
+			if (in_array($key, $valid_html_attrs, true)) {
+				$filtered_attr[$key] = $value;
+			} else {
+				$transform_args[$key] = $value;
+			}
+		}
+		$attr = $filtered_attr;
 
 		if ($dimensions) {
 			// Force dimensions in attributes
@@ -174,44 +217,11 @@ class Handler {
 			// Store original dimensions in data attributes
 			$attr['data-original-width'] = (string) $dimensions['width'];
 			$attr['data-original-height'] = (string) $dimensions['height'];
-			
-			// Store in post meta for redundancy
-			update_post_meta($attachment->ID, '_edge_images_dimensions', $dimensions);
-		}
-
-		// Extract transformation arguments from attributes
-		$transform_args = $this->extract_transform_args($attr);
-
-		// Remove these from the final HTML attributes
-		foreach ($transform_args as $key => $value) {
-			unset($attr[$key]);
-		}
-
-		// Normalize the transformation arguments
-		$transform_args = $this->normalize_transform_args($transform_args);
-
-		// Generate srcset first (before transforming src)
-		if ($dimensions) {
-			$full_src = isset($attr['src']) ? $this->get_full_size_url($attr['src'], $attachment->ID) : '';
-			if ($full_src) {
-				$srcset = Srcset_Transformer::transform(
-					$full_src,
-					$dimensions,
-					$attr['sizes'] ?? '',
-					$transform_args
-				);
-
-				if ($srcset) {
-					$attr['srcset'] = $srcset;
-				}
-			}
 		}
 
 		// Transform src
 		if (isset($attr['src'])) {
-			// Get a provider instance to access default args
 			$provider = Helpers::get_edge_provider();
-			
 			$edge_args = array_merge(
 				$provider->get_default_args(),
 				$transform_args,
@@ -225,6 +235,20 @@ class Handler {
 			$attr['src'] = Helpers::edge_src($full_src, $edge_args);
 		}
 
+		// Generate srcset
+		if (isset($attr['src']) && $dimensions) {
+			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
+			$srcset = Srcset_Transformer::transform(
+				$full_src,
+				$dimensions,
+				$attr['sizes'] ?? "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px",
+				$transform_args
+			);
+			if ($srcset) {
+				$attr['srcset'] = $srcset;
+			}
+		}
+
 		// Add our classes
 		$attr['class'] = isset($attr['class']) 
 			? $attr['class'] . ' edge-images-img edge-images-processed' 
@@ -233,7 +257,7 @@ class Handler {
 		// Add attachment ID as data attribute
 		$attr['data-attachment-id'] = $attachment->ID;
 
-		// Always add flag for wrapping unless picture wrapping is disabled
+		// Add picture wrap flag if needed
 		if (!get_option('edge_images_disable_picture_wrap', false)) {
 			$attr['data-wrap-in-picture'] = 'true';
 		}
@@ -333,32 +357,15 @@ class Handler {
 
 		// If it's a string size
 		if (is_string($size)) {
-			// Check core image sizes first
-			$core_sizes = [
-				'thumbnail' => [
-					'width' => (int)get_option('thumbnail_size_w', 150),
-					'height' => (int)get_option('thumbnail_size_h', 150)
-				],
-				'medium' => [
-					'width' => (int)get_option('medium_size_w', 300),
-					'height' => (int)get_option('medium_size_h', 300)
-				],
-				'large' => [
-					'width' => (int)get_option('large_size_w', 1024),
-					'height' => (int)get_option('large_size_h', 1024)
-				]
-			];
-
-			if (isset($core_sizes[$size])) {
-				return $core_sizes[$size];
-			}
-
-			// Check registered sizes
-			global $_wp_additional_image_sizes;
-			if (isset($_wp_additional_image_sizes[$size])) {
+			// Get registered image sizes
+			$registered_sizes = wp_get_registered_image_subsizes();
+			
+			// Check if this is a registered size
+			if (isset($registered_sizes[$size])) {
 				return [
-					'width' => $_wp_additional_image_sizes[$size]['width'],
-					'height' => $_wp_additional_image_sizes[$size]['height']
+					'width' => (int) $registered_sizes[$size]['width'],
+					'height' => (int) $registered_sizes[$size]['height'],
+					'crop' => (bool) $registered_sizes[$size]['crop']
 				];
 			}
 
@@ -1525,6 +1532,24 @@ class Handler {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Get transform args for a registered size
+	 *
+	 * @param array $dimensions The image dimensions.
+	 * @param bool  $crop      Whether the size is cropped.
+	 * @return array The transform arguments
+	 */
+	private function get_registered_size_args(array $dimensions, bool $crop = true): array {
+		return [
+			'w' => $dimensions['width'],
+			'h' => $dimensions['height'],
+			'fit' => $crop ? 'cover' : 'contain',
+			'q' => 85,
+			'f' => 'auto',
+			'g' => 'auto'
+		];
 	}
 
 }
