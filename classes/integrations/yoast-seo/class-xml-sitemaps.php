@@ -209,7 +209,6 @@ class XML_Sitemaps {
 				'width'  => self::IMAGE_WIDTH,
 				'height' => self::IMAGE_HEIGHT,
 				'fit'    => 'contain',
-				'sharpen' => 2,
 			];
 
 			if ( (int) $dimensions['width'] < self::IMAGE_WIDTH || (int) $dimensions['height'] < self::IMAGE_HEIGHT ) {

@@ -42,12 +42,15 @@ class Handler {
 		// Hook into the earliest possible filter for image dimensions
 		add_filter('wp_get_attachment_metadata', array($instance, 'filter_attachment_metadata'), 1, 2);
 
-		// Add our transformations with high priority
-		add_filter('wp_get_attachment_image_attributes', array($instance, 'transform_attachment_image'), 999900, 3);
-		add_filter('wp_get_attachment_image_attributes', array($instance, 'enforce_dimensions'), PHP_INT_MAX, 3);
-
-		// Transform images in templates
-		add_filter('wp_get_attachment_image', array($instance, 'wrap_attachment_image'), PHP_INT_MAX - 100, 5);
+		// First transform the attributes
+		add_filter('wp_get_attachment_image_attributes', array($instance, 'transform_attachment_image'), 10, 3);
+		
+		// Then wrap in picture element
+		add_filter('wp_get_attachment_image', array($instance, 'wrap_attachment_image'), 11, 5);
+		
+		// Finally enforce dimensions and cleanup
+		add_filter('wp_get_attachment_image_attributes', array($instance, 'enforce_dimensions'), 12, 3);
+		add_filter('wp_get_attachment_image', array($instance, 'cleanup_image_html'), 13, 5);
 
 		// Transform images in content
 		add_filter('wp_img_tag_add_width_and_height_attr', array($instance, 'transform_image'), 5, 4);
@@ -61,9 +64,6 @@ class Handler {
 
 		// Prevent WordPress from scaling images
 		add_filter('big_image_size_threshold', array($instance, 'adjust_image_size_threshold'), 10, 4);
-
-		// Add a final filter to fix the width attribute in the HTML
-		add_filter('wp_get_attachment_image', array($instance, 'cleanup_image_html'), PHP_INT_MAX, 5);
 
 		self::$registered = true;
 	}
@@ -233,8 +233,10 @@ class Handler {
 		// Add attachment ID as data attribute
 		$attr['data-attachment-id'] = $attachment->ID;
 
-		// Add flag for wrapping
-		$attr['data-wrap-in-picture'] = 'true';
+		// Always add flag for wrapping unless picture wrapping is disabled
+		if (!get_option('edge_images_disable_picture_wrap', false)) {
+			$attr['data-wrap-in-picture'] = 'true';
+		}
 
 		// Handle sizes attribute
 		if (!isset($attr['sizes']) && isset($dimensions['width'])) {
@@ -372,23 +374,46 @@ class Handler {
 	/**
 	 * Wrap attachment image in picture element
 	 *
+	 * @since 4.0.0
+	 * 
 	 * @param string       $html          The HTML img element markup.
 	 * @param int         $attachment_id Image attachment ID.
 	 * @param string|array $size          Size of image. Array can be [width, height] or string size name.
-	 * @param bool        $icon          Whether the image should be treated as an icon.
-	 * @param array       $attr          Array of image attributes.
-	 * 
+	 * @param bool|array   $attr_or_icon  Either the attributes array or icon boolean.
+	 * @param bool|null    $icon          Whether the image should be treated as an icon.
 	 * @return string Modified HTML
 	 */
-	public function wrap_attachment_image( string $html, int $attachment_id, $size, bool $icon, array $attr ): string {
+	public function wrap_attachment_image( string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null ): string {
+		error_log('Edge Images: wrap_attachment_image called');
+		error_log('Edge Images: HTML: ' . $html);
+
+		// Handle flexible parameter order
+		$attr = is_array($attr_or_icon) ? $attr_or_icon : [];
+		if (is_bool($attr_or_icon)) {
+			$icon = $attr_or_icon;
+			$attr = [];
+		}
+
+		error_log('Edge Images: Attributes: ' . print_r($attr, true));
 
 		// Skip if already wrapped or if we shouldn't wrap
-		if ( 
-			strpos( $html, '<picture' ) !== false || 
-			! isset( $attr['data-wrap-in-picture'] ) ||
-			! isset( $attr['width'], $attr['height'] ) ||
-			get_option( 'edge_images_disable_picture_wrap', false ) // Check the option
-		) {
+		if ( strpos( $html, '<picture' ) !== false ) {
+			error_log('Edge Images: Already wrapped in picture');
+			return $html;
+		}
+
+		if ( ! isset( $attr['data-wrap-in-picture'] ) ) {
+			error_log('Edge Images: Missing data-wrap-in-picture attribute');
+			return $html;
+		}
+
+		if ( ! isset( $attr['width'], $attr['height'] ) ) {
+			error_log('Edge Images: Missing width/height attributes');
+			return $html;
+		}
+
+		if ( get_option( 'edge_images_disable_picture_wrap', false ) ) {
+			error_log('Edge Images: Picture wrapping disabled by option');
 			return $html;
 		}
 
@@ -397,7 +422,10 @@ class Handler {
 			'height' => $attr['height']
 		];
 
-		return $this->create_picture_element( $html, $dimensions );
+		$wrapped = $this->create_picture_element( $html, $dimensions );
+		error_log('Edge Images: Wrapped HTML: ' . $wrapped);
+
+		return $wrapped;
 	}
 
 	/**
@@ -1280,15 +1308,23 @@ class Handler {
 	/**
 	 * Final cleanup of the image HTML
 	 *
+	 * @since 4.0.0
+	 * 
 	 * @param string       $html          The HTML img element markup.
 	 * @param int         $attachment_id Image attachment ID.
 	 * @param string|array $size          Size of image.
-	 * @param bool        $icon          Whether the image should be treated as an icon.
-	 * @param array       $attr          Array of image attributes.
-	 * 
+	 * @param bool|array   $attr_or_icon  Either the attributes array or icon boolean.
+	 * @param bool|null    $icon          Whether the image should be treated as an icon.
 	 * @return string Modified HTML
 	 */
-	public function cleanup_image_html(string $html, int $attachment_id, $size, bool $icon, array $attr): string {
+	public function cleanup_image_html(string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null): string {
+		// Handle flexible parameter order
+		$attr = is_array($attr_or_icon) ? $attr_or_icon : [];
+		if (is_bool($attr_or_icon)) {
+			$icon = $attr_or_icon;
+			$attr = [];
+		}
+
 		// Check if this is our processed image
 		if (strpos($html, 'edge-images-processed') === false) {
 			return $html;
@@ -1324,13 +1360,13 @@ class Handler {
 	 * 
 	 * @return string The picture element HTML
 	 */
-	private function create_picture_element( string $img_html, array $dimensions, string $extra_classes = '' ): string {
+	private function create_picture_element(string $img_html, array $dimensions, string $extra_classes = ''): string {
 		// Start with base classes
 		$classes = ['edge-images-container'];
 		
 		// Add any extra classes
 		if ($extra_classes) {
-			$classes[] = $extra_classes;
+			$classes = array_merge($classes, explode(' ', $extra_classes));
 		}
 		
 		// Check if the image has explicit fit value
@@ -1359,9 +1395,10 @@ class Handler {
 		// Get reduced aspect ratio
 		$ratio = Image_Dimensions::reduce_ratio($width, $height);
 
+		// Create the picture element
 		return sprintf(
 			'<picture class="%s" style="aspect-ratio: %d/%d; --max-width: %dpx;">%s</picture>',
-			esc_attr( implode(' ', $classes) ),
+			esc_attr(implode(' ', array_unique($classes))),
 			$ratio['width'],
 			$ratio['height'],
 			$width,

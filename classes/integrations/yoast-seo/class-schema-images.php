@@ -195,8 +195,13 @@ class Schema_Images {
 	 */
 	public function edge_organization_logo( $data ): array {
 	
-		// Get the image ID from the URL
+		// Get the image ID from Yoast SEO
 		$image_id = YoastSEO()->meta->for_current_page()->company_logo_id;
+
+		// Bail if we didn't get an image.
+		if ( ! $image_id ) {
+			return $data;
+		}
 
 		// Get dimensions from the image
 		$dimensions = Image_Dimensions::from_attachment( $image_id );

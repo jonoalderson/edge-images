@@ -26,10 +26,6 @@
 
 namespace Edge_Images;
 
-// TODO:
-// Check enabling/disabling yoast options actually disables respective functionality
-// OG:Image not being transformed in Yoast SEO
-
 // Prevent direct access.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
