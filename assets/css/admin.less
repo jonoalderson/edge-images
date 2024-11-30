@@ -1,16 +1,175 @@
+// Variables
+@primary-color: #2271b1;  // WordPress primary blue color.
+@border-radius: 8px;      // Consistent border radius across components.
+@transition-speed: 0.2s;  // Standard transition speed for animations.
 
-#postimagediv {
+// Main container styles
+.edge-images-wrap {
+    max-width: 800px;
+    margin: 20px 0;
 
-	// Unset absolute positioning.
-	.inside img.edge-images-img {
-		position: relative !important;
-	}
-
-	// Remove the :before pseudo-element. 
-	.edge-images-container {
-		&:before {
-			display: none;
-		}
-	}
-
+    // Page title styling
+    h1 {
+        margin-bottom: 1em;
+        padding-bottom: 1em;
+        border-bottom: 1px solid #eee;
+    }
 }
+
+// Settings container with card-like appearance
+.edge-images-container {
+    background: #fff;
+    padding: 2em;
+    border-radius: @border-radius;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+// Provider selector grid layout
+.edge-images-provider-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+    margin-bottom: 2em;
+}
+
+// Individual provider option styling
+.edge-images-provider-option {
+    display: block;
+    cursor: pointer;
+
+    // Hide radio input visually
+    input[type="radio"] {
+        display: none;
+    }
+
+    // Provider card styling
+    .edge-images-provider-card {
+        display: block;
+        padding: 1.5em;
+        background: #f8f9fa;
+        border: 2px solid #e2e4e7;
+        border-radius: @border-radius;
+        transition: all @transition-speed ease;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+
+        // Hover effects
+        &:hover {
+            border-color: @primary-color;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+    }
+
+    // Selected state styling
+    input[type="radio"]:checked + .edge-images-provider-card {
+        background: #fff;
+        border-color: @primary-color;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+        // Checkmark indicator
+        &::after {
+            content: "✓";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: @primary-color;
+            font-weight: bold;
+        }
+    }
+}
+
+// Provider name text styling
+.edge-images-provider-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1d2327;
+}
+
+// Settings field container styling
+.edge-images-settings-field {
+    margin: 0 0 2em;
+    padding: 1.5em;
+    background: #f8f9fa;
+    border-radius: @border-radius;
+    border: 1px solid #e2e4e7;
+
+    // Field label styling
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5em;
+    }
+
+    // Help text styling
+    .description {
+        margin-top: 0.75em;
+        color: #666;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    // Checkbox alignment
+    input[type="checkbox"] {
+        margin-right: 8px;
+    }
+}
+
+// Submit button container
+.submit {
+    margin: 2em 0 0;
+    padding: 1.5em 0 0;
+    border-top: 1px solid #eee;
+}
+
+// Responsive adjustments for mobile
+@media screen and (max-width: 782px) {
+    .edge-images-provider-selector {
+        grid-template-columns: 1fr;
+    }
+}
+
+// Accessibility: Respect reduced motion preferences
+@media (prefers-reduced-motion: reduce) {
+    .edge-images-provider-option .edge-images-provider-card {
+        transition: none;
+        transform: none !important;
+    }
+}
+
+// Add this to the existing CSS
+.edge-images-imgix-field {
+    display: none; // Hidden by default
+    
+    th, td {
+        padding-top: 0; // Remove extra spacing
+    }
+}
+
+// Add this to the existing CSS
+.edge-images-intro {
+    margin-bottom: 2em;
+    padding-bottom: 1.5em;
+    border-bottom: 1px solid #eee;
+
+    p {
+        font-size: 14px;
+        line-height: 1.6;
+        margin: 1em 0;
+        max-width: 800px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    a {
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+} 
