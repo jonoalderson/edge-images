@@ -169,9 +169,17 @@ class Handler {
 			return $attr;
 		}
 
+		// Extract any transformation arguments from the attributes
+		$transform_args = [];
+		foreach ($attr as $key => $value) {
+			if (Edge_Provider::get_canonical_arg($key)) {
+				$transform_args[$key] = $value;
+				unset($attr[$key]); // Remove from HTML attributes
+			}
+		}
+
 		// Get dimensions and crop setting from the registered size if applicable
 		$dimensions = null;
-		$transform_args = [];
 
 		// First try to get dimensions from registered size
 		if (is_string($size)) {
@@ -183,9 +191,12 @@ class Handler {
 				];
 				
 				// Set transform args for registered size
-				$transform_args = $this->get_registered_size_args(
-					$dimensions,
-					$registered_sizes[$size]['crop']
+				$transform_args = array_merge(
+					$this->get_registered_size_args(
+						$dimensions,
+						$registered_sizes[$size]['crop']
+					),
+					$transform_args // Put user args last so they override defaults
 				);
 
 				// Force these dimensions throughout the process
@@ -247,6 +258,7 @@ class Handler {
 			$provider = $this->get_provider_instance();
 			$edge_args = array_merge(
 				$provider->get_default_args(),
+				$this->get_registered_size_args($dimensions, true),
 				$transform_args,
 				array_filter([
 					'w' => $dimensions['width'] ?? null,
@@ -258,14 +270,14 @@ class Handler {
 			$attr['src'] = Helpers::edge_src($full_src, $edge_args);
 		}
 
-		// Generate srcset
+		// Generate srcset with the same transformation args
 		if (isset($attr['src']) && $dimensions) {
 			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
 			$srcset = Srcset_Transformer::transform(
 				$full_src,
 				$dimensions,
 				$attr['sizes'] ?? "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px",
-				$transform_args
+				$transform_args // Pass the transformation args to srcset generation
 			);
 			if ($srcset) {
 				$attr['srcset'] = $srcset;

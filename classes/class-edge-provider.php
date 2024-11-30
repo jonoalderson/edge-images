@@ -27,7 +27,7 @@ abstract class Edge_Provider {
 		'h' => ['height'],             // Height of the image, in pixels
 		'dpr' => null,                 // Device Pixel Ratio (1-3)
 		'fit' => null,                 // Resizing behavior: scale-down, contain, cover, crop, pad
-		'g' => ['gravity'],            // Gravity/crop position: auto, north, south, east, west, center
+		'g' => ['gravity'],            // Gravity/crop position: auto, north, south, east, west, center, left, right
 		'q' => ['quality'],            // Quality (1-100)
 		'f' => ['format'],             // Output format: auto, webp, json, jpeg, png, gif, avif
 		
@@ -176,7 +176,7 @@ abstract class Edge_Provider {
 			case 'fit':
 				return in_array($value, ['scale-down', 'contain', 'cover', 'crop', 'pad'], true);
 			case 'g':
-				return in_array($value, ['auto', 'north', 'south', 'east', 'west', 'center'], true);
+				return in_array($value, ['auto', 'north', 'south', 'east', 'west', 'center', 'left', 'right'], true);
 			default:
 				return true;
 		}
@@ -248,8 +248,8 @@ abstract class Edge_Provider {
 	 * @return string|null The canonical form or null if not valid.
 	 */
 	public static function get_canonical_arg(string $arg): ?string {
-		// If it's already a canonical form
-		if (isset(self::$valid_args[$arg])) {
+		// If it's already a canonical form (including those with null aliases)
+		if (array_key_exists($arg, self::$valid_args)) {
 			return $arg;
 		}
 

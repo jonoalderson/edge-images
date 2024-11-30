@@ -1,24 +1,57 @@
 # Edge Images
 A WordPress plugin which automatically uses an edge transformation service (e.g., [Cloudflare](https://www.cloudflare.com/) or [Accelerated Domains](https://accelerateddomains.com/)) to apply performance optimizations to `<img>` markup.
 
+## Features
+- Automatic image optimization through edge providers
+- Smart `srcset` generation for responsive images
+- Support for multiple CDN/edge providers
+- Automatic WebP/AVIF conversion (provider dependent)
+- Yoast SEO integration for meta images
+- No local image processing required
+- No additional server load
+- Maintains original images
+
+## Version Compatibility
+- WordPress: 5.6 or higher
+- PHP: 7.4 or higher
+- Gutenberg: Full support for image blocks
+- Classic Editor: Full support
+
+## Browser Support
+The plugin generates standard HTML5 markup that works in all modern browsers. The `<picture>` element is supported in:
+- Chrome 38+
+- Firefox 38+
+- Safari 9.1+
+- Edge 13+
+- Opera 25+
+- iOS Safari 9.3+
+- Android Chrome 38+
+
+## Security & Performance
+- Original images remain untouched and secure
+- No local processing means no server load
+- Edge providers handle caching automatically
+- All transformations are URL-based
+- No database modifications
+- No filesystem modifications
+
+## Credits
+- Author: Jono Alderson
+
 ## Description
-Edge Images intercepts various flavors of WordPress' native `wp_get_attachment_image()`, `get_the_post_thumbnail()` and similar, and:
-  - Uses an associative array of named (or h/w array value) sizes as lookups for user-defined layout, presentation and optimization rules.
+Edge Images filters image blocks and template functions (such as `wp_get_attachment_image()` and `get_the_post_thumbnail()`), and:
+  - Alters `src` and `srcset` attributes to use the edge provider's URL format.
   - Generates comprehensive `srcset` values, optimal `sizes` attributes, and applies general image optimizations.
-  - Wraps the `<img>` in a `<%container%>` elem (_optional_).
+  - Wraps the `<img>` in a `<picture>` elem (_optional_).
 
 ### What problem does this solve?
 WordPress ships with a concept of "image sizes", each of which has a _height_, _width_ and _crop_ option. It provides some defaults like 'large', 'medium' and 'thumbnail', and provides ways for developers to customize or extend these options. When a user adds images to content, or includes them in templates, they must select the most optimal size from the options available.
 
 This is often imprecise. Images are often loaded at 'roughly the right size', then shunk or stretched by the browser; by varying degrees of inaccuracy based on the user's context (such as viewport size, screen density, or content preferences). This is inefficient, and 'expensive' from a performance perspective.
 
-WordPress attempts to mitigate this by generating `srcset` and `sizes` values in image markup. However, this isn't sophisticated enough to consider the _context_ of _where_ an image is output, and how the optimal sizes should be calculated based on theme layout/behaviour and user conditions.
+WordPress attempts to mitigate this by generating `srcset` and `sizes` values in image markup. However, the accuracy of this is limited by the availability and size of pre-generated images - which is rarely sufficient.
 
-In an ideal world, the user would always receive an appropriately sized image, based on a combination of the _template_ context the _user's_ context. That's far more flexibility than WordPress currently supports.
-
-This plugin solves these problems, by:
-- Allowing users/developers to specify more sophisticated `sizes` and `srcset` logic for each image, based on its optimal template behaviour, and;
-- Providing a large number of 'interstitial' `srcset` values (generated via an edge provider, in order to avoid storage/generation overheads).
+This plugin solves these problems by providing suitable 'interstitial' `srcset` values, generated on-demand via an edge provider, without the need to pre-generate a large number of images.
 
 ## Requirements
 - PHP 7.0+
@@ -26,239 +59,27 @@ This plugin solves these problems, by:
 - Supported edge providers are:
   - [Cloudflare](https://www.cloudflare.com/), with the 'Image resizing' feature enabled (note that this requires a _Pro_ account or higher).
   - [Accelerated Domains](https://accelerateddomains.com/), with the 'Image resizing' feature enabled.
+  - [BunnyCDN](https://bunny.net/), with the 'Image resizing' feature enabled.
 
 ## Examples
 
-### Before
-Use WordPress' native `add_image_size` function to define a 'banner', and output that image.
-
 **PHP**
 ```php
-add_image_size( 'banner', 968, 580 );
-echo wp_get_attachment_image( $image_id, 'banner' );
+echo wp_get_attachment_image(1, [640,400], false, ['fit' => 'contain', 'gravity' => 'left']);
 ```
 
-**HTML output**
+**HTML output: Before**
 ```html
-<img
-  width="1920"
-  height="580"
-  src="https://www.example.com/path-to-image-1920x580.jpg"
-  class="attachment-banner size-banner"
-  alt=""
-  loading="lazy">
+<img width="380" height="400" src="http://edge-images-plugin.local/wp-content/uploads/2024/11/1.jpg" class="attachment-640x400 size-640x400" alt="" fit="contain" gravity="left" decoding="async" loading="lazy" srcset="http://edge-images-plugin.local/wp-content/uploads/2024/11/1.jpg 400w, http://edge-images-plugin.local/wp-content/uploads/2024/11/1-285x300.jpg 285w" sizes="auto, (max-width: 380px) 100vw, 380px">
 ```
 
-### After
-Use Edge Images `edge_images_sizes` filter to define a 'banner', and output that image.
-
-**PHP**
-```php
-add_filter( 'edge_images_sizes', array( $instance, 'register_edge_image_sizes' ), 1, 1 );
-
-/**
- * Register image sizes for Edge Images plugin
- *
- * @param  array $sizes The array of named sizes.
- *
- * @return array The modified array
- */
-public function register_edge_image_sizes( array $sizes ) : array {
-  $sizes['banner'] = array(
-    'width'   => 968,
-    'height'  => 500,
-    'sizes'   => '(max-width: 968px) calc(100vw - 2.5em), 968px',
-    'loading' => 'eager',
-  );
-}
-
-echo wp_get_attachment_image( $image_id, 'banner' );
-```
-
-**HTML output**
+**HTML output: After**
 ```html
-<picture
-  style="--aspect-ratio:968/500"
-  class="picture-banner edge-images-picture responsive image-id-34376">
-<img
-  class="attachment-banner size-banner edge-images-img"
-  alt=""
-  decoding="async"
-  height="500"
-  loading="eager"
-  sizes="(max-width: 968px) calc(100vw - 2.5em), 968px"
-  src="https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=500%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=968/path-to-image.jpg" width="968"
-  srcset="https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=750%2Cmetadata=none%2Conerror=redirect%2Cq=75%2Cwidth=1452/path-to-image.jpg 1452w,
-  	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=1000%2Cmetadata=none%2Conerror=redirect%2Cq=65%2Cwidth=1936/path-to-image.jpg 1936w,
-  	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=207%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=400/path-to-image.jpg 400w,
-  	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=259%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=500/path-to-image.jpg 500w,
-          https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=310%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=600/path-to-image.jpg 600w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=362%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=700/path-to-image.jpg 700w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=414%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=800/path-to-image.jpg 800w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=465%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=900/path-to-image.jpg 900w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=517%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=1000/path-to-image.jpg 1000w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=620%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=1200/path-to-image.jpg 1200w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=724%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=1400/path-to-image.jpg 1400w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=827%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=1600/path-to-image.jpg 1600w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=930%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=1800/path-to-image.jpg 1800w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=500%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=968/path-to-image.jpg 968w,
-	  https://www.example.com/cdn-cgi/image/f=auto%2Cfit=cover%2Cgravity=auto%2Cheight=250%2Cmetadata=none%2Conerror=redirect%2Cq=85%2Cwidth=484/path-to-image.jpg 484w">
-</picture>
-```
-
-### Preloading
-
-```php
-add_filter( 'edge_images_preloads', 'preload_images', 1, 1 );
-
-/**
- * Register images to preload
- *
- * @param  array $preloads The array of images (with IDs and sizes).
- *
- * @return array The modified array
- */
-public function preload_images( array $preloads ) : array {
-  $preloads[] = array(
-    array(
-      'id' => 123,
-      'size' => 'large'
-    ),
-    array(
-      'id' => 456,
-      'size' => 'banner'
-    )
-  );
-  return $preloads;
-}
+<picture class="edge-images-container contain" style="aspect-ratio: 8/5; --max-width: 640px;"><img width="640" height="400" src="http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=400&amp;q=85&amp;width=640" class="attachment-640x400 size-640x400 edge-images-img edge-images-processed" alt="" decoding="async" loading="lazy" srcset="http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=188&amp;q=85&amp;width=300 300w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=200&amp;q=85&amp;width=320 320w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=400&amp;q=85&amp;width=640 640w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=600&amp;q=85&amp;width=960 960w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=800&amp;q=85&amp;width=1280 1280w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=1000&amp;q=85&amp;width=1600 1600w" sizes="(max-width: 640px) 100vw, 640px" data-attachment-id="11"></picture>
 ```
 
 ## Customization
-The plugin automatically converts WordPress' native image sizes, and any sizes registered via `add_image_size()`.
-However, more fine-grained control can be achieved by registering custom sizes and definitions using the `edge_images_sizes` filter.
-
-### Using `edge_images_sizes`
-The `edge_images_sizes` filter expects and returns an associative array of image definitions; where they key is the _name_ of the size, and the value is an array constructed with the following properties.
-
-#### Required
-- `height` (`int`): The `height` in pixels of the image of the smallest/mobile/default size. Sets the `height` attribute on the `<img>` elem.
-- `width` (`int`): The `width` in pixels of the image of the smallest/mobile/default size. Sets the `width` attribute on the `<img>` elem.
-
-#### Optional
-- `sizes` (`str`):  The `sizes` attribute to be used on the `<img>` elem.
-- `srcset` (`arr`): An array of `width`/`height` arrays. Used to generate the `srcset` attribute (and stepped variations) on the `<img>` elem.
-- `fit` (`str`): Sets the `fit` attribute on the `<img>` elem. Defaults to `cover`.
-- `sharpen` (`int`): Applies a sharpening effect.
-- `blur` (`int`): Applies a blurring effect.
-- `gravity` (`string`): Alters the center of gravity.
-- `layout` (`str`): Determines how `<img>` markup should be generated, based on whether the image is `responsive` or has `fixed` dimensions. Defaults to `responsive`.
-- `loading` (`str`): Sets the `loading` attribute on the `<img>` elem. Defaults to `lazy`.
-- `decoding` (`str`): Sets the `decoding` attribute on the `<img>` elem. Defaults to `async`.
-- `fetchpriority` (`str`): Sets the `fetchpriority` attribute on the `<img>` elem.
-- `class` (`array`|`str`): Extends the `class` value(s) on the `<img>` elem.
-- `container-class` (`array`|`str`): Extends the `class` value(s) on the `<%container%>` elem.
-
-#### Example configurations:
-A general use-case, which defines dimensions, sizes, and custom `srcset` values.
-```php
-add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['example_size_1'] = array(
-    'width'   => 173,
-    'height'  => 229,
-    'sizes'   => '(max-width: 768px) 256px, 173px',
-    'srcset'  => array(
-      array(
-        'width'  => 256,
-        'height' => 229,
-      )
-    )
-  );
-  return $sizes;
-}
-```
-
-A simple small image.
-```php
-add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['small_logo'] = array(
-    'width'  => 70,
-    'height' => 20,
-    'sizes'  => '70px'
-  );
-  return $sizes;
-}
-```
-
-A simple small image, requested with a size array (of `[32, 32]`) instead of a named size.
-```php
-add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['32x32'] = array(
-    'width'  => 32,
-    'height' => 32,
-    'sizes'  => '32px'
-  );
-  return $sizes;
-}
-```
-
-A more complex use-case, which changes layout considerably at different viewport ranges (and has complex `sizes` and `srcset` values to support this).
-```php
-add_filter( 'edge_images_sizes', 'my_example_sizes', 1, 1 );
-
-function my_example_sizes($sizes) {
-  $sizes['card'] = array(
-    'width'  => 195,
-    'height' => 195,
-    'sizes'  => '(max-width: 1120px) 25vw, (min-width: 1121px) and (max-width: 1440px) 150px, 195px',
-    'srcset' => array(
-      array(
-        'width'  => 150,
-        'height' => 150,
-      ),
-      array(
-        'width'  => 125,
-        'height' => 125,
-      ),
-      array(
-        'width'  => 100,
-        'height' => 100,
-      ),
-    ),
-    'loading' => 'eager',
-    'container-class' => array('pineapples', 'bananas'),
-    'class' => 'oranges'
-  );
-  return $sizes;
-}
-```
-
-### Other filters
-#### Enabling/disabling
-- `edge_images_disable` (`bool`): Disable all image transformation mechanisms. Defaults to `false`.
-- `edge_images_exclude` (`array`): An array of images to exclude from transformation.
-- `edge_images_disable_container_wrap` (`bool`): Disable wrapping images in a `<picture>` element (and disable the associated CSS). Defaults to `false`.
-
-#### General configuration
-- `edge_images_provider` (`str`): The name of the edge provider to use. Supports `Cloudflare` or `Accelerated_Domains`. Defaults to `Cloudflare`.
-- `edge_images_domain` (`str`): The fully qualified domain name (and protocol) to use to as the base for image transformation. Defaults to `get_site_url()`.
-- `edge_images_content_width` (`int`): The default maximum content width for an image. Defaults to the theme's `$content_width` value, or falls back to `600`.
-
-#### Image quality settings
-- `edge_images_quality` (`int`): Alter the default quality value (from `1`-`100`). Defaults to `85`.
-
-#### `srcset` generation settings
-- `edge_images_step_value` (`int`): The number of pixels to increment in `srcset` variations. Defaults to `100`.
-- `edge_images_min_width` (`int`): The minimum width to generate in an `srcset`. Defaults to `400`.
-- `edge_images_max_width` (`int`): The maximum width to generate in an `srcset`. Defaults to `2400`.
-
-#### Additional optimizations
-- `edge_images_preloads` (`array`): An associative array of image IDs and sizes to automatically preload (via `<link>` tags in the `<head>`).
+The plugin automatically converts WordPress' native image sizes, any sizes registered via `add_image_size()`, and array values.
 
 ## Integrations
 The plugin automatically integrates with the following systems and plugins.
@@ -275,3 +96,126 @@ Supports the following filters:
 - `edge_images_yoast_disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
 - `edge_images_yoast_disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
 - `edge_images_yoast_social_image_args`: (`array`): Alters the args passed to the social image.
+
+## Supported Attributes
+When using `wp_get_attachment_image()` or similar functions, you can pass the following attributes to control image transformation:
+
+### Core Parameters
+- `width` or `w`: Width of the image in pixels
+- `height` or `h`: Height of the image in pixels
+- `fit`: Resizing behavior. Supported values:
+  - `contain`: Resize to fit within dimensions while maintaining aspect ratio
+  - `cover`: Resize to cover dimensions while maintaining aspect ratio
+  - `crop`: Crop to exact dimensions
+  - `scale-down`: Scale down to fit within dimensions
+  - `pad`: Pad to exact dimensions
+- `gravity` or `g`: Crop/focus position. Supported values:
+  - `auto`: Automatic focus detection
+  - `center`: Center of image
+  - `north`: Top edge
+  - `south`: Bottom edge
+  - `east`: Right edge
+  - `west`: Left edge
+  - `left`: Left side
+  - `right`: Right side
+- `quality` or `q`: JPEG/WebP quality (1-100). Defaults to 85
+- `format` or `f`: Output format. Supported values:
+  - `auto`: Automatically select best format (default)
+  - `webp`: Force WebP format
+  - `jpeg`: Force JPEG format
+  - `png`: Force PNG format
+  - `avif`: Force AVIF format
+
+### Advanced Parameters
+- `dpr`: Device Pixel Ratio multiplier (1-3)
+- `metadata`: Metadata handling. Supported values:
+  - `keep`: Preserve all metadata
+  - `copyright`: Keep only copyright info
+  - `none`: Strip all metadata
+- `blur`: Apply Gaussian blur (1-250)
+- `sharpen`: Apply sharpening (1-100)
+- `brightness`: Adjust brightness (-100 to 100)
+- `contrast`: Adjust contrast (-100 to 100)
+- `gamma`: Adjust gamma correction (1-100)
+
+### Example Usage
+```php
+echo wp_get_attachment_image(
+    $attachment_id,
+    [800, 600],
+    false,
+    [
+        'fit' => 'contain',
+        'gravity' => 'center',
+        'quality' => 90,
+        'sharpen' => 10
+    ]
+);
+```
+
+This will output an 800x600 image that:
+- Fits within the dimensions while maintaining aspect ratio
+- Is centered in the frame
+- Uses 90% JPEG quality
+- Has slight sharpening applied
+
+All parameters are optional and will use sensible defaults if not specified.
+
+## Installation
+1. Upload the plugin files to `/wp-content/plugins/edge-images/`
+2. Activate the plugin through the 'Plugins' screen in WordPress
+3. Go to Settings > Edge Images to configure your provider
+
+## Provider-Specific Configuration
+
+### Cloudflare
+1. Ensure your domain is on a Cloudflare Pro plan or higher
+2. Enable "Image Resizing" in your Cloudflare dashboard
+3. Select "Cloudflare" in the Edge Images settings
+
+### Accelerated Domains
+1. Enable image optimization in your Accelerated Domains dashboard
+2. Select "Accelerated Domains" in the Edge Images settings
+
+### Bunny CDN
+1. Enable image processing in your Bunny CDN dashboard
+2. Select "Bunny CDN" in the Edge Images settings
+
+### Imgix
+1. Create an Imgix source for your domain
+2. Enter your Imgix subdomain in the Edge Images settings
+3. Select "Imgix" in the Edge Images settings
+
+## Filters
+
+### General Configuration
+- `edge_images_disable` (`bool`): Disable all image transformation. Defaults to `false`.
+- `edge_images_provider` (`string`): Override the selected provider. Accepts 'cloudflare', 'accelerated_domains', 'bunny', or 'imgix'.
+- `edge_images_domain` (`string`): Override the domain used for image URLs. Defaults to site URL.
+- `edge_images_disable_picture_wrap` (`bool`): Disable wrapping images in `<picture>` elements. Defaults to `false`.
+
+### Image Processing
+- `edge_images_max_width` (`int`): Maximum width for generated images. Defaults to 2400.
+- `edge_images_min_width` (`int`): Minimum width for generated images. Defaults to 300.
+- `edge_images_quality` (`int`): Default JPEG/WebP quality. Defaults to 85.
+
+### Performance
+- `edge_images_preloads` (`array`): Array of image IDs and sizes to preload.
+
+## Troubleshooting
+
+### Images Not Transforming
+1. Check that your chosen provider is properly configured
+2. Verify that image resizing is enabled in your provider's dashboard
+3. Check the browser console for any JavaScript errors
+4. Try disabling other image optimization plugins
+
+### Performance Issues
+1. Consider enabling browser caching for transformed images
+2. Use the `edge_images_preloads` filter for critical images
+3. Adjust quality settings for better compression
+
+### Common Issues
+- **404 Errors**: Ensure your provider's image transformation service is properly enabled
+- **Broken Images**: Check that image paths are correctly formatted
+- **Missing Transformations**: Verify that your provider supports the requested transformations

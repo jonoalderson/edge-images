@@ -364,7 +364,7 @@ class Admin_Page {
 
 				<form method="post" action="options.php">
 					<?php
-					settings_fields( 'edge_images_settings' );
+					settings_fields( self::OPTION_GROUP );
 					do_settings_sections( 'edge_images' );
 					submit_button();
 					?>
