@@ -378,11 +378,21 @@ class Handler {
 			
 			// Check if this is a registered size
 			if (isset($registered_sizes[$size])) {
-				return [
+				$dimensions = [
 					'width' => (int) $registered_sizes[$size]['width'],
 					'height' => (int) $registered_sizes[$size]['height'],
 					'crop' => (bool) $registered_sizes[$size]['crop']
 				];
+
+				// Constrain to max content width if necessary
+				global $content_width;
+				if ($content_width && $dimensions['width'] > $content_width) {
+					$ratio = $dimensions['height'] / $dimensions['width'];
+					$dimensions['width'] = $content_width;
+					$dimensions['height'] = (int) round($content_width * $ratio);
+				}
+
+				return $dimensions;
 			}
 
 			// Try to get from attachment metadata
@@ -682,7 +692,7 @@ class Handler {
 		// Get content width if we're constraining
 		if ($should_constrain) {
 			global $content_width;
-			$max_width = $content_width ?? 1200; // Fallback to 1200 if not set
+			$max_width = $content_width ?? (int) get_option('edge_images_max_width', 650); // Read from option
 			$dimensions = $this->constrain_dimensions($dimensions, $max_width);
 		}
 

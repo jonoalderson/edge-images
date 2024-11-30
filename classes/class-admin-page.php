@@ -75,6 +75,14 @@ class Admin_Page {
 	private const YOAST_SITEMAP_OPTION = 'edge_images_yoast_disable_xml_sitemap_images';
 
 	/**
+	 * The max width option name.
+	 *
+	 * @since 4.2.0
+	 * @var string
+	 */
+	private const MAX_WIDTH_OPTION = 'edge_images_max_width';
+
+	/**
 	 * Registers the admin page and its hooks.
 	 *
 	 * Sets up the admin menu, registers settings, and enqueues assets.
@@ -193,6 +201,18 @@ class Admin_Page {
 			]
 		);
 
+		// Register max width setting.
+		register_setting(
+			self::OPTION_GROUP,
+			self::MAX_WIDTH_OPTION,
+			[
+				'type'              => 'integer',
+				'description'       => __( 'The maximum width for images when content width is not set', 'edge-images' ),
+				'sanitize_callback' => 'absint',
+				'default'           => 800,
+			]
+		);
+
 		// Add main section.
 		add_settings_section(
 			'edge_images_main_section',
@@ -234,6 +254,15 @@ class Admin_Page {
 			'edge_images_yoast_integrations',
 			__( 'Yoast SEO Integration', 'edge-images' ),
 			[ self::class, 'render_yoast_integration_fields' ],
+			'edge_images',
+			'edge_images_main_section'
+		);
+
+		// Add max width field.
+		add_settings_field(
+			'edge_images_max_width',
+			__( 'Max Image Width', 'edge-images' ),
+			[ self::class, 'render_max_width_field' ],
 			'edge_images',
 			'edge_images_main_section'
 		);
@@ -544,6 +573,34 @@ class Admin_Page {
 				</p>
 			</fieldset>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the max width field.
+	 *
+	 * Creates the input for setting the maximum image width.
+	 *
+	 * @since 4.2.0
+	 * 
+	 * @return void
+	 */
+	public static function render_max_width_field(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$max_width = get_option( self::MAX_WIDTH_OPTION, 650 );
+		?>
+		<input type="number" 
+			   name="<?php echo esc_attr( self::MAX_WIDTH_OPTION ); ?>" 
+			   value="<?php echo esc_attr( $max_width ); ?>" 
+			   class="small-text" 
+			   min="1" 
+			   step="1">
+		<p class="description">
+			<?php esc_html_e( 'Set the maximum width for images when content width is not set. Default is 650px.', 'edge-images' ); ?>
+		</p>
 		<?php
 	}
 } 

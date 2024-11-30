@@ -111,6 +111,12 @@ class Srcset_Transformer {
         foreach (self::$width_multipliers as $multiplier) {
             $width = round($original_width * $multiplier);
             
+            // Constrain to max content width
+            global $content_width;
+            if ($content_width && $width > $content_width) {
+                $width = $content_width;
+            }
+            
             if ($width >= self::$min_srcset_width && $width <= self::$max_srcset_width && !in_array($width, $widths)) {
                 $widths[] = $width;
             }
