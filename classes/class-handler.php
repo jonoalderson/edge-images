@@ -20,6 +20,13 @@ class Handler {
 	private static bool $registered = false;
 
 	/**
+	 * The cached edge provider instance.
+	 *
+	 * @var Edge_Provider|null
+	 */
+	private static ?Edge_Provider $provider_instance = null;
+
+	/**
 	 * Register the integration
 	 *
 	 * @return void
@@ -157,8 +164,12 @@ class Handler {
 	 * @return array Modified attributes
 	 */
 	public function transform_attachment_image(array $attr, $attachment, $size): array {
+		// Bail early if no attachment
+		if (!$attachment) {
+			return $attr;
+		}
+
 		// Get dimensions and crop setting from the registered size if applicable
-		$registered_size = null;
 		$dimensions = null;
 		$transform_args = [];
 
@@ -166,44 +177,57 @@ class Handler {
 		if (is_string($size)) {
 			$registered_sizes = wp_get_registered_image_subsizes();
 			if (isset($registered_sizes[$size])) {
-				$registered_size = $registered_sizes[$size];
 				$dimensions = [
-					'width' => (int) $registered_size['width'],
-					'height' => (int) $registered_size['height']
+					'width' => (int) $registered_sizes[$size]['width'],
+					'height' => (int) $registered_sizes[$size]['height']
 				];
 				
 				// Set transform args for registered size
-				$transform_args = [
-					'w' => $dimensions['width'],
-					'h' => $dimensions['height'],
-					'fit' => isset($attr['fit']) ? $attr['fit'] : ($registered_size['crop'] ? 'cover' : 'contain')
-				];
+				$transform_args = $this->get_registered_size_args(
+					$dimensions,
+					$registered_sizes[$size]['crop']
+				);
 
 				// Force these dimensions throughout the process
 				$attr['width'] = (string) $dimensions['width'];
 				$attr['height'] = (string) $dimensions['height'];
 				$attr['data-original-width'] = (string) $dimensions['width'];
 				$attr['data-original-height'] = (string) $dimensions['height'];
+				
+				return $this->apply_transform($attr, $dimensions, $transform_args, $attachment);
 			}
 		}
 
 		// Only fall back to metadata if we don't have registered size dimensions
+		$metadata = wp_get_attachment_metadata($attachment->ID);
+		$dimensions = $metadata['_edge_images_dimensions'] ?? null;
+
 		if (!$dimensions) {
-			$metadata = wp_get_attachment_metadata($attachment->ID);
-			$dimensions = $metadata['_edge_images_dimensions'] ?? null;
-
-			if (!$dimensions) {
-				$dimensions = $this->get_size_dimensions($size, $attachment->ID);
-			}
-
-			if ($dimensions) {
-				$attr['width'] = (string) $dimensions['width'];
-				$attr['height'] = (string) $dimensions['height'];
-				$attr['data-original-width'] = (string) $dimensions['width'];
-				$attr['data-original-height'] = (string) $dimensions['height'];
-			}
+			$dimensions = $this->get_size_dimensions($size, $attachment->ID);
 		}
 
+		if (!$dimensions) {
+			return $attr;
+		}
+
+		$attr['width'] = (string) $dimensions['width'];
+		$attr['height'] = (string) $dimensions['height'];
+		$attr['data-original-width'] = (string) $dimensions['width'];
+		$attr['data-original-height'] = (string) $dimensions['height'];
+
+		return $this->apply_transform($attr, $dimensions, $transform_args, $attachment);
+	}
+
+	/**
+	 * Apply transformation to attributes
+	 *
+	 * @param array   $attr          The attributes array.
+	 * @param array   $dimensions    The image dimensions.
+	 * @param array   $transform_args The transformation arguments.
+	 * @param WP_Post $attachment    The attachment post.
+	 * @return array Modified attributes
+	 */
+	private function apply_transform(array $attr, array $dimensions, array $transform_args, $attachment): array {
 		// List of valid HTML image attributes
 		$valid_html_attrs = Helpers::$valid_html_attrs;
 		
@@ -220,7 +244,7 @@ class Handler {
 
 		// Transform src
 		if (isset($attr['src'])) {
-			$provider = Helpers::get_edge_provider();
+			$provider = $this->get_provider_instance();
 			$edge_args = array_merge(
 				$provider->get_default_args(),
 				$transform_args,
@@ -234,7 +258,7 @@ class Handler {
 			$attr['src'] = Helpers::edge_src($full_src, $edge_args);
 		}
 
-		// Generate srcset based on the correct dimensions
+		// Generate srcset
 		if (isset($attr['src']) && $dimensions) {
 			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
 			$srcset = Srcset_Transformer::transform(
@@ -270,25 +294,18 @@ class Handler {
 	}
 
 	/**
-	 * Extract transformation arguments from attributes
+	 * Extract transformation arguments from attributes.
 	 *
 	 * @param array $attr The attributes array.
-	 * 
-	 * @return array The transformation arguments
+	 * @return array The transformation arguments.
 	 */
 	private function extract_transform_args(array $attr): array {
-		// Get valid args from Edge_Provider
 		$valid_args = Edge_Provider::get_valid_args();
+		$all_valid_args = array_merge(
+			array_keys($valid_args),
+			array_merge(...array_filter(array_values($valid_args)))
+		);
 		
-		// Get all valid argument names (canonical forms and aliases)
-		$all_valid_args = array_keys($valid_args);
-		foreach ($valid_args as $aliases) {
-			if (is_array($aliases)) {
-				$all_valid_args = array_merge($all_valid_args, $aliases);
-			}
-		}
-		
-		// Return only the valid arguments from attributes
 		return array_intersect_key($attr, array_flip($all_valid_args));
 	}
 
@@ -1599,6 +1616,18 @@ class Handler {
 			'f' => 'auto',
 			'g' => 'auto'
 		];
+	}
+
+	/**
+	 * Get the edge provider instance.
+	 * 
+	 * @return Edge_Provider The provider instance.
+	 */
+	private function get_provider_instance(): Edge_Provider {
+		if (self::$provider_instance === null) {
+			self::$provider_instance = Helpers::get_edge_provider();
+		}
+		return self::$provider_instance;
 	}
 
 }

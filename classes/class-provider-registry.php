@@ -28,6 +28,13 @@ class Provider_Registry {
 	public const DEFAULT_PROVIDER = 'cloudflare';
 
 	/**
+	 * Cache for provider class names.
+	 *
+	 * @var array<string,string>
+	 */
+	private static array $provider_class_cache = [];
+
+	/**
 	 * Get all registered providers.
 	 *
 	 * Returns an array of all available providers and their display names.
@@ -76,25 +83,23 @@ class Provider_Registry {
 	}
 
 	/**
-	 * Get the provider class name.
+	 * Get the provider class name with caching.
 	 *
-	 * Returns the fully qualified class name for a given provider.
-	 * Falls back to the base Edge_Provider class if the provider is invalid or 'none'.
-	 *
-	 * @since 4.0.0
-	 * 
 	 * @param string $provider_name The provider name.
 	 * @return string The fully qualified class name.
 	 */
 	public static function get_provider_class( string $provider_name ): string {
-		if ( ! self::is_valid_provider( $provider_name ) ) {
-			return Edge_Provider::class;
+		if (isset(self::$provider_class_cache[$provider_name])) {
+			return self::$provider_class_cache[$provider_name];
 		}
 
-		if ( $provider_name === 'none' ) {
-			return Edge_Provider::class;
+		if (!self::is_valid_provider($provider_name) || $provider_name === 'none') {
+			$class = Edge_Provider::class;
+		} else {
+			$class = 'Edge_Images\Edge_Providers\\' . ucfirst($provider_name);
 		}
 
-		return 'Edge_Images\Edge_Providers\\' . ucfirst( $provider_name );
+		self::$provider_class_cache[$provider_name] = $class;
+		return $class;
 	}
 } 

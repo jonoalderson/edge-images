@@ -72,6 +72,13 @@ class Helpers {
 	];
 
 	/**
+	 * Cache for provider URL patterns.
+	 *
+	 * @var array<string,string>
+	 */
+	private static array $url_pattern_cache = [];
+
+	/**
 	 * Get the configured edge provider name.
 	 *
 	 * Retrieves the provider name from options and validates it.
@@ -274,5 +281,19 @@ class Helpers {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Get URL pattern for a provider with caching.
+	 *
+	 * @param string $provider_name The provider name.
+	 * @return string The URL pattern.
+	 */
+	private static function get_provider_url_pattern(string $provider_name): string {
+		if (!isset(self::$url_pattern_cache[$provider_name])) {
+			$provider_class = Provider_Registry::get_provider_class($provider_name);
+			self::$url_pattern_cache[$provider_name] = $provider_class::get_url_pattern();
+		}
+		return self::$url_pattern_cache[$provider_name];
 	}
 }

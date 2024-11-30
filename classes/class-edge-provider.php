@@ -2,12 +2,7 @@
 /**
  * Base edge provider class.
  *
- * Provides core functionality for transforming image URLs through edge providers.
- * All specific provider implementations should extend this class.
- *
- * @package    Edge_Images
- * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @since      1.0.0
+ * @package Edge_Images
  */
 
 namespace Edge_Images;
@@ -55,19 +50,6 @@ abstract class Edge_Provider {
 		// Rotation and flipping
 		'rot' => ['rotate'],      // Rotation angle (multiple of 90)
 		'flip' => null,          // Flip image: h, v, hv
-		
-		// Text and watermarks
-		'txt' => null,          // Text to render
-		'txt-color' => null,    // Text color
-		'txt-align' => null,    // Text alignment
-		'txt-font' => null,     // Text font family
-		'txt-size' => null,     // Text size
-		'txt-pad' => null,      // Text padding
-		'txt-line' => null,     // Text line height
-		'txt-width' => null,    // Text box width
-		
-		// Optimization
-		'strip' => null,        // Strip metadata: all, color, none
 	];
 
 	/**
@@ -82,33 +64,7 @@ abstract class Edge_Provider {
 		'f' => 'auto',
 		'g' => 'auto',
 		'q' => 85,
-		'w' => null,
-		'h' => null,
 	];
-
-	/**
-	 * Value mappings for specific parameters
-	 *
-	 * @since 4.0.0
-	 * @var array<string,array>
-	 */
-	protected static array $value_mappings = [
-		'g' => [
-			'top' => 'north',
-			'bottom' => 'south',
-			'left' => 'west',
-			'right' => 'east',
-			'center' => 'center',
-	 ],
-	];
-
-	/**
-	 * The args to set for images.
-	 *
-	 * @since 4.0.0
-	 * @var array<string,mixed>
-	 */
-	public array $args = [];
 
 	/**
 	 * The image path
@@ -116,7 +72,15 @@ abstract class Edge_Provider {
 	 * @since 4.0.0
 	 * @var string
 	 */
-	public string $path;
+	protected string $path;
+
+	/**
+	 * The args to set for images.
+	 *
+	 * @since 4.0.0
+	 * @var array<string,mixed>
+	 */
+	protected array $args = [];
 
 	/**
 	 * Create a new edge provider instance.
@@ -126,16 +90,119 @@ abstract class Edge_Provider {
 	 * @param string $path The path to the image.
 	 * @param array  $args The transformation arguments.
 	 */
-	public function __construct( string $path, array $args = [] ) {
+	final public function __construct(string $path, array $args = []) {
 		$this->path = $path;
-		$this->args = $args;
+		$this->args = $this->validate_args($args);
+		$this->normalize_args();
+	}
 
-		global $content_width;
-		if ( ! $content_width ) {
-			$content_width = 600;
+	/**
+	 * Get the URL pattern used to identify transformed images.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return string The URL pattern.
+	 */
+	abstract public static function get_url_pattern(): string;
+
+	/**
+	 * Get the edge URL for the image.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return string The transformed edge URL.
+	 */
+	abstract public function get_edge_url(): string;
+
+	/**
+	 * Get default edge transformation arguments.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return array<string,mixed> The default arguments.
+	 */
+	final public function get_default_args(): array {
+		return $this->default_edge_args;
+	}
+
+	/**
+	 * Get all valid edge arguments.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return array<string,array|null> Array of all valid arguments and their aliases.
+	 */
+	final public static function get_valid_args(): array {
+		return self::$valid_args;
+	}
+
+	/**
+	 * Validate transformation arguments.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @param array $args The arguments to validate.
+	 * @return array Validated arguments.
+	 */
+	protected function validate_args(array $args): array {
+		$validated = [];
+		foreach ($args as $key => $value) {
+			$canonical = self::get_canonical_arg($key);
+			if ($canonical && $this->is_valid_value($canonical, $value)) {
+				$validated[$canonical] = $value;
+			}
+		}
+		return $validated;
+	}
+
+	/**
+	 * Check if a value is valid for a given argument.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @param string $arg   The argument name.
+	 * @param mixed  $value The value to check.
+	 * @return bool Whether the value is valid.
+	 */
+	protected function is_valid_value(string $arg, $value): bool {
+		switch ($arg) {
+			case 'w':
+			case 'h':
+				return is_numeric($value) && $value > 0;
+			case 'dpr':
+				return is_numeric($value) && $value >= 1 && $value <= 3;
+			case 'q':
+				return is_numeric($value) && $value >= 1 && $value <= 100;
+			case 'fit':
+				return in_array($value, ['scale-down', 'contain', 'cover', 'crop', 'pad'], true);
+			case 'g':
+				return in_array($value, ['auto', 'north', 'south', 'east', 'west', 'center'], true);
+			default:
+				return true;
+		}
+	}
+
+	/**
+	 * Normalize argument values.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return void
+	 */
+	private function normalize_args(): void {
+		$normalized = [];
+		
+		foreach ($this->args as $key => $value) {
+			$canonical = self::get_canonical_arg($key);
+			if ($canonical) {
+				// Map the value if needed, but only if it's not null
+				$normalized[$canonical] = $value !== null ? self::get_mapped_value($canonical, (string)$value) : null;
+			}
 		}
 
-		$this->normalize_args();
+		$this->args = array_filter($normalized, function($value) {
+			return $value !== null && $value !== '';
+		});
 	}
 
 	/**
@@ -170,69 +237,6 @@ abstract class Edge_Provider {
 		ksort($args);
 
 		return $args;
-	}
-
-	/**
-	 * Normalize argument values.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return void
-	 */
-	private function normalize_args(): void {
-		$normalized = [];
-		
-		foreach ($this->args as $key => $value) {
-			$canonical = self::get_canonical_arg($key);
-			if ($canonical) {
-				// Map the value if needed, but only if it's not null
-				$normalized[$canonical] = $value !== null ? self::get_mapped_value($canonical, (string)$value) : null;
-			}
-		}
-
-		$this->args = array_filter($normalized, function($value) {
-			return $value !== null && $value !== '';
-		});
-	}
-
-	/**
-	 * Get the URL pattern used to identify transformed images.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return string The URL pattern.
-	 */
-	abstract public static function get_url_pattern(): string;
-
-	/**
-	 * Get the edge URL for the image.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return string The transformed edge URL.
-	 */
-	abstract public function get_edge_url(): string;
-
-	/**
-	 * Get default edge transformation arguments.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return array<string,mixed> The default arguments.
-	 */
-	public function get_default_args(): array {
-		return $this->default_edge_args;
-	}
-
-	/**
-	 * Get all valid edge arguments.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return array<string,array|null> Array of all valid arguments and their aliases.
-	 */
-	public static function get_valid_args(): array {
-		return self::$valid_args;
 	}
 
 	/**
