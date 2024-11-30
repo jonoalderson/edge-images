@@ -600,19 +600,63 @@ class Handler {
 		// Get full size URL
 		$full_src = $this->get_full_size_url($src, $attachment_id);
 
-		// Get the requested size from classes
-		$classes = $processor->get_attribute('class') ?? '';
-		$size_match = [];
-		if (preg_match('/size-([\w-]+)/', $classes, $size_match)) {
-			$size = $size_match[1];
-			$size_dimensions = $this->get_size_dimensions($size, $attachment_id);
-			if ($size_dimensions) {
-				$dimensions = $size_dimensions;
-				// Store original dimensions before any constraining
-				$original_dimensions = $size_dimensions;
+		// Initialize original dimensions with current dimensions
+		$original_dimensions = $dimensions;
+
+		// Extract size from original HTML first
+		$size = null;
+
+		// First try to get size from URL dimensions
+		if (preg_match('/-(\d+)x(\d+)\.(jpg|jpeg|png|gif|webp)$/', $src, $url_matches)) {
+			$width = (int)$url_matches[1];
+			$height = (int)$url_matches[2];
+			
+			// Get registered sizes to find a match
+			$registered_sizes = wp_get_registered_image_subsizes();
+			foreach ($registered_sizes as $size_name => $size_data) {
+				if ($size_data['width'] == $width && $size_data['height'] == $height) {
+					$size = $size_name;
+					break;
+				}
 			}
-		} else {
-			$original_dimensions = $dimensions;
+		}
+
+		// If no size found in URL, try classes
+		if (!$size) {
+			if (preg_match('/class=["\']([^"\']*)["\']/', $original_html, $class_matches)) {
+				$classes = $class_matches[1];
+				if (preg_match('/size-([\w-]+)/', $classes, $size_match)) {
+					$size = $size_match[1];
+				}
+			}
+		}
+
+		// If still no size found, try current classes
+		if (!$size) {
+			$classes = $processor->get_attribute('class') ?? '';
+			if (preg_match('/size-([\w-]+)/', $classes, $size_match)) {
+				$size = $size_match[1];
+			}
+		}
+
+		// If we found a size, get its dimensions
+		if ($size) {
+			// Get registered image sizes
+			$registered_sizes = wp_get_registered_image_subsizes();
+			
+			// If this is a registered size, use its dimensions
+			if (isset($registered_sizes[$size])) {
+				$dimensions = [
+					'width' => (int) $registered_sizes[$size]['width'],
+					'height' => (int) $registered_sizes[$size]['height']
+				];
+				
+				// Update original dimensions to match registered size
+				$original_dimensions = $dimensions;
+				
+				// Set fit mode based on crop setting
+				$fit = $registered_sizes[$size]['crop'] ? 'cover' : 'contain';
+			}
 		}
 
 		// Determine if we should constrain the image
@@ -632,9 +676,10 @@ class Handler {
 		$edge_args = array_merge(
 			$provider->get_default_args(),
 			array_filter([
-				'width' => $dimensions['width'], // Use constrained dimensions when appropriate
+				'width' => $dimensions['width'],
 				'height' => $dimensions['height'],
 				'dpr' => 1,
+				'fit' => $fit ?? 'cover', // Use the fit mode we determined from registered size
 			])
 		);
 		
