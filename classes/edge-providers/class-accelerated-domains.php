@@ -76,7 +76,7 @@ class Accelerated_Domains extends Edge_Provider {
 	/**
 	 * Get full transformation arguments with full parameter names.
 	 *
-	 * @return array The transformation arguments with full names.
+	 * @return array The transformation arguments.
 	 */
 	private function get_full_transform_args(): array {
 		$args = $this->get_transform_args();
@@ -90,9 +90,6 @@ class Accelerated_Domains extends Edge_Provider {
 					break;
 				case 'h':
 					$full_args['height'] = $value;
-					break;
-				case 'g':
-					$full_args['gravity'] = $value;
 					break;
 				default:
 					$full_args[$key] = $value;
