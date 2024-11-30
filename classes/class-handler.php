@@ -1182,9 +1182,11 @@ class Handler {
 		}
 
 		// Try getting the dimensions from the image file.
-		$dimensions = $this->get_dimensions_from_image_file( $src );
-		if ( $dimensions ) {
-			return $dimensions;
+		if ($src) {
+			$dimensions = $this->get_dimensions_from_image_file( $src );
+			if ( $dimensions ) {
+				return $dimensions;
+			}
 		}
 		
 		return null;

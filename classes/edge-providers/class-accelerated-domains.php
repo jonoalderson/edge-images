@@ -51,9 +51,9 @@ class Accelerated_Domains extends Edge_Provider {
 			$edge_prefix,
 			$this->path,
 			http_build_query(
-				$this->get_transform_args(),
+				$this->get_full_transform_args(),
 				'',
-				'|'
+				'&'
 			)
 		);
 
@@ -71,5 +71,35 @@ class Accelerated_Domains extends Edge_Provider {
 	 */
 	public static function get_url_pattern(): string {
 		return self::EDGE_ROOT;
+	}
+
+	/**
+	 * Get full transformation arguments with full parameter names.
+	 *
+	 * @return array The transformation arguments with full names.
+	 */
+	private function get_full_transform_args(): array {
+		$args = $this->get_transform_args();
+
+		// Map short args to full names
+		$full_args = [];
+		foreach ($args as $key => $value) {
+			switch ($key) {
+				case 'w':
+					$full_args['width'] = $value;
+					break;
+				case 'h':
+					$full_args['height'] = $value;
+					break;
+				case 'g':
+					$full_args['gravity'] = $value;
+					break;
+				default:
+					$full_args[$key] = $value;
+					break;
+			}
+		}
+
+		return $full_args;
 	}
 }

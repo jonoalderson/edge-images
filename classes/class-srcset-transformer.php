@@ -125,6 +125,11 @@ class Srcset_Transformer {
         $widths = array_unique($widths);
         sort($widths);
 
+        // If only one width, set dpr to 2.
+        if (count($widths) === 1) {
+            $transform_args['dpr'] = 2;
+        }
+
         // Get the original URL from the upload path.
         $upload_dir = wp_get_upload_dir();
         $upload_path = str_replace(site_url('/'), '', $upload_dir['baseurl']);
