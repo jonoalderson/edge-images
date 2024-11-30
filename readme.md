@@ -17,24 +17,6 @@ A WordPress plugin which automatically uses an edge transformation service (e.g.
 - Gutenberg: Full support for image blocks
 - Classic Editor: Full support
 
-## Browser Support
-The plugin generates standard HTML5 markup that works in all modern browsers. The `<picture>` element is supported in:
-- Chrome 38+
-- Firefox 38+
-- Safari 9.1+
-- Edge 13+
-- Opera 25+
-- iOS Safari 9.3+
-- Android Chrome 38+
-
-## Security & Performance
-- Original images remain untouched and secure
-- No local processing means no server load
-- Edge providers handle caching automatically
-- All transformations are URL-based
-- No database modifications
-- No filesystem modifications
-
 ## Credits
 - Author: Jono Alderson
 
