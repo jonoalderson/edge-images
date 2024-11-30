@@ -130,7 +130,7 @@ echo wp_get_attachment_image(
         'fit' => 'contain',
         'gravity' => 'center',
         'quality' => 90,
-        'sharpen' => 10
+        'sharpen' => 1
     ]
 );
 ```
