@@ -6,19 +6,14 @@ A WordPress plugin which automatically uses an edge transformation service (e.g.
 - Smart `srcset` generation for responsive images
 - Support for multiple CDN/edge providers
 - Automatic WebP/AVIF conversion (provider dependent)
-- Yoast SEO integration for meta images
 - No local image processing required
-- No additional server load
 - Maintains original images
+- Yoast SEO integration for meta images, schema, and XML sitemaps
 
-## Version Compatibility
-- WordPress: 5.6 or higher
-- PHP: 7.4 or higher
-- Gutenberg: Full support for image blocks
-- Classic Editor: Full support
-
-## Credits
-- Author: Jono Alderson
+## Installation
+1. Upload the plugin files to `/wp-content/plugins/edge-images/`
+2. Activate the plugin through the 'Plugins' screen in WordPress
+3. Go to Settings > Edge Images to configure your provider
 
 ## Description
 Edge Images filters image blocks and template functions (such as `wp_get_attachment_image()` and `get_the_post_thumbnail()`), and:
@@ -143,11 +138,6 @@ This will output an 800x600 image that:
 
 All parameters are optional and will use sensible defaults if not specified.
 
-## Installation
-1. Upload the plugin files to `/wp-content/plugins/edge-images/`
-2. Activate the plugin through the 'Plugins' screen in WordPress
-3. Go to Settings > Edge Images to configure your provider
-
 ## Provider-Specific Configuration
 
 ### Cloudflare
@@ -181,9 +171,6 @@ All parameters are optional and will use sensible defaults if not specified.
 - `edge_images_min_width` (`int`): Minimum width for generated images. Defaults to 300.
 - `edge_images_quality` (`int`): Default JPEG/WebP quality. Defaults to 85.
 
-### Performance
-- `edge_images_preloads` (`array`): Array of image IDs and sizes to preload.
-
 ## Troubleshooting
 
 ### Images Not Transforming
@@ -191,11 +178,6 @@ All parameters are optional and will use sensible defaults if not specified.
 2. Verify that image resizing is enabled in your provider's dashboard
 3. Check the browser console for any JavaScript errors
 4. Try disabling other image optimization plugins
-
-### Performance Issues
-1. Consider enabling browser caching for transformed images
-2. Use the `edge_images_preloads` filter for critical images
-3. Adjust quality settings for better compression
 
 ### Common Issues
 - **404 Errors**: Ensure your provider's image transformation service is properly enabled

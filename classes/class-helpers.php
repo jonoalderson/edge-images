@@ -116,8 +116,13 @@ class Helpers {
 	 * @return string      The modified URL.
 	 */
 	public static function edge_src( string $src, array $args ): string {
-		// Don't transform SVGs.
-		if ( self::is_svg( $src ) ) {
+		// Skip SVGs and AVIFs
+		if (preg_match('/\.(svg|avif)$/i', $src)) {
+			return $src;
+		}
+
+		// Bail if we shouldn't transform the src.
+		if (!self::should_transform_url($src)) {
 			return $src;
 		}
 
@@ -295,5 +300,70 @@ class Helpers {
 			self::$url_pattern_cache[$provider_name] = $provider_class::get_url_pattern();
 		}
 		return self::$url_pattern_cache[$provider_name];
+	}
+
+	/**
+	 * Check if we should transform an image URL.
+	 *
+	 * @param string $url The image URL to check.
+	 * @return bool Whether we should transform the image.
+	 */
+	public static function should_transform_url(string $url): bool {
+		// Skip if no URL
+		if (!$url) {
+			return false;
+		}
+
+		// Skip if already transformed
+		if (self::is_transformed_url($url)) {
+			return false;
+		}
+
+		// Skip external URLs
+		if (!self::is_local_url($url)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if a URL has already been transformed by an edge provider.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param string $url The URL to check.
+	 * @return bool Whether the URL has been transformed.
+	 */
+	public static function is_transformed_url(string $url): bool {
+		// Get current provider
+		$provider = self::get_provider_name();
+		
+		// If no provider selected, URL can't be transformed
+		if ($provider === 'none') {
+			return false;
+		}
+
+		// Get the provider's URL pattern
+		$pattern = self::get_provider_url_pattern($provider);
+		
+		// Check if URL contains the provider's pattern
+		return strpos($url, $pattern) !== false;
+	}
+
+	/**
+	 * Check if a URL is local to the current site.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param string $url The URL to check.
+	 * @return bool Whether the URL is local.
+	 */
+	public static function is_local_url(string $url): bool {
+		$site_url = site_url();
+		$upload_url = wp_get_upload_dir()['baseurl'];
+		
+		// Check if URL starts with site URL or uploads URL
+		return strpos($url, $site_url) === 0 || strpos($url, $upload_url) === 0;
 	}
 }

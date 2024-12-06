@@ -2,15 +2,24 @@
 .edge-images-container {
 	display: block;
 	position: relative;
-	max-width: min(var(--max-width, 100%), var(--wp--style--global--content-size, 100%));
-	margin-inline: auto;
-	
+	max-width: ~"min(var(--max-width, 100%), var(--wp--style--global--content-size, 100%))";
+	align-content: center;
+
 	img {
-		height: auto;
 		display: block;
 		max-width: 100%;
+		max-height: 100%;
+		height: auto;
+		margin: auto;
+		
+		// SVGs are a sometimes headache.
+		&[src$=".svg"] {
+			height: 100%;
+			aspect-ratio: auto;
+		}
+		
 	}
-
+	
 	&.contain {
 		 img {
 			object-fit: contain;
