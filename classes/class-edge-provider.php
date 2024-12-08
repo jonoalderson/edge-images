@@ -39,7 +39,7 @@ abstract class Edge_Provider {
 		'brightness' => null,         // Adjust brightness (-100 to 100)
 		'contrast' => null,          // Adjust contrast (-100 to 100)
 		'gamma' => null,             // Adjust gamma (1-100)
-		'sharpen' => null,          // Sharpen radius (1-100)
+		'sharpen' => null,           // Sharpen amount (1-10)
 		'trim' => null,             // Trim edges by color (1-100)
 		
 		// Background and border

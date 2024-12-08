@@ -56,7 +56,7 @@ class Admin_Page {
 	 * @since 4.1.0
 	 * @var string
 	 */
-	private const YOAST_SCHEMA_OPTION = 'edge_images_yoast_disable_schema_images';
+	private const YOAST_SCHEMA_OPTION = 'edge_images_yoast_schema_images';
 
 	/**
 	 * The Yoast SEO social integration option name.
@@ -64,7 +64,7 @@ class Admin_Page {
 	 * @since 4.1.0
 	 * @var string
 	 */
-	private const YOAST_SOCIAL_OPTION = 'edge_images_yoast_disable_social_images';
+	private const YOAST_SOCIAL_OPTION = 'edge_images_yoast_social_images';
 
 	/**
 	 * The Yoast SEO sitemap integration option name.
@@ -72,7 +72,7 @@ class Admin_Page {
 	 * @since 4.1.0
 	 * @var string
 	 */
-	private const YOAST_SITEMAP_OPTION = 'edge_images_yoast_disable_xml_sitemap_images';
+	private const YOAST_SITEMAP_OPTION = 'edge_images_yoast_xml_sitemap_images';
 
 	/**
 	 * The max width option name.
@@ -81,6 +81,14 @@ class Admin_Page {
 	 * @var string
 	 */
 	private const MAX_WIDTH_OPTION = 'edge_images_max_width';
+
+	/**
+	 * The integrations section ID.
+	 *
+	 * @since 4.2.0
+	 * @var string
+	 */
+	private const INTEGRATIONS_SECTION = 'edge_images_integrations_section';
 
 	/**
 	 * Registers the admin page and its hooks.
@@ -173,9 +181,9 @@ class Admin_Page {
 			self::YOAST_SCHEMA_OPTION,
 			[
 				'type'              => 'boolean',
-				'description'       => __( 'Disable Yoast SEO schema image optimization', 'edge-images' ),
+				'description'       => __( 'Enable Yoast SEO schema image optimization', 'edge-images' ),
 				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => false,
+				'default'          => true,
 			]
 		);
 
@@ -184,9 +192,9 @@ class Admin_Page {
 			self::YOAST_SOCIAL_OPTION,
 			[
 				'type'              => 'boolean',
-				'description'       => __( 'Disable Yoast SEO social image optimization', 'edge-images' ),
+				'description'       => __( 'Enable Yoast SEO social image optimization', 'edge-images' ),
 				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => false,
+				'default'          => true,
 			]
 		);
 
@@ -195,9 +203,9 @@ class Admin_Page {
 			self::YOAST_SITEMAP_OPTION,
 			[
 				'type'              => 'boolean',
-				'description'       => __( 'Disable Yoast SEO sitemap image optimization', 'edge-images' ),
+				'description'       => __( 'Enable Yoast SEO sitemap image optimization', 'edge-images' ),
 				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => false,
+				'default'          => true,
 			]
 		);
 
@@ -249,15 +257,6 @@ class Admin_Page {
 			[ 'class' => 'edge-images-imgix-field' ]
 		);
 
-		// Add Yoast SEO integration settings field.
-		add_settings_field(
-			'edge_images_yoast_integrations',
-			__( 'Yoast SEO Integration', 'edge-images' ),
-			[ self::class, 'render_yoast_integration_fields' ],
-			'edge_images',
-			'edge_images_main_section'
-		);
-
 		// Add max width field.
 		add_settings_field(
 			'edge_images_max_width',
@@ -265,6 +264,14 @@ class Admin_Page {
 			[ self::class, 'render_max_width_field' ],
 			'edge_images',
 			'edge_images_main_section'
+		);
+
+		// Add integrations section
+		add_settings_section(
+			self::INTEGRATIONS_SECTION,
+			__( 'Active Integrations', 'edge-images' ),
+			[ self::class, 'render_integrations_section' ],
+			'edge_images'
 		);
 	}
 
@@ -502,81 +509,6 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the Yoast SEO integration fields.
-	 *
-	 * Creates checkboxes for controlling Yoast SEO integration features.
-	 *
-	 * @since 4.1.0
-	 * 
-	 * @return void
-	 */
-	public static function render_yoast_integration_fields(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		// Only show these options if Yoast SEO is active
-		if ( ! defined( 'WPSEO_VERSION' ) ) {
-			?>
-			<p class="description">
-				<?php esc_html_e( 'These settings require Yoast SEO to be installed and activated.', 'edge-images' ); ?>
-			</p>
-			<?php
-			return;
-		}
-
-		$schema_disabled = get_option( self::YOAST_SCHEMA_OPTION, false );
-		$social_disabled = get_option( self::YOAST_SOCIAL_OPTION, false );
-		$sitemap_disabled = get_option( self::YOAST_SITEMAP_OPTION, false );
-		?>
-		<div class="edge-images-settings-field">
-			<fieldset>
-				<legend class="screen-reader-text">
-					<?php esc_html_e( 'Yoast SEO Integration Settings', 'edge-images' ); ?>
-				</legend>
-
-				<p>
-					<label>
-						<input type="checkbox" 
-							name="<?php echo esc_attr( self::YOAST_SCHEMA_OPTION ); ?>" 
-							value="1" 
-							<?php checked( $schema_disabled ); ?>
-						>
-						<?php esc_html_e( 'Disable schema.org image optimization', 'edge-images' ); ?>
-					</label>
-				</p>
-
-				<p>
-					<label>
-						<input type="checkbox" 
-							name="<?php echo esc_attr( self::YOAST_SOCIAL_OPTION ); ?>" 
-							value="1" 
-							<?php checked( $social_disabled ); ?>
-						>
-						<?php esc_html_e( 'Disable social media image optimization', 'edge-images' ); ?>
-					</label>
-				</p>
-
-				<p>
-					<label>
-						<input type="checkbox" 
-							name="<?php echo esc_attr( self::YOAST_SITEMAP_OPTION ); ?>" 
-							value="1" 
-							<?php checked( $sitemap_disabled ); ?>
-						>
-						<?php esc_html_e( 'Disable XML sitemap image optimization', 'edge-images' ); ?>
-					</label>
-				</p>
-
-				<p class="description">
-					<?php esc_html_e( 'By default, Edge Images optimizes images in Yoast SEO\'s schema.org output, social media tags, and XML sitemaps. Disable any of these features if you want to preserve the original image URLs.', 'edge-images' ); ?>
-				</p>
-			</fieldset>
-		</div>
-		<?php
-	}
-
-	/**
 	 * Renders the max width field.
 	 *
 	 * Creates the input for setting the maximum image width.
@@ -601,6 +533,112 @@ class Admin_Page {
 		<p class="description">
 			<?php esc_html_e( 'Set the maximum width for images when content width is not set. Default is 650px.', 'edge-images' ); ?>
 		</p>
+		<?php
+	}
+
+	/**
+	 * Renders the integrations section.
+	 *
+	 * Shows which plugin integrations are active and available.
+	 *
+	 * @since 4.2.0
+	 * 
+	 * @return void
+	 */
+	public static function render_integrations_section(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$integrations = Integration_Manager::get_registered_integrations();
+		if ( empty( $integrations ) ) {
+			return;
+		}
+
+		?>
+		<div class="edge-images-integrations">
+			<?php foreach ( $integrations as $id => $integration ) : ?>
+				<div class="integration-card">
+					<div class="integration-header">
+						<?php if ( $integration['active'] ) : ?>
+							<span class="dashicons dashicons-yes-alt" style="color: #46B450;"></span>
+						<?php else : ?>
+							<span class="dashicons dashicons-no-alt" style="color: #DC3232;"></span>
+						<?php endif; ?>
+						<strong><?php echo esc_html( Integration_Manager::get_name( $id ) ); ?></strong>
+					</div>
+
+					<?php if ( $integration['active'] && $id === 'yoast-seo' ) : ?>
+						<div class="integration-settings">
+							<?php self::render_yoast_integration_fields(); ?>
+						</div>
+					<?php endif; ?>
+				</div>
+			<?php endforeach; ?>
+
+			<p class="description">
+				<?php esc_html_e( 'Edge Images automatically integrates with supported plugins when they are active.', 'edge-images' ); ?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the Yoast SEO integration fields.
+	 *
+	 * Creates checkboxes for controlling Yoast SEO integration features.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @return void
+	 */
+	public static function render_yoast_integration_fields(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$schema_enabled = get_option( self::YOAST_SCHEMA_OPTION, true );
+		$social_enabled = get_option( self::YOAST_SOCIAL_OPTION, true );
+		$sitemap_enabled = get_option( self::YOAST_SITEMAP_OPTION, true );
+		?>
+		<fieldset>
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="<?php echo esc_attr( self::YOAST_SCHEMA_OPTION ); ?>" 
+						value="1" 
+						<?php checked( $schema_enabled ); ?>
+					>
+					<?php esc_html_e( 'Enable schema.org image optimization', 'edge-images' ); ?>
+				</label>
+			</p>
+
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="<?php echo esc_attr( self::YOAST_SOCIAL_OPTION ); ?>" 
+						value="1" 
+						<?php checked( $social_enabled ); ?>
+					>
+					<?php esc_html_e( 'Enable social media image optimization', 'edge-images' ); ?>
+				</label>
+			</p>
+
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="<?php echo esc_attr( self::YOAST_SITEMAP_OPTION ); ?>" 
+						value="1" 
+						<?php checked( $sitemap_enabled ); ?>
+					>
+					<?php esc_html_e( 'Enable XML sitemap image optimization', 'edge-images' ); ?>
+				</label>
+			</p>
+
+			<p class="description">
+				<?php esc_html_e( 'Edge Images can optimize images in Yoast SEO\'s schema.org output, social media tags, and XML sitemaps. Enable or disable these features as needed.', 'edge-images' ); ?>
+			</p>
+		</fieldset>
 		<?php
 	}
 } 

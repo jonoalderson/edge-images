@@ -28,13 +28,22 @@ class Integration_Manager {
 	private static array $integrations = [
 		'yoast-seo' => [
 			'check'  => 'WPSEO_VERSION',
+			'type'   => 'constant',
+			'name'   => 'Yoast SEO',
 			'classes' => [
 				'Integrations\Yoast_SEO\Schema_Images',
 				'Integrations\Yoast_SEO\Social_Images',
 				'Integrations\Yoast_SEO\XML_Sitemaps',
 			],
 		],
-		// Add other integrations here as needed
+		'relevanssi-live-search' => [
+			'check'   => 'Relevanssi_Live_Search',
+			'type'    => 'class',
+			'name'    => 'Relevanssi Live Ajax Search',
+			'classes' => [
+				'Integrations\Relevanssi\Live_Ajax_Search',
+			],
+		],
 	];
 
 	/**
@@ -63,8 +72,8 @@ class Integration_Manager {
 	 * @return void
 	 */
 	private static function maybe_register_integration( string $integration, array $config ): void {
-		// Check if the required plugin/constant is present
-		if ( ! defined( $config['check'] ) ) {
+		// Check if the integration requirements are met
+		if ( ! self::check_integration_requirements( $config ) ) {
 			return;
 		}
 
@@ -74,6 +83,32 @@ class Integration_Manager {
 			if ( class_exists( $full_class ) ) {
 				$full_class::register();
 			}
+		}
+	}
+
+	/**
+	 * Check if integration requirements are met.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param array $config The integration configuration.
+	 * @return bool Whether requirements are met.
+	 */
+	private static function check_integration_requirements( array $config ): bool {
+		$type = $config['type'] ?? 'constant';
+		$check = $config['check'] ?? '';
+
+		switch ( $type ) {
+			case 'constant':
+				return defined( $check );
+			case 'class':
+				return class_exists( $check );
+			case 'function':
+				return function_exists( $check );
+			case 'callback':
+				return is_callable( $check ) && call_user_func( $check );
+			default:
+				return false;
 		}
 	}
 
@@ -92,7 +127,7 @@ class Integration_Manager {
 
 		foreach ( self::$integrations as $integration => $config ) {
 			$registered[$integration] = [
-				'active'   => defined( $config['check'] ),
+				'active'   => self::check_integration_requirements( $config ),
 				'classes'  => $config['classes'],
 			];
 		}
@@ -113,6 +148,18 @@ class Integration_Manager {
 			return false;
 		}
 
-		return defined( self::$integrations[$integration]['check'] );
+		return self::check_integration_requirements( self::$integrations[$integration] );
+	}
+
+	/**
+	 * Get human-readable integration name.
+	 *
+	 * @since 4.2.0
+	 * 
+	 * @param string $integration_id The integration identifier.
+	 * @return string The formatted integration name.
+	 */
+	public static function get_name( string $integration_id ): string {
+		return self::$integrations[$integration_id]['name'] ?? ucwords( str_replace( '-', ' ', $integration_id ) );
 	}
 } 

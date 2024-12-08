@@ -258,8 +258,8 @@ class Schema_Images {
 		}
 
 		// Bail if schema image filtering is disabled.
-		$disable_feature = apply_filters( 'edge_images_yoast_disable_schema_images', false );
-		if ( $disable_feature ) {
+		$enabled = get_option( 'edge_images_yoast_schema_images', true );
+		if ( ! $enabled ) {
 			return false;
 		}
 
@@ -271,3 +271,4 @@ class Schema_Images {
 		return true;
 	}
 }
+

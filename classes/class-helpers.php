@@ -54,6 +54,7 @@ class Helpers {
 	public static array $valid_html_attrs = [
 		'alt',
 		'class',
+		'container-class',
 		'decoding',
 		'height',
 		'id',
@@ -175,12 +176,12 @@ class Helpers {
 	 * @return bool Whether images should be transformed.
 	 */
 	public static function should_transform_images(): bool {
-		// Never transform in admin.
-		if ( is_admin() ) {
+		// Never transform in admin
+		if ( is_admin() && !wp_doing_ajax() ) {  // Allow AJAX requests
 			return false;
 		}
 
-		// Never transform in REST API or AJAX requests.
+		// Never transform in REST API requests
 		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 			return false;
 		}
@@ -189,8 +190,9 @@ class Helpers {
 			return false;
 		}
 
-		if ( wp_doing_ajax() ) {
-			return false;
+		// Allow AJAX requests for Relevanssi
+		if ( wp_doing_ajax() && isset($_REQUEST['action']) && $_REQUEST['action'] === 'relevanssi_live_search' ) {
+			return true;
 		}
 
 		// If we're debugging, always return true.
