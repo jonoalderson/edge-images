@@ -177,6 +177,22 @@ class Handler {
 			return $attr;
 		}
 
+		// Get the metadata first and validate it
+		$metadata = wp_get_attachment_metadata($attachment->ID);
+		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
+			// If metadata is invalid, try to regenerate it
+			$file = get_attached_file($attachment->ID);
+			if ($file && file_exists($file)) {
+				$metadata = wp_generate_attachment_metadata($attachment->ID, $file);
+				wp_update_attachment_metadata($attachment->ID, $metadata);
+			}
+			
+			// If we still don't have valid metadata, return original attributes
+			if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
+				return $attr;
+			}
+		}
+
 		// Check if this is an SVG
 		$is_svg = get_post_mime_type($attachment->ID) === 'image/svg+xml';
 
@@ -456,69 +472,46 @@ class Handler {
 	/**
 	 * Get dimensions for a given size
 	 */
-	private function get_size_dimensions($size, int $attachment_id): ?array {
-		// Check if this is an SVG
-		$is_svg = get_post_mime_type($attachment_id) === 'image/svg+xml';
-
-		// If size is an array, use those dimensions directly
+	private function get_size_dimensions($size, $attachment_id) {
+		// If size is array with explicit dimensions
 		if (is_array($size) && isset($size[0], $size[1])) {
 			return [
-				'width' => $size[0],
-				'height' => $size[1]
+				'width' => (int) $size[0],
+				'height' => (int) $size[1]
 			];
 		}
 
-		// If it's a string size
-		if (is_string($size)) {
-			// Get registered image sizes
-			$registered_sizes = wp_get_registered_image_subsizes();
-			
-			// Check if this is a registered size
-			if (isset($registered_sizes[$size])) {
-				$dimensions = [
-					'width' => (int) $registered_sizes[$size]['width'],
-					'height' => (int) $registered_sizes[$size]['height'],
-					'crop' => (bool) $registered_sizes[$size]['crop']
-				];
-
-				// Constrain to max content width if necessary
-				global $content_width;
-				if ($content_width && $dimensions['width'] > $content_width) {
-					$ratio = $dimensions['height'] / $dimensions['width'];
-					$dimensions['width'] = $content_width;
-					$dimensions['height'] = (int) round($content_width * $ratio);
-				}
-
-				return $dimensions;
+		// Get attachment metadata
+		$metadata = wp_get_attachment_metadata($attachment_id);
+		
+		// Validate metadata
+		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
+			// Try to regenerate metadata
+			$file = get_attached_file($attachment_id);
+			if ($file && file_exists($file)) {
+				$metadata = wp_generate_attachment_metadata($attachment_id, $file);
+				wp_update_attachment_metadata($attachment_id, $metadata);
 			}
-
-			// Try to get from attachment metadata
-			$metadata = wp_get_attachment_metadata($attachment_id);
-			if ($metadata && isset($metadata['sizes'])) {
-				if ($size === 'full') {
-					if ($is_svg) {
-						// For SVGs, use the requested width or a default
-						$width = $this->get_requested_svg_width($attachment_id);
-						$height = $width; // Default to square if no height info available
-						return [
-							'width' => $width,
-							'height' => $height
-						];
-					}
-					return [
-						'width' => $metadata['width'],
-						'height' => $metadata['height']
-					];
-				} elseif (isset($metadata['sizes'][$size])) {
-					return [
-						'width' => $metadata['sizes'][$size]['width'],
-						'height' => $metadata['sizes'][$size]['height']
-					];
-				}
+			
+			// If still invalid, return null
+			if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
+				return null;
 			}
 		}
 
-		return null;
+		// If size is a string (e.g., 'thumbnail', 'medium', etc.)
+		if (is_string($size) && isset($metadata['sizes'][$size])) {
+			return [
+				'width' => (int) $metadata['sizes'][$size]['width'],
+				'height' => (int) $metadata['sizes'][$size]['height']
+			];
+		}
+
+		// Fall back to original dimensions
+		return [
+			'width' => (int) $metadata['width'],
+			'height' => (int) $metadata['height']
+		];
 	}
 
 	/**
@@ -1840,6 +1833,27 @@ class Handler {
 			$dimensions, 
 			implode( ' ', $classes )
 		);
+	}
+
+	private function maybe_show_metadata_warning($attachment_id): void {
+		if (!is_admin() || !current_user_can('manage_options')) {
+			return;
+		}
+
+		$metadata = wp_get_attachment_metadata($attachment_id);
+		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
+			add_action('admin_notices', function() use ($attachment_id) {
+				$edit_link = get_edit_post_link($attachment_id);
+				echo '<div class="notice notice-warning">';
+				printf(
+					/* translators: %1$s: Edit link, %2$d: Attachment ID */
+					esc_html__('Edge Images: Invalid or missing metadata for attachment %2$d. Please %1$s to regenerate.', 'edge-images'),
+					sprintf('<a href="%s">%s</a>', esc_url($edit_link), esc_html__('edit the attachment', 'edge-images')),
+					$attachment_id
+				);
+				echo '</div>';
+			});
+		}
 	}
 
 }
