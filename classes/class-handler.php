@@ -180,17 +180,8 @@ class Handler {
 		// Get the metadata first and validate it
 		$metadata = wp_get_attachment_metadata($attachment->ID);
 		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
-			// If metadata is invalid, try to regenerate it
-			$file = \get_attached_file($attachment->ID);
-			if ($file && file_exists($file)) {
-				$metadata = \wp_generate_attachment_metadata($attachment->ID, $file);
-				\wp_update_attachment_metadata($attachment->ID, $metadata);
-			}
-			
-			// If we still don't have valid metadata, return original attributes
-			if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
-				return $attr;
-			}
+			// Return original attributes if metadata is invalid
+			return $attr;
 		}
 
 		// Check if this is an SVG
@@ -425,17 +416,8 @@ class Handler {
 		
 		// Validate metadata
 		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
-			// Try to regenerate metadata
-			$file = \get_attached_file($attachment_id);
-			if ($file && file_exists($file)) {
-				$metadata = \wp_generate_attachment_metadata($attachment_id, $file);
-				\wp_update_attachment_metadata($attachment_id, $metadata);
-			}
-			
-			// If still invalid, return null
-			if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
-				return null;
-			}
+			// Return null if metadata is invalid
+			return null;
 		}
 
 		// If size is a string (e.g., 'thumbnail', 'medium', etc.)
