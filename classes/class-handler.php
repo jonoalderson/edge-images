@@ -404,7 +404,26 @@ class Handler {
 	 */
 	private function get_size_dimensions($size, $attachment_id) {
 		// If size is array with explicit dimensions
-		if (is_array($size) && isset($size[0], $size[1])) {
+		if (is_array($size)) {
+			// Ensure we have both dimensions
+			if (!isset($size[0]) || !isset($size[1])) {
+				// Get original dimensions to calculate missing dimension
+				$metadata = wp_get_attachment_metadata($attachment_id);
+				if ($metadata && isset($metadata['width'], $metadata['height'])) {
+					$ratio = $metadata['height'] / $metadata['width'];
+					if (!isset($size[0])) {
+						$size[0] = round($size[1] / $ratio);
+					}
+					if (!isset($size[1])) {
+						$size[1] = round($size[0] * $ratio);
+					}
+				} else {
+					// If we can't calculate, use defaults
+					$size[0] = $size[0] ?? 150;
+					$size[1] = $size[1] ?? 150;
+				}
+			}
+
 			return [
 				'width' => (int) $size[0],
 				'height' => (int) $size[1]
