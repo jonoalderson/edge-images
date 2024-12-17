@@ -177,13 +177,6 @@ class Handler {
 			return $attr;
 		}
 
-		// Get the metadata first and validate it
-		$metadata = wp_get_attachment_metadata($attachment->ID);
-		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
-			// Return original attributes if metadata is invalid
-			return $attr;
-		}
-
 		// Check if this is an SVG
 		$is_svg = get_post_mime_type($attachment->ID) === 'image/svg+xml';
 
@@ -197,11 +190,27 @@ class Handler {
 		}
 
 		// First priority: Check if size is an array with explicit dimensions
-		if (is_array($size) && isset($size[0], $size[1])) {
+		if (is_array($size)) {
+			// Ensure both dimensions are set with fallbacks
 			$dimensions = [
-				'width' => (int) $size[0],
-				'height' => (int) $size[1]
+				'width' => isset($size[0]) ? (int) $size[0] : 0,
+				'height' => isset($size[1]) ? (int) $size[1] : 0
 			];
+			
+			// If either dimension is 0, try to calculate it based on the other
+			if ($dimensions['width'] === 0 || $dimensions['height'] === 0) {
+				$original_dimensions = Image_Dimensions::from_attachment($attachment->ID);
+				if ($original_dimensions) {
+					$ratio = (int) $original_dimensions['height'] / (int) $original_dimensions['width'];
+					
+					if ($dimensions['width'] === 0) {
+						$dimensions['width'] = round($dimensions['height'] / $ratio);
+					}
+					if ($dimensions['height'] === 0) {
+						$dimensions['height'] = round($dimensions['width'] * $ratio);
+					}
+				}
+			}
 			
 			// Set transform args for explicit dimensions, preserving user-specified fit
 			$transform_args = array_merge(
@@ -400,58 +409,87 @@ class Handler {
 	}
 
 	/**
+	 * Extract transformation arguments from attributes.
+	 *
+	 * @param array $attr The attributes array.
+	 * @return array The transformation arguments.
+	 */
+	private function extract_transform_args(array $attr): array {
+		$valid_args = Edge_Provider::get_valid_args();
+		$all_valid_args = array_merge(
+			array_keys($valid_args),
+			array_merge(...array_filter(array_values($valid_args)))
+		);
+		
+		return array_intersect_key($attr, array_flip($all_valid_args));
+	}
+
+	/**
 	 * Get dimensions for a given size
 	 */
-	private function get_size_dimensions($size, $attachment_id) {
-		// If size is array with explicit dimensions
-		if (is_array($size)) {
-			// Ensure we have both dimensions
-			if (!isset($size[0]) || !isset($size[1])) {
-				// Get original dimensions to calculate missing dimension
-				$metadata = wp_get_attachment_metadata($attachment_id);
-				if ($metadata && isset($metadata['width'], $metadata['height'])) {
-					$ratio = (float) $metadata['height'] / (float) $metadata['width'];
-					if (!isset($size[0])) {
-						$size[0] = round((float) $size[1] / $ratio);
-					}
-					if (!isset($size[1])) {
-						$size[1] = round((float) $size[0] * $ratio);
-					}
-				} else {
-					// If we can't calculate, use defaults
-					$size[0] = $size[0] ?? 150;
-					$size[1] = $size[1] ?? 150;
+	private function get_size_dimensions($size, int $attachment_id): ?array {
+		// Check if this is an SVG
+		$is_svg = get_post_mime_type($attachment_id) === 'image/svg+xml';
+
+		// If size is an array, use those dimensions directly
+		if (is_array($size) && isset($size[0], $size[1])) {
+			return [
+				'width' => $size[0],
+				'height' => $size[1]
+			];
+		}
+
+		// If it's a string size
+		if (is_string($size)) {
+			// Get registered image sizes
+			$registered_sizes = wp_get_registered_image_subsizes();
+			
+			// Check if this is a registered size
+			if (isset($registered_sizes[$size])) {
+				$dimensions = [
+					'width' => (int) $registered_sizes[$size]['width'],
+					'height' => (int) $registered_sizes[$size]['height'],
+					'crop' => (bool) $registered_sizes[$size]['crop']
+				];
+
+				// Constrain to max content width if necessary
+				global $content_width;
+				if ($content_width && $dimensions['width'] > $content_width) {
+					$ratio = $dimensions['height'] / $dimensions['width'];
+					$dimensions['width'] = $content_width;
+					$dimensions['height'] = (int) round($content_width * $ratio);
 				}
+
+				return $dimensions;
 			}
 
-			return [
-				'width' => (int) $size[0],
-				'height' => (int) $size[1]
-			];
+			// Try to get from attachment metadata
+			$metadata = wp_get_attachment_metadata($attachment_id);
+			if ($metadata && isset($metadata['sizes'])) {
+				if ($size === 'full') {
+					if ($is_svg) {
+						// For SVGs, use the requested width or a default
+						$width = $this->get_requested_svg_width($attachment_id);
+						$height = $width; // Default to square if no height info available
+						return [
+							'width' => $width,
+							'height' => $height
+						];
+					}
+					return [
+						'width' => $metadata['width'],
+						'height' => $metadata['height']
+					];
+				} elseif (isset($metadata['sizes'][$size])) {
+					return [
+						'width' => $metadata['sizes'][$size]['width'],
+						'height' => $metadata['sizes'][$size]['height']
+					];
+				}
+			}
 		}
 
-		// Get attachment metadata
-		$metadata = wp_get_attachment_metadata($attachment_id);
-		
-		// Validate metadata
-		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
-			// Return null if metadata is invalid
-			return null;
-		}
-
-		// If size is a string (e.g., 'thumbnail', 'medium', etc.)
-		if (is_string($size) && isset($metadata['sizes'][$size])) {
-			return [
-				'width' => (int) $metadata['sizes'][$size]['width'],
-				'height' => (int) $metadata['sizes'][$size]['height']
-			];
-		}
-
-		// Fall back to original dimensions
-		return [
-			'width' => (int) $metadata['width'],
-			'height' => (int) $metadata['height']
-		];
+		return null;
 	}
 
 	/**
