@@ -410,12 +410,12 @@ class Handler {
 				// Get original dimensions to calculate missing dimension
 				$metadata = wp_get_attachment_metadata($attachment_id);
 				if ($metadata && isset($metadata['width'], $metadata['height'])) {
-					$ratio = $metadata['height'] / $metadata['width'];
+					$ratio = (float) $metadata['height'] / (float) $metadata['width'];
 					if (!isset($size[0])) {
-						$size[0] = round($size[1] / $ratio);
+						$size[0] = round((float) $size[1] / $ratio);
 					}
 					if (!isset($size[1])) {
-						$size[1] = round($size[0] * $ratio);
+						$size[1] = round((float) $size[0] * $ratio);
 					}
 				} else {
 					// If we can't calculate, use defaults
