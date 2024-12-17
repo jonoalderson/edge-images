@@ -80,6 +80,14 @@ class Helpers {
 	private static array $url_pattern_cache = [];
 
 	/**
+	 * Cache group for all operations in the plugin.
+	 *
+	 * @since 4.1.0
+	 * @var string
+	 */
+	public const CACHE_GROUP = 'edge_images';
+
+	/**
 	 * Get the configured edge provider name.
 	 *
 	 * Retrieves the provider name from options and validates it.
@@ -367,5 +375,51 @@ class Helpers {
 		
 		// Check if URL starts with site URL or uploads URL
 		return strpos($url, $site_url) === 0 || strpos($url, $upload_url) === 0;
+	}
+
+	/**
+	 * Get the attachment ID from a URL, with caching.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param string $url The image URL.
+	 * @return int|null The attachment ID or null if not found.
+	 */
+	public static function get_attachment_id( string $url ): ?int {
+		// Remove query string for attachment lookup
+		$clean_url = preg_replace('/\?.*/', '', $url);
+
+		// Try to get cached attachment ID
+		$cache_key = 'attachment_' . md5($clean_url);
+		$image_id = wp_cache_get($cache_key, self::CACHE_GROUP);
+
+		if (false === $image_id) {
+			// Cache miss - look up the attachment ID
+			$image_id = attachment_url_to_postid($clean_url);
+			
+			// Cache the result (even if it's 0)
+			wp_cache_set($cache_key, $image_id, self::CACHE_GROUP, 3600);
+		}
+
+		return $image_id ?: null;
+	}
+
+	/**
+	 * Get image dimensions with caching.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param int $image_id The attachment ID.
+	 * @return array|null The dimensions or null if not found.
+	 */
+	public static function get_image_dimensions( int $image_id ): ?array {
+		static $dimension_cache = [];
+
+		// Get dimensions from static cache first
+		if (!isset($dimension_cache[$image_id])) {
+			$dimension_cache[$image_id] = Image_Dimensions::from_attachment($image_id);
+		}
+
+		return $dimension_cache[$image_id] ?: null;
 	}
 }
