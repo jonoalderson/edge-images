@@ -409,67 +409,6 @@ class Handler {
 	}
 
 	/**
-	 * Extract transformation arguments from attributes.
-	 *
-	 * @param array $attr The attributes array.
-	 * @return array The transformation arguments.
-	 */
-	private function extract_transform_args(array $attr): array {
-		$valid_args = Edge_Provider::get_valid_args();
-		$all_valid_args = array_merge(
-			array_keys($valid_args),
-			array_merge(...array_filter(array_values($valid_args)))
-		);
-		
-		return array_intersect_key($attr, array_flip($all_valid_args));
-	}
-
-	/**
-	 * Normalize transformation arguments
-	 *
-	 * @param array $args The transformation arguments.
-	 * 
-	 * @return array Normalized arguments
-	 */
-	private function normalize_transform_args(array $args): array {
-		if (empty($args)) {
-			return [];
-		}
-
-		// Convert long-form parameters to short-form
-		$conversions = [
-			'gravity' => 'g',
-			'quality' => 'q',
-			'format' => 'f',
-		];
-
-		$normalized = [];
-		foreach ($args as $key => $value) {
-			// Convert long form to short form if applicable
-			$normalized_key = $conversions[$key] ?? $key;
-			$normalized[$normalized_key] = $value;
-		}
-
-		// Handle special values
-		if (isset($normalized['g'])) {
-			// Convert common gravity values
-			$gravity_map = [
-				'top' => 'north',
-				'bottom' => 'south',
-				'left' => 'west',
-				'right' => 'east',
-				'center' => 'center',
-			];
-			$normalized['g'] = $gravity_map[$normalized['g']] ?? $normalized['g'];
-		}
-
-		// Remove any null or empty values
-		return array_filter($normalized, function($value) {
-			return !is_null($value) && $value !== '';
-		});
-	}
-
-	/**
 	 * Get dimensions for a given size
 	 */
 	private function get_size_dimensions($size, $attachment_id) {
@@ -1833,27 +1772,6 @@ class Handler {
 			$dimensions, 
 			implode( ' ', $classes )
 		);
-	}
-
-	private function maybe_show_metadata_warning($attachment_id): void {
-		if (!is_admin() || !current_user_can('manage_options')) {
-			return;
-		}
-
-		$metadata = wp_get_attachment_metadata($attachment_id);
-		if (!$metadata || !isset($metadata['width'], $metadata['height'])) {
-			add_action('admin_notices', function() use ($attachment_id) {
-				$edit_link = get_edit_post_link($attachment_id);
-				echo '<div class="notice notice-warning">';
-				printf(
-					/* translators: %1$s: Edit link, %2$d: Attachment ID */
-					esc_html__('Edge Images: Invalid or missing metadata for attachment %2$d. Please %1$s to regenerate.', 'edge-images'),
-					sprintf('<a href="%s">%s</a>', esc_url($edit_link), esc_html__('edit the attachment', 'edge-images')),
-					$attachment_id
-				);
-				echo '</div>';
-			});
-		}
 	}
 
 }
