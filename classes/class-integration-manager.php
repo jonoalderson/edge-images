@@ -44,6 +44,15 @@ class Integration_Manager {
 				'Integrations\Relevanssi\Live_Ajax_Search',
 			],
 		],
+		'enable-media-replace' => [
+			'class' => Integrations\Enable_Media_Replace\Enable_Media_Replace::class,
+			'check' => 'EMR_VERSION',
+			'type' => 'constant',
+			'name' => 'Enable Media Replace',
+			'classes' => [
+				'Integrations\Enable_Media_Replace\Enable_Media_Replace',
+			],
+		],
 	];
 
 	/**

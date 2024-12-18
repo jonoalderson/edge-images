@@ -28,6 +28,7 @@ class Live_Ajax_Search {
 	 * @return void
 	 */
 	public static function register(): void {
+		
 		// Prevent multiple registrations.
 		if ( self::$registered ) {
 			return;

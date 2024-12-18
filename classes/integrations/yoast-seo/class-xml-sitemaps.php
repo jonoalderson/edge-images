@@ -22,6 +22,14 @@ use Edge_Images\{Helpers, Image_Dimensions};
 class XML_Sitemaps {
 
 	/**
+	 * Cached result of should_filter check.
+	 *
+	 * @since 4.1.0
+	 * @var bool|null
+	 */
+	private static $should_filter = null;
+
+	/**
 	 * The width value to use for sitemap images.
 	 *
 	 * @since 4.0.0
@@ -38,6 +46,14 @@ class XML_Sitemaps {
 	public const IMAGE_HEIGHT = 675;
 
 	/**
+	 * Whether the integration has been registered.
+	 *
+	 * @since 4.5.0
+	 * @var bool
+	 */
+	private static bool $registered = false;
+
+	/**
 	 * Register the integration.
 	 *
 	 * Sets up filters to transform image URLs in XML sitemaps.
@@ -47,18 +63,31 @@ class XML_Sitemaps {
 	 * @return void
 	 */
 	public static function register(): void {
-		$instance = new self();
-
-		if ( ! $instance->should_filter() ) {
+		
+		// Prevent double registration.
+		if (self::$registered) {
 			return;
 		}
+
+		$instance = new self();
+
+		// Use cached result if available.
+		if ( null === self::$should_filter ) {
+			self::$should_filter = $instance->should_filter();
+		}
+
+		// Bail if these filters shouldn't run.
+		if ( ! self::$should_filter ) {
+			return;
+		}
+
 
 		add_filter( 'wpseo_sitemap_url_images', [ $instance, 'transform_sitemap_images' ], 10, 2 );
 		add_filter( 'wpseo_sitemap_entry', [ $instance, 'transform_sitemap_entry' ], 10, 3 );
 		add_action( 'wpseo_sitemap_entries', [ $instance, 'debug_sitemap_entries' ], 10, 2 );
 		add_action( 'wpseo_sitemap_content', [ $instance, 'debug_sitemap_content' ], 10, 2 );
 
-		$instance->test_transformation();
+		self::$registered = true;
 	}
 
 	/**
@@ -231,20 +260,4 @@ class XML_Sitemaps {
 		return $url;
 	}
 
-	/**
-	 * Test transformation functionality.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return void
-	 */
-	private function test_transformation(): void {
-		$test_url = site_url('/wp-content/uploads/2024/11/test.jpg');
-		$args = [
-			'width'  => self::IMAGE_WIDTH,
-			'height' => self::IMAGE_HEIGHT,
-			'fit'    => 'contain',
-		];
-		Helpers::edge_src($test_url, $args);
-	}
 }

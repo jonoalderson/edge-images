@@ -278,4 +278,25 @@ abstract class Edge_Provider {
 		}
 		return $value;
 	}
+
+	/**
+	 * Get the pattern to identify transformed URLs.
+	 * 
+	 * @since 4.5.0
+	 * 
+	 * @return string The pattern to match in transformed URLs.
+	 */
+	abstract public static function get_transform_pattern(): string;
+
+	/**
+	 * Clean a transformed URL back to its original form.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $url The transformed URL.
+	 * @return string The original URL.
+	 */
+	public static function clean_transformed_url(string $url): string {
+		return preg_replace('#' . static::get_transform_pattern() . '#', '/', $url);
+	}
 }

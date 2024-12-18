@@ -74,6 +74,17 @@ class Accelerated_Domains extends Edge_Provider {
 	}
 
 	/**
+	 * Get the pattern to identify transformed URLs.
+	 * 
+	 * @since 4.5.0
+	 * 
+	 * @return string The pattern to match in transformed URLs.
+	 */
+	public static function get_transform_pattern(): string {
+		return '/acd-cgi/img/v1/[^?]+\?';
+	}
+
+	/**
 	 * Get full transformation arguments with full parameter names.
 	 *
 	 * @return array The transformation arguments.

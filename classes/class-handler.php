@@ -27,6 +27,22 @@ class Handler {
 	private static ?Edge_Provider $provider_instance = null;
 
 	/**
+	 * Cache group for transformed image HTML.
+	 *
+	 * @since 4.5.0
+	 * @var string
+	 */
+	private const CACHE_GROUP = 'edge_images';
+
+	/**
+	 * Cache expiration time in seconds (24 hours).
+	 *
+	 * @since 4.5.0
+	 * @var int 
+	 */
+	private const CACHE_EXPIRATION = DAY_IN_SECONDS;
+
+	/**
 	 * Register the integration
 	 *
 	 * @return void
@@ -78,6 +94,11 @@ class Handler {
 		// Avatar transformations
 		add_filter( 'get_avatar_url', [ $instance, 'transform_avatar_url' ], 10, 3 );
 		add_filter( 'get_avatar', [ $instance, 'transform_avatar_html' ], 10, 6 );
+
+		// Add cache purging hooks
+		add_action('save_post', [self::class, 'purge_post_image_cache']);
+		add_action('deleted_post', [self::class, 'purge_post_image_cache']);
+		add_action('attachment_updated', [self::class, 'purge_attachment_cache'], 10, 3);
 
 		self::$registered = true;
 	}
@@ -172,6 +193,20 @@ class Handler {
 	 * @return array Modified attributes
 	 */
 	public function transform_attachment_image(array $attr, $attachment, $size): array {
+		// Check cache first
+		$cached_html = Cache::get_image_html($attachment->ID, $size, $attr);
+		if ($cached_html !== false) {
+			// Parse cached HTML back into attributes
+			$processor = new \WP_HTML_Tag_Processor($cached_html);
+			if ($processor->next_tag('img')) {
+				$cached_attr = [];
+				foreach ($processor->get_attribute_names() as $name) {
+					$cached_attr[$name] = $processor->get_attribute($name);
+				}
+				return $cached_attr;
+			}
+		}
+
 		// Bail early if no attachment
 		if (!$attachment) {
 			return $attr;
@@ -405,6 +440,17 @@ class Handler {
 			$attr['sizes'] = "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
 		}
 
+		// Cache the result before returning
+		$html = '<img ' . implode(' ', array_map(
+			function($key, $value) {
+				return sprintf('%s="%s"', $key, esc_attr($value));
+			},
+			array_keys($attr),
+			$attr
+		)) . '>';
+		
+		Cache::set_image_html($attachment->ID, $size, $attr, $html);
+		
 		return $attr;
 	}
 
@@ -1436,6 +1482,7 @@ class Handler {
 	 * @return string The full size image URL
 	 */
 	private function get_full_size_url(string $src, ?int $attachment_id = null): string {
+		
 		// Try getting the full URL from attachment ID first
 		if ($attachment_id) {
 			$full_url = wp_get_attachment_image_url($attachment_id, 'full');
@@ -1444,8 +1491,11 @@ class Handler {
 			}
 		}
 		
-		// Remove any existing CDN transformations
-		$src = preg_replace('#/cdn-cgi/image/[^/]+/#', '/', $src);
+		// Get the provider instance
+		$provider = $this->get_provider_instance();
+		
+		// Remove any existing transformations
+		$src = $provider::clean_transformed_url($src);
 		
 		// Try to convert the current URL to a full size URL
 		$path_parts = pathinfo($src);
@@ -1548,6 +1598,7 @@ class Handler {
 	 * @return string The picture element HTML
 	 */
 	public function create_picture_element(string $img_html, array $dimensions, string $extra_classes = ''): string {
+
 		// Start with base classes
 		$classes = ['edge-images-container'];
 		
@@ -1663,6 +1714,7 @@ class Handler {
 	 * @return array The transform arguments
 	 */
 	private function get_registered_size_args(array $dimensions, bool $crop = true): array {
+		
 		// Get provider instance to access default args
 		$provider = $this->get_provider_instance();
 		
@@ -1811,6 +1863,32 @@ class Handler {
 			$dimensions, 
 			implode( ' ', $classes )
 		);
+	}
+
+	/**
+	 * Purge image HTML cache for a post.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int $post_id The post ID.
+	 * @return void
+	 */
+	public function purge_post_image_cache(int $post_id): void {
+		Cache::purge_post_images($post_id);
+	}
+
+	/**
+	 * Purge cache when attachment is updated.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int   $attachment_id The attachment ID.
+	 * @param array $data         The updated attachment data.
+	 * @param array $old_data     The old attachment data.
+	 * @return void
+	 */
+	public static function purge_attachment_cache(int $attachment_id, array $data, array $old_data): void {
+		Cache::purge_attachment($attachment_id);
 	}
 
 }

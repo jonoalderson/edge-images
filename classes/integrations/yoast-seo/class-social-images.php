@@ -23,6 +23,30 @@ use Edge_Images\{Helpers, Image_Dimensions};
 class Social_Images {
 
 	/**
+	 * Cached result of should_filter check.
+	 *
+	 * @since 4.1.0
+	 * @var bool|null
+	 */
+	private static $should_filter = null;
+
+	/**
+	 * Cache for processed URLs to avoid repeated transformations.
+	 *
+	 * @since 4.1.0
+	 * @var array<string,string>
+	 */
+	private static $processed_urls = [];
+
+	/**
+	 * Cache for post images to avoid repeated meta queries.
+	 *
+	 * @since 4.1.0
+	 * @var array<int,array>
+	 */
+	private static $post_images_cache = [];
+
+	/**
 	 * The og:width value.
 	 *
 	 * @since 4.0.0
@@ -39,20 +63,12 @@ class Social_Images {
 	public const OG_HEIGHT = 675;
 
 	/**
-	 * Cache for image dimensions to avoid repeated lookups.
+	 * Whether the integration has been registered.
 	 *
-	 * @since 4.1.0
-	 * @var array<int,array>
+	 * @since 4.5.0
+	 * @var bool
 	 */
-	private static array $dimension_cache = [];
-
-	/**
-	 * Cache for post images to avoid repeated meta queries.
-	 *
-	 * @since 4.1.0
-	 * @var array<int,array>
-	 */
-	private static array $post_images_cache = [];
+	private static bool $registered = false;
 
 	/**
 	 * Register the integration.
@@ -62,14 +78,25 @@ class Social_Images {
 	 * @return void
 	 */
 	public static function register(): void {
-		$instance = new self();
-
-		// Bail if these filters shouldn't run.
-		if ( ! $instance->should_filter() ) {
+		
+		// Prevent double registration.
+		if (self::$registered) {
 			return;
 		}
 
-		// Add filters with higher priority to ensure they run before Yoast's internal filters
+		$instance = new self();
+
+		// Use cached result if available.
+		if ( null === self::$should_filter ) {
+			self::$should_filter = $instance->should_filter();
+		}
+
+		// Bail if these filters shouldn't run.
+		if ( ! self::$should_filter ) {
+			return;
+		}
+
+		// Add filters with higher priority to ensure they run before Yoast's internal filters.
 		add_filter( 'wpseo_opengraph_image', [ $instance, 'route_image_through_edge' ], 5, 2 );
 		add_filter( 'wpseo_opengraph_image_url', [ $instance, 'route_image_through_edge' ], 5, 2 );
 		add_filter( 'wpseo_twitter_image', [ $instance, 'route_image_through_edge' ], 5, 2 );
@@ -77,38 +104,87 @@ class Social_Images {
 		add_filter( 'wpseo_opengraph_image_size', [ $instance, 'set_full_size_og_image' ], 5 );
 		add_filter( 'wpseo_frontend_presentation', [ $instance, 'set_image_dimensions' ], 5, 1 );
 
-		// Add cache busting hooks
+		// Add cache busting hooks.
 		add_action( 'save_post', [ $instance, 'bust_cache' ], 10, 3 );
 		add_action( 'deleted_post', [ $instance, 'bust_cache' ] );
 		add_action( 'attachment_updated', [ $instance, 'bust_attachment_cache' ], 10, 3 );
+
+		self::$registered = true;
 	}
 
 	/**
-	 * Checks if these filters should run.
+	 * Process an image for social media output.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param string $url The original image URL.
+	 * @return string The processed image URL.
+	 */
+	private function process_social_image( string $url ): string {
+		// Use static cache for already processed URLs in this request.
+		if ( isset( self::$processed_urls[$url] ) ) {
+			return self::$processed_urls[$url];
+		}
+
+		// Skip if URL is already transformed.
+		if ( Helpers::is_transformed_url( $url ) ) {
+			self::$processed_urls[$url] = $url;
+			return $url;
+		}
+
+		// Get the image ID from the URL.
+		$image_id = Helpers::get_attachment_id( $url );
+		if ( ! $image_id ) {
+			self::$processed_urls[$url] = $url;
+			return $url;
+		}
+
+		// Get dimensions from the image.
+		$dimensions = Helpers::get_image_dimensions( $image_id );
+		if ( ! $dimensions ) {
+			self::$processed_urls[$url] = $url;
+			return $url;
+		}
+
+		// Set our default args.
+		$args = [
+			'width'  => self::OG_WIDTH,
+			'height' => self::OG_HEIGHT,
+			'fit'    => 'cover',
+		];
+
+		// Tweak the behaviour for small images.
+		if ( (int) $dimensions['width'] < self::OG_WIDTH || (int) $dimensions['height'] < self::OG_HEIGHT ) {
+			$args['fit']     = 'pad';
+			$args['sharpen'] = 2;
+		}
+
+		// Allow for filtering the args.
+		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
+
+		// Convert the image src to an edge SRC.
+		$transformed_url = Helpers::edge_src( $url, $args );
+		self::$processed_urls[$url] = $transformed_url;
+
+		return $transformed_url;
+	}
+
+	/**
+	 * Sets the og:image to the max size.
 	 *
 	 * @since 4.0.0
 	 * 
-	 * @return bool Whether the filters should run.
+	 * @param string $url       The image URL.
+	 * @param mixed  $presenter The presenter (unused).
+	 * @return string The modified URL.
 	 */
-	private function should_filter(): bool {
-		// Bail if the Yoast SEO integration is disabled
-		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
-		if ( $disable_integration ) {
-			return false;
+	public function route_image_through_edge( $url, $presenter = null ): string {
+		// Bail if URL isn't a string or is empty.
+		if ( ! is_string( $url ) || empty( $url ) ) {
+			return $url;
 		}
 
-		// Bail if social image filtering is disabled
-		$enabled = get_option( 'edge_images_yoast_social_images', true );
-		if ( ! $enabled ) {
-			return false;
-		}
-
-		// Check if the provider is properly configured
-		if ( ! Helpers::is_provider_configured() ) {
-			return false;
-		}
-
-		return true;
+		return $this->process_social_image( $url );
 	}
 
 	/**
@@ -136,19 +212,7 @@ class Social_Images {
 			unset( $presentation->open_graph_images[ $key ]['type'] );
 		}
 
-		// Get the image ID.
-		$image_id = $presentation->model->open_graph_image_id;
-		if ( ! $image_id ) {
-			return $presentation;
-		}
-
-		// Get dimensions from the image.
-		$dimensions = Image_Dimensions::from_attachment( $image_id );
-		if ( ! $dimensions ) {
-			return $presentation;
-		}
-
-		// Set the width and height based on the image's max dimensions.
+		// Set the width and height based on our constants.
 		$presentation->open_graph_images[ $key ]['width']  = self::OG_WIDTH;
 		$presentation->open_graph_images[ $key ]['height'] = self::OG_HEIGHT;
 
@@ -167,69 +231,43 @@ class Social_Images {
 	}
 
 	/**
-	 * Sets the og:image to the max size.
+	 * Gets all images associated with a post.
 	 *
-	 * @since 4.0.0
+	 * @since 4.1.0
 	 * 
-	 * @param string $url       The image URL.
-	 * @param mixed  $presenter The presenter (unused).
-	 * @return string The modified URL.
+	 * @param int $post_id Post ID.
+	 * @return array Array of image URLs.
 	 */
-	public function route_image_through_edge( $url, $presenter = null ): string {
-		static $processed_urls = [];
-
-		// Use static cache for already processed URLs in this request
-		if (isset($processed_urls[$url])) {
-			return $processed_urls[$url];
+	private function get_post_images( int $post_id ): array {
+		// Return cached result if available.
+		if ( isset( self::$post_images_cache[$post_id] ) ) {
+			return self::$post_images_cache[$post_id];
 		}
 
-		// Bail if URL isn't a string or is empty
-		if ( ! is_string( $url ) || empty( $url ) ) {
-			$processed_urls[$url] = $url;
-			return $url;
+		$images = [];
+
+		// Get featured image.
+		if ( has_post_thumbnail( $post_id ) ) {
+			$images[] = get_the_post_thumbnail_url( $post_id, 'full' );
 		}
 
-		// Skip if URL is already transformed
-		if ( Helpers::is_transformed_url( $url ) ) {
-			$processed_urls[$url] = $url;
-			return $url;
+		// Get all Yoast meta in one query instead of multiple.
+		$yoast_meta = get_post_meta( $post_id, '', true );
+		
+		// Get Yoast SEO images.
+		$meta_keys = ['_yoast_wpseo_opengraph-image', '_yoast_wpseo_twitter-image'];
+		foreach ( $meta_keys as $key ) {
+			if ( ! empty( $yoast_meta[$key][0] ) ) {
+				$images[] = $yoast_meta[$key][0];
+			}
 		}
 
-		// Get the image ID from the URL
-		$image_id = Helpers::get_attachment_id( $url );
-		if ( ! $image_id ) {
-			$processed_urls[$url] = $url;
-			return $url;
-		}
+		$images = array_unique( array_filter( $images ) );
+		
+		// Cache the result.
+		self::$post_images_cache[$post_id] = $images;
 
-		// Get dimensions from the image
-		$dimensions = Helpers::get_image_dimensions( $image_id );
-		if ( ! $dimensions ) {
-			$processed_urls[$url] = $url;
-			return $url;
-		}
-
-		// Set our default args
-		$args = [
-			'width'  => self::OG_WIDTH,
-			'height' => self::OG_HEIGHT,
-			'fit'    => 'cover',
-		];
-
-		// Tweak the behaviour for small images
-		if ( (int) $dimensions['width'] < self::OG_WIDTH || (int) $dimensions['height'] < self::OG_HEIGHT ) {
-			$args['fit']     = 'pad';
-			$args['sharpen'] = 2;
-		}
-
-		// Allow for filtering the args
-		$args = apply_filters( 'edge_images_yoast_social_image_args', $args );
-
-		// Convert the image src to an edge SRC
-		$transformed_url = Helpers::edge_src( $url, $args );
-		$processed_urls[$url] = $transformed_url;
-
-		return $transformed_url;
+		return $images;
 	}
 
 	/**
@@ -243,22 +281,23 @@ class Social_Images {
 	 * @return void
 	 */
 	public function bust_cache( int $post_id, \WP_Post $post = null, bool $update = false ): void {
-		// Skip revisions and autosaves
+		// Skip revisions and autosaves.
 		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
 			return;
 		}
 
-		// Clear static caches
-		unset(self::$post_images_cache[$post_id]);
+		// Clear static caches.
+		unset( self::$post_images_cache[$post_id] );
+		self::$processed_urls = [];
 		
-		// Get all images associated with the post
+		// Get all images associated with the post.
 		$images = $this->get_post_images( $post_id );
 
-		// Bust cache for each image
+		// Bust cache for each image.
 		foreach ( $images as $url ) {
-			$clean_url = preg_replace('/\?.*/', '', $url);
-			$cache_key = 'attachment_' . md5($clean_url);
-			wp_cache_delete($cache_key, Helpers::CACHE_GROUP);
+			$clean_url = preg_replace( '/\?.*/', '', $url );
+			$cache_key = 'attachment_' . md5( $clean_url );
+			wp_cache_delete( $cache_key, Helpers::CACHE_GROUP );
 		}
 	}
 
@@ -267,9 +306,9 @@ class Social_Images {
 	 *
 	 * @since 4.1.0
 	 * 
-	 * @param int      $attachment_id Attachment ID.
-	 * @param array    $data          Attachment data.
-	 * @param array    $old_data      Old attachment data.
+	 * @param int   $attachment_id Attachment ID.
+	 * @param array $data          Attachment data.
+	 * @param array $old_data      Old attachment data.
 	 * @return void
 	 */
 	public function bust_attachment_cache( int $attachment_id, array $data, array $old_data ): void {
@@ -278,50 +317,39 @@ class Social_Images {
 			return;
 		}
 
-		$clean_url = preg_replace('/\?.*/', '', $url);
-		$cache_key = 'attachment_' . md5($clean_url);
-		wp_cache_delete($cache_key, Helpers::CACHE_GROUP);
+		// Clear all URL processing cache when an attachment is updated.
+		self::$processed_urls = [];
+
+		$clean_url = preg_replace( '/\?.*/', '', $url );
+		$cache_key = 'attachment_' . md5( $clean_url );
+		wp_cache_delete( $cache_key, Helpers::CACHE_GROUP );
 	}
 
 	/**
-	 * Gets all images associated with a post.
+	 * Checks if these filters should run.
 	 *
-	 * @since 4.1.0
+	 * @since 4.0.0
 	 * 
-	 * @param int $post_id Post ID.
-	 * @return array Array of image URLs.
+	 * @return bool Whether the filters should run.
 	 */
-	private function get_post_images( int $post_id ): array {
-		// Return cached result if available
-		if (isset(self::$post_images_cache[$post_id])) {
-			return self::$post_images_cache[$post_id];
+	private function should_filter(): bool {
+		// Bail if the Yoast SEO integration is disabled.
+		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
+		if ( $disable_integration ) {
+			return false;
 		}
 
-		$images = [];
-
-		// Get featured image
-		if ( has_post_thumbnail( $post_id ) ) {
-			$images[] = get_the_post_thumbnail_url( $post_id, 'full' );
+		// Bail if social image filtering is disabled.
+		$enabled = get_option( 'edge_images_yoast_social_images', true );
+		if ( ! $enabled ) {
+			return false;
 		}
 
-		// Get all Yoast meta in one query instead of multiple
-		$yoast_meta = get_post_meta( $post_id, '', true );
-		
-		// Get Yoast SEO image
-		if ( !empty($yoast_meta['_yoast_wpseo_opengraph-image'][0]) ) {
-			$images[] = $yoast_meta['_yoast_wpseo_opengraph-image'][0];
+		// Check if the provider is properly configured.
+		if ( ! Helpers::is_provider_configured() ) {
+			return false;
 		}
 
-		// Get Twitter image
-		if ( !empty($yoast_meta['_yoast_wpseo_twitter-image'][0]) ) {
-			$images[] = $yoast_meta['_yoast_wpseo_twitter-image'][0];
-		}
-
-		$images = array_unique( array_filter( $images ) );
-		
-		// Cache the result
-		self::$post_images_cache[$post_id] = $images;
-
-		return $images;
+		return true;
 	}
 }

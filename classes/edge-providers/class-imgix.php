@@ -186,4 +186,22 @@ class Imgix extends Edge_Provider {
 
         return $gravity_map[$gravity] ?? 'center';
     }
+
+    /**
+     * Get the pattern to identify transformed URLs.
+     * 
+     * @since 4.5.0
+     * 
+     * @return string The pattern to match in transformed URLs.
+     */
+    public static function get_transform_pattern(): string {
+        // Get the configured subdomain
+        $subdomain = get_option('edge_images_imgix_subdomain', '');
+        if (empty($subdomain)) {
+            return '';
+        }
+        
+        // Match the Imgix subdomain and any query parameters
+        return $subdomain . '\.imgix\.net/[^?]+\?';
+    }
 } 

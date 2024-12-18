@@ -6,6 +6,8 @@
  * Ensures that schema images are optimized and properly sized.
  *
  * @package    Edge_Images\Integrations
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @since      4.0.0
  */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
@@ -18,6 +20,14 @@ use Edge_Images\Helpers;
  * @since 4.0.0
  */
 class Schema_Images {
+
+	/**
+	 * Cached result of should_filter check.
+	 *
+	 * @since 4.1.0
+	 * @var bool|null
+	 */
+	private static $should_filter = null;
 
 	/**
 	 * The image width value for schema images.
@@ -36,6 +46,14 @@ class Schema_Images {
 	public const SCHEMA_HEIGHT = 675;
 
 	/**
+	 * Whether the integration has been registered.
+	 *
+	 * @since 4.5.0
+	 * @var bool
+	 */
+	private static bool $registered = false;
+
+	/**
 	 * Register the integration.
 	 *
 	 * @since 4.0.0
@@ -43,17 +61,79 @@ class Schema_Images {
 	 * @return void
 	 */
 	public static function register(): void {
+		
+		// Prevent double registration.
+		if (self::$registered) {
+			return;
+		}
+
 		$instance = new self();
 
+		// Use cached result if available.
+		if ( null === self::$should_filter ) {
+			self::$should_filter = $instance->should_filter();
+		}
+
 		// Bail if these filters shouldn't run.
-		if ( ! $instance->should_filter() ) {
+		if ( ! self::$should_filter ) {
 			return;
 		}
 
 		add_filter( 'wpseo_schema_imageobject', [ $instance, 'edge_image' ] );
 		add_filter( 'wpseo_schema_organization', [ $instance, 'edge_organization_logo' ] );
-		add_filter('wpseo_schema_webpage', [ $instance, 'edge_thumbnail' ]);
-		add_filter('wpseo_schema_article', [ $instance, 'edge_thumbnail' ]);
+		add_filter( 'wpseo_schema_webpage', [ $instance, 'edge_thumbnail' ] );
+		add_filter( 'wpseo_schema_article', [ $instance, 'edge_thumbnail' ] );
+
+		self::$registered = true;
+	}
+
+	/**
+	 * Process an image for schema output.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param string $image_url The original image URL.
+	 * @param array  $custom_args Optional. Custom transformation arguments.
+	 * @return array|false Array of edge URL and dimensions, or false on failure.
+	 */
+	private function process_schema_image( string $image_url, array $custom_args = [] ) {
+		$image_id = Helpers::get_attachment_id( $image_url );
+		if ( ! $image_id ) {
+			return false;
+		}
+
+		$dimensions = Helpers::get_image_dimensions( $image_id );
+		if ( ! $dimensions ) {
+			return false;
+		}
+
+		// Set default args.
+		$args = [
+			'width'   => self::SCHEMA_WIDTH,
+			'height'  => self::SCHEMA_HEIGHT,
+			'fit'     => 'cover',
+			'sharpen' => (int) $dimensions['width'] < self::SCHEMA_WIDTH ? 3 : 2,
+		];
+
+		// Merge with custom args.
+		$args = array_merge( $args, $custom_args );
+
+		// Tweak the behaviour for small images.
+		if ( (int) $dimensions['width'] < self::SCHEMA_WIDTH || (int) $dimensions['height'] < self::SCHEMA_HEIGHT ) {
+			$args['fit']     = 'pad';
+			$args['sharpen'] = 2;
+		}
+
+		$edge_url = Helpers::edge_src( $image_url, $args );
+		if ( ! $edge_url ) {
+			return false;
+		}
+
+		return [
+			'url'     => $edge_url,
+			'width'   => $args['width'],
+			'height'  => $args['height'],
+		];
 	}
 
 	/**
@@ -64,43 +144,43 @@ class Schema_Images {
 	 * @param array $data The image schema properties.
 	 * @return array The modified properties.
 	 */
-	public function edge_thumbnail( $data ): array {
-
+	public function edge_thumbnail( array $data ): array {
 		if ( ! isset( $data['thumbnailUrl'] ) ) {
 			return $data;
 		}
 
-		// Get the image ID from the URL
-		$image_id = Helpers::get_attachment_id( $data['thumbnailUrl'] );
-		if ( ! $image_id ) {
+		$processed = $this->process_schema_image( $data['thumbnailUrl'] );
+		if ( $processed ) {
+			$data['thumbnailUrl'] = $processed['url'];
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Transform the primary image to use the edge.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @param array $data The image schema properties.
+	 * @return array The modified properties.
+	 */
+	public function edge_image( array $data ): array {
+		if ( ! isset( $data['url'] ) ) {
 			return $data;
 		}
 
-		// Get dimensions from the image
-		$dimensions = Helpers::get_image_dimensions( $image_id );
-		if ( ! $dimensions ) {
-			return $data;
+		$processed = $this->process_schema_image( 
+			$data['url'],
+			['fit' => 'contain']
+		);
+
+		if ( $processed ) {
+			$data['url']         = $processed['url'];
+			$data['contentUrl']  = $processed['url'];
+			$data['width']       = $processed['width'];
+			$data['height']      = $processed['height'];
 		}
-
-		// Set our default args
-		$args = [
-			'width'  => self::SCHEMA_WIDTH,
-			'height' => self::SCHEMA_HEIGHT,
-			'fit'    => 'cover',
-			'sharpen' => (int) $dimensions['width'] < self::SCHEMA_WIDTH ? 3 : 2,
-		];
-
-		// Tweak the behaviour for small images
-		if ( (int) $dimensions['width'] < self::SCHEMA_WIDTH || (int) $dimensions['height'] < self::SCHEMA_HEIGHT ) {
-			$args['fit']     = 'pad';
-			$args['sharpen'] = 2;
-		}
-
-		// Convert the image src to an edge SRC
-		$edge_url = Helpers::edge_src( $data['thumbnailUrl'], $args );
-
-		// Update the schema values
-		$data['thumbnailUrl'] = $edge_url;
 
 		return $data;
 	}
@@ -113,51 +193,42 @@ class Schema_Images {
 	 * @param array $data The image schema properties.
 	 * @return array The modified properties.
 	 */
-	public function edge_organization_logo( $data ): array {
-		// Get the image ID from Yoast SEO
+	public function edge_organization_logo( array $data ): array {
+		// Get the image ID from Yoast SEO.
 		$image_id = YoastSEO()->meta->for_current_page()->company_logo_id;
-
-		// Bail if we didn't get an image.
 		if ( ! $image_id ) {
 			return $data;
 		}
 
-		// Get dimensions from the image
-		$dimensions = Helpers::get_image_dimensions( $image_id );
-		if ( ! $dimensions ) {
-			return $data;
-		}
-
-		// Set our default args
-		$args = [
-			'width'  => min( (int) $dimensions['width'], self::SCHEMA_WIDTH ),
-			'height' => min( (int) $dimensions['height'], self::SCHEMA_HEIGHT ),
-			'fit'    => 'contain',
-		];
-
-		// Tweak the behaviour for small images
-		if ( (int) $dimensions['width'] < self::SCHEMA_WIDTH || (int) $dimensions['height'] < self::SCHEMA_HEIGHT ) {
-			$args['fit']     = 'pad';
-			$args['sharpen'] = 2;
-		}
-
-		// Get the original image URL
 		$image = wp_get_attachment_image_src( $image_id, 'full' );
 		if ( ! $image ) {
 			return $data;
 		}
 
-		// Convert the image src to an edge SRC
-		$edge_url = Helpers::edge_src( $image[0], $args );
+		// Get dimensions from the image.
+		$dimensions = Helpers::get_image_dimensions( $image_id );
+		if ( ! $dimensions ) {
+			return $data;
+		}
 
-		// Update the schema values
-		$data['logo'] = [
-			'url'         => $edge_url,
-			'contentUrl'  => $edge_url,
-			'width'       => $args['width'],
-			'height'      => $args['height'],
-			'@type'       => 'ImageObject',
-		];
+		$processed = $this->process_schema_image(
+			$image[0],
+			[
+				'fit'    => 'contain',
+				'width'  => min( (int) $dimensions['width'], self::SCHEMA_WIDTH ),
+				'height' => min( (int) $dimensions['height'], self::SCHEMA_HEIGHT ),
+			]
+		);
+
+		if ( $processed ) {
+			$data['logo'] = [
+				'url'         => $processed['url'],
+				'contentUrl'  => $processed['url'],
+				'width'       => $processed['width'],
+				'height'      => $processed['height'],
+				'@type'       => 'ImageObject',
+			];
+		}
 
 		return $data;
 	}
@@ -189,52 +260,6 @@ class Schema_Images {
 
 		return true;
 	}
-
-	/**
-	 * Transform the primary image to use the edge.
-	 *
-	 * @since 4.1.0
-	 * 
-	 * @param array $data The image schema properties.
-	 * @return array The modified properties.
-	 */
-	public function edge_image( $data ): array {
-
-		// Bail if the URL is not set.
-		if ( ! isset( $data['url'] ) ) {
-			return $data;
-		}
-
-		// Get the image ID from the URL
-		$image_id = Helpers::get_attachment_id( $data['url'] );
-		if ( ! $image_id ) {
-			return $data;
-		}
-
-		// Get dimensions from the image
-		$dimensions = Helpers::get_image_dimensions( $image_id );
-		if ( ! $dimensions ) {
-			return $data;
-		}
-
-		// Set transformation arguments
-		$args = [
-			'width'  => self::SCHEMA_WIDTH,
-			'height' => self::SCHEMA_HEIGHT,
-			'fit'    => 'contain',
-			'sharpen' => (int) $dimensions['width'] < self::SCHEMA_WIDTH ? 3 : 2,
-		];
-
-		// Convert the image src to an edge SRC
-		$edge_url = Helpers::edge_src( $data['url'], $args );
-
-		// Update the schema values
-		$data['url'] = $edge_url;
-		$data['contentUrl'] = $edge_url;
-		$data['width'] = $args['width'];
-		$data['height'] = $args['height'];
-
-		return $data;
-	}
 }
+
 

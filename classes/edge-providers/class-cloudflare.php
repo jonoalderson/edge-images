@@ -70,4 +70,15 @@ class Cloudflare extends Edge_Provider {
 	public static function get_url_pattern(): string {
 		return self::EDGE_ROOT;
 	}
+
+	/**
+	 * Get the pattern to identify transformed URLs.
+	 * 
+	 * @since 4.5.0
+	 * 
+	 * @return string The pattern to match in transformed URLs.
+	 */
+	public static function get_transform_pattern(): string {
+		return '/cdn-cgi/image/[^/]+/';
+	}
 }
