@@ -202,4 +202,5 @@ class Cache {
 		
 		return array_map('intval', $images);
 	}
+
 } 

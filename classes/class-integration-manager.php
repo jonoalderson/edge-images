@@ -56,6 +56,11 @@ class Integration_Manager {
 	];
 
 	/**
+	 * Optimize integration loading.
+	 */
+	private static $loaded_integrations = [];
+
+	/**
 	 * Register all available integrations.
 	 *
 	 * Checks for active plugins and registers their integrations
@@ -66,8 +71,17 @@ class Integration_Manager {
 	 * @return void
 	 */
 	public static function register(): void {
-		foreach ( self::$integrations as $integration => $config ) {
-			self::maybe_register_integration( $integration, $config );
+		// Skip if no integrations needed
+		if (!Helpers::should_transform_images()) {
+			return;
+		}
+
+		// Load integrations only once
+		foreach (self::$integrations as $integration => $config) {
+			if (!isset(self::$loaded_integrations[$integration])) {
+				self::maybe_register_integration($integration, $config);
+				self::$loaded_integrations[$integration] = true;
+			}
 		}
 	}
 

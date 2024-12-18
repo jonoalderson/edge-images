@@ -241,23 +241,33 @@ class Helpers {
 	/**
 	 * Get an edge provider instance.
 	 *
-	 * Creates and returns a new instance of the configured edge provider.
-	 *
 	 * @since 4.0.0
 	 * 
 	 * @param string $path Optional path to the image.
 	 * @param array  $args Optional transformation arguments.
 	 * @return Edge_Provider The provider instance.
 	 */
-	public static function get_edge_provider( string $path = '', array $args = [] ): Edge_Provider {
-		$provider = self::get_provider_name();
-		$provider_class = Provider_Registry::get_provider_class( $provider );
+	private static $provider_instances = [];
 
-		if ( ! class_exists( $provider_class ) ) {
+	public static function get_edge_provider(string $path = '', array $args = []): Edge_Provider {
+		// Create cache key from path and args
+		$cache_key = md5($path . serialize($args));
+		
+		// Return cached instance if exists
+		if (isset(self::$provider_instances[$cache_key])) {
+			return self::$provider_instances[$cache_key];
+		}
+		
+		$provider = self::get_provider_name();
+		$provider_class = Provider_Registry::get_provider_class($provider);
+
+		if (!class_exists($provider_class)) {
 			$provider_class = Edge_Provider::class;
 		}
 
-		return new $provider_class( $path, $args );
+		// Cache and return new instance
+		self::$provider_instances[$cache_key] = new $provider_class($path, $args);
+		return self::$provider_instances[$cache_key];
 	}
 
 	/**

@@ -440,6 +440,12 @@ class Handler {
 			$attr['sizes'] = "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
 		}
 
+		// Synthesize size from dimensions if not already set
+		$size = isset($size) ? $size : [
+			$dimensions['width'],
+			$dimensions['height']
+		];
+
 		// Cache the result before returning
 		$html = '<img ' . implode(' ', array_map(
 			function($key, $value) {
