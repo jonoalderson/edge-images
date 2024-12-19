@@ -184,18 +184,14 @@ class Helpers {
 	 * @return bool Whether images should be transformed.
 	 */
 	public static function should_transform_images(): bool {
+
+		// Bail if we're not on a page
+		if ( ! self::request_is_for_page() ) {
+			return false;
+		}
 		
 		// Never transform in admin
 		if ( is_admin() && !wp_doing_ajax() ) {  // Allow AJAX requests
-			return false;
-		}
-
-		// Never transform in REST API requests
-		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
-			return false;
-		}
-
-		if ( wp_is_json_request() ) {
 			return false;
 		}
 
@@ -204,18 +200,7 @@ class Helpers {
 			return true;
 		}
 
-		// If we're debugging, always return true.
-		if ( defined( 'EDGE_IMAGES_DEBUG_MODE' ) && EDGE_IMAGES_DEBUG_MODE === true ) {
-			return true;
-		}
-
-		// Bail if the functionality has been disabled via a filter.
-		$disabled = apply_filters( 'edge_images_disable', false );
-		if ( $disabled === true ) {
-			return false;
-		}
-
-		// Bail if the provider is not properly configured.
+		// Bail if the selected provider is not properly configured.
 		if (!self::is_provider_configured()) {
 			return false;
 		}	
@@ -428,4 +413,60 @@ class Helpers {
 
 		return $dimension_cache[$image_id] ?: null;
 	}
+
+	
+	/**
+	 * Checks if the request is for a 'page'
+	 *
+	 * @return bool
+	 */
+	public static function request_is_for_page(): bool {
+		
+		// Admin.
+		if ( is_admin() ) {
+			return false;
+		}
+
+		// Service workers - check if the query var exists first
+		global $wp_query;
+		if ( $wp_query && get_query_var( 'wp_service_worker', false ) ) {
+			return false;
+		}
+
+		// WP non-page scenarios.
+		if ( is_favicon() || is_feed() || is_robots() || wp_is_json_request() || wp_is_jsonp_request() || wp_is_xml_request() ) {
+			return false;
+		}
+
+		// Bail if this is the login page.
+		if ( is_login() ) {
+			return true;
+		}
+
+		// Back-end wp-login/wp-register activity.
+		if ( isset( $GLOBALS['pagenow'] ) ) {
+			if ( in_array(
+				$GLOBALS['pagenow'],
+				array( 'wp-login.php', 'wp-register.php' ),
+				true
+			)
+			) {
+				return false;
+			}
+		}
+
+		// XML sitemaps - check if the query var exists first
+		if ( $wp_query && get_query_var( 'sitemap', false ) ) {
+			return false;
+		}
+		if ( strpos( $_SERVER['REQUEST_URI'], '.xml' ) !== false ) {
+			return false;
+		}
+		if ( strpos( $_SERVER['REQUEST_URI'], '.kml' ) !== false ) {
+			return false;
+		}
+
+		return true;
+	}
+
 }
