@@ -320,4 +320,22 @@ class Social_Images extends Integration {
 		];
 	}
 
+	/**
+	 * Check if this integration should filter.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return bool Whether the integration should filter.
+	 */
+	protected function should_filter(): bool {
+
+		// Bail if the Yoast SEO integration is disabled
+		if ( ! Integration_Manager::is_enabled('yoast-seo') ) {
+			return false;
+		}
+
+		return Settings::get_option('edge_images_yoast_social_images');
+	}
+
+
 }
