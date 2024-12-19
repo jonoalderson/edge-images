@@ -27,22 +27,6 @@ class Handler {
 	private static ?Edge_Provider $provider_instance = null;
 
 	/**
-	 * Cache group for transformed image HTML.
-	 *
-	 * @since 4.5.0
-	 * @var string
-	 */
-	private const CACHE_GROUP = 'edge_images';
-
-	/**
-	 * Cache expiration time in seconds (24 hours).
-	 *
-	 * @since 4.5.0
-	 * @var int 
-	 */
-	private const CACHE_EXPIRATION = DAY_IN_SECONDS;
-
-	/**
 	 * Register the integration
 	 *
 	 * @return void
@@ -59,48 +43,48 @@ class Handler {
 			return;
 		}
 
-		// Create an instance and store it statically
-		static $instance = null;
-		if ($instance === null) {
-			$instance = new self();
-		}
+		$instance = new self();
+		$instance->add_filters();
+
+		self::$registered = true;
+	}
+
+	/**
+	 * Add filters to the handler.
+	 *
+	 * @return void
+	 */
+	private function add_filters() : void {
 
 		// Hook into the earliest possible filter for image dimensions
-		add_filter('wp_get_attachment_metadata', [$instance, 'filter_attachment_metadata'], 1, 2);
+		add_filter('wp_get_attachment_metadata', [$this, 'filter_attachment_metadata'], 1, 2);
 
 		// First transform the attributes
-		add_filter('wp_get_attachment_image_attributes', [$instance, 'transform_attachment_image'], 10, 3);
+		add_filter('wp_get_attachment_image_attributes', [$this, 'transform_attachment_image'], 10, 3);
 		
 		// Then wrap in picture element
-		add_filter('wp_get_attachment_image', [$instance, 'wrap_attachment_image'], 11, 5);
+		add_filter('wp_get_attachment_image', [$this, 'wrap_attachment_image'], 11, 5);
 		
 		// Finally enforce dimensions and cleanup
-		add_filter('wp_get_attachment_image_attributes', [$instance, 'enforce_dimensions'], 12, 3);
-		add_filter('wp_get_attachment_image', [$instance, 'cleanup_image_html'], 13, 5);
+		add_filter('wp_get_attachment_image_attributes', [$this, 'enforce_dimensions'], 12, 3);
+		add_filter('wp_get_attachment_image', [$this, 'cleanup_image_html'], 13, 5);
 
 		// Transform images in content
-		add_filter('wp_img_tag_add_width_and_height_attr', [$instance, 'transform_image'], 5, 4);
-		add_filter('render_block', [$instance, 'transform_block_images'], 5, 2);
+		add_filter('wp_img_tag_add_width_and_height_attr', [$this, 'transform_image'], 5, 4);
+		add_filter('render_block', [$this, 'transform_block_images'], 5, 2);
 
 		// Ensure WordPress's default dimension handling still runs
 		add_filter('wp_img_tag_add_width_and_height_attr', '__return_true', 999);
 
 		// Enqueue styles
-		add_action('wp_enqueue_scripts', [$instance, 'enqueue_styles']);
+		add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);
 
 		// Prevent WordPress from scaling images
-		add_filter('big_image_size_threshold', [$instance, 'adjust_image_size_threshold'], 10, 4);
+		add_filter('big_image_size_threshold', [$this, 'adjust_image_size_threshold'], 10, 4);
 
 		// Avatar transformations
-		add_filter( 'get_avatar_url', [ $instance, 'transform_avatar_url' ], 10, 3 );
-		add_filter( 'get_avatar', [ $instance, 'transform_avatar_html' ], 10, 6 );
-
-		// Add cache purging hooks
-		add_action('save_post', [self::class, 'purge_post_image_cache']);
-		add_action('deleted_post', [self::class, 'purge_post_image_cache']);
-		add_action('attachment_updated', [self::class, 'purge_attachment_cache'], 10, 3);
-
-		self::$registered = true;
+		add_filter( 'get_avatar_url', [ $this, 'transform_avatar_url' ], 10, 3 );
+		add_filter( 'get_avatar', [ $this, 'transform_avatar_html' ], 10, 6 );
 	}
 
 	/**
@@ -1869,32 +1853,6 @@ class Handler {
 			$dimensions, 
 			implode( ' ', $classes )
 		);
-	}
-
-	/**
-	 * Purge image HTML cache for a post.
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param int $post_id The post ID.
-	 * @return void
-	 */
-	public function purge_post_image_cache(int $post_id): void {
-		Cache::purge_post_images($post_id);
-	}
-
-	/**
-	 * Purge cache when attachment is updated.
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param int   $attachment_id The attachment ID.
-	 * @param array $data         The updated attachment data.
-	 * @param array $old_data     The old attachment data.
-	 * @return void
-	 */
-	public static function purge_attachment_cache(int $attachment_id, array $data, array $old_data): void {
-		Cache::purge_attachment($attachment_id);
 	}
 
 }

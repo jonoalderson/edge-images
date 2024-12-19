@@ -184,6 +184,7 @@ class Helpers {
 	 * @return bool Whether images should be transformed.
 	 */
 	public static function should_transform_images(): bool {
+		
 		// Never transform in admin
 		if ( is_admin() && !wp_doing_ajax() ) {  // Allow AJAX requests
 			return false;
@@ -214,14 +215,10 @@ class Helpers {
 			return false;
 		}
 
-		// Check if Imgix is selected but not configured
-		$provider = get_option( 'edge_images_provider', Provider_Registry::DEFAULT_PROVIDER );
-		if ( $provider === 'imgix' ) {
-			$subdomain = get_option( 'edge_images_imgix_subdomain', '' );
-			if ( empty( $subdomain ) ) {
-				return false;
-			}
-		}
+		// Bail if the provider is not properly configured.
+		if (!self::is_provider_configured()) {
+			return false;
+		}	
 
 		return true;
 	}
@@ -285,27 +282,26 @@ class Helpers {
 	 * Check if the current provider is properly configured.
 	 *
 	 * Validates that the selected provider has all required configuration.
-	 * For example, checks if Imgix has a subdomain configured.
 	 *
 	 * @since 4.1.0
 	 * 
 	 * @return bool Whether the provider is properly configured.
 	 */
 	public static function is_provider_configured(): bool {
-		$provider = get_option( 'edge_images_provider', 'none' );
-
-		// Check provider-specific requirements
-		switch ( $provider ) {
-			case 'imgix':
-				$subdomain = get_option( 'edge_images_imgix_subdomain', '' );
-				if ( empty( $subdomain ) ) {
-					return false;
-				}
-				break;
-			// Add other provider-specific checks here as needed
+		$provider = get_option('edge_images_provider', 'none');
+		
+		// Bail if no provider is selected.
+		if ($provider === 'none') {
+			return false;
 		}
-
-		return true;
+		
+		$provider_class = Provider_Registry::get_provider_class($provider);
+		
+		if (!class_exists($provider_class)) {
+			return false;
+		}
+		
+		return $provider_class::is_configured();
 	}
 
 	/**

@@ -7,41 +7,22 @@
 
 namespace Edge_Images\Integrations\Relevanssi;
 
-use Edge_Images\Handler;
-use Edge_Images\Helpers;
+use Edge_Images\{Integration, Handler, Helpers, Cache};
 
 /**
  * Handles integration with Relevanssi Live Ajax Search plugin.
  */
-class Live_Ajax_Search {
+class Live_Ajax_Search extends Integration {
 
 	/**
-	 * Whether the integration has been registered.
+	 * Add integration-specific filters.
 	 *
-	 * @var bool
-	 */
-	private static bool $registered = false;
-
-	/**
-	 * Register the integration.
-	 *
+	 * @since 4.5.0
+	 * 
 	 * @return void
 	 */
-	public static function register(): void {
-		
-		// Prevent multiple registrations.
-		if ( self::$registered ) {
-			return;
-		}
-
-		// Create instance.
-		$instance = new self();
-
-		// Hook into the search results template.
-		add_filter( 'relevanssi_live_search_results_template', [ $instance, 'transform_search_results' ], 10, 1 );
-
-		// Mark as registered.
-		self::$registered = true;
+	protected function add_filters(): void {
+		add_filter('relevanssi_live_search_results_template', [$this, 'transform_search_results'], 10, 1);
 	}
 
 	/**

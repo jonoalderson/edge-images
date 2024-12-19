@@ -204,4 +204,16 @@ class Imgix extends Edge_Provider {
         // Match the Imgix subdomain and any query parameters
         return $subdomain . '\.imgix\.net/[^?]+\?';
     }
+
+    /**
+     * Check if this provider is properly configured.
+     *
+     * @since 4.1.0
+     * 
+     * @return bool Whether the provider is properly configured.
+     */
+    public static function is_configured(): bool {
+        $subdomain = get_option('edge_images_imgix_subdomain', '');
+        return !empty($subdomain);
+    }
 } 

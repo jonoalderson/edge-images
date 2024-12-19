@@ -299,4 +299,15 @@ abstract class Edge_Provider {
 	public static function clean_transformed_url(string $url): string {
 		return preg_replace('#' . static::get_transform_pattern() . '#', '/', $url);
 	}
+
+	/**
+	 * Check if this provider is properly configured.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @return bool Whether the provider is properly configured.
+	 */
+	public static function is_configured(): bool {
+		return true; // Base provider is always "configured".
+	}
 }

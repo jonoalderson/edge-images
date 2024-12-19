@@ -39,6 +39,9 @@ define( 'EDGE_IMAGES_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 // Load autoloader.
 require_once EDGE_IMAGES_PLUGIN_DIR . 'autoload.php';
 
+// Add near the top of the file after plugin header
+register_activation_hook(__FILE__, ['\Edge_Images\Activation', 'activate']);
+
 /**
  * Initialize admin functionality when in the WordPress admin area.
  */

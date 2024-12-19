@@ -12,22 +12,14 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\Helpers;
+use Edge_Images\{Helpers, Integration, Cache};
 
 /**
  * Configures Yoast SEO schema output to use the image rewriter.
  *
  * @since 4.0.0
  */
-class Schema_Images {
-
-	/**
-	 * Cached result of should_filter check.
-	 *
-	 * @since 4.1.0
-	 * @var bool|null
-	 */
-	private static $should_filter = null;
+class Schema_Images extends Integration {
 
 	/**
 	 * The image width value for schema images.
@@ -46,45 +38,17 @@ class Schema_Images {
 	public const SCHEMA_HEIGHT = 675;
 
 	/**
-	 * Whether the integration has been registered.
-	 *
-	 * @since 4.5.0
-	 * @var bool
-	 */
-	private static bool $registered = false;
-
-	/**
-	 * Register the integration.
+	 * Add integration-specific filters.
 	 *
 	 * @since 4.0.0
 	 * 
 	 * @return void
 	 */
-	public static function register(): void {
-		
-		// Prevent double registration.
-		if (self::$registered) {
-			return;
-		}
-
-		$instance = new self();
-
-		// Use cached result if available.
-		if ( null === self::$should_filter ) {
-			self::$should_filter = $instance->should_filter();
-		}
-
-		// Bail if these filters shouldn't run.
-		if ( ! self::$should_filter ) {
-			return;
-		}
-
-		add_filter( 'wpseo_schema_imageobject', [ $instance, 'edge_image' ] );
-		add_filter( 'wpseo_schema_organization', [ $instance, 'edge_organization_logo' ] );
-		add_filter( 'wpseo_schema_webpage', [ $instance, 'edge_thumbnail' ] );
-		add_filter( 'wpseo_schema_article', [ $instance, 'edge_thumbnail' ] );
-
-		self::$registered = true;
+	protected function add_filters(): void {
+		add_filter('wpseo_schema_imageobject', [$this, 'edge_image']);
+		add_filter('wpseo_schema_organization', [$this, 'edge_organization_logo']);
+		add_filter('wpseo_schema_webpage', [$this, 'edge_thumbnail']);
+		add_filter('wpseo_schema_article', [$this, 'edge_thumbnail']);
 	}
 
 	/**
@@ -97,17 +61,26 @@ class Schema_Images {
 	 * @return array|false Array of edge URL and dimensions, or false on failure.
 	 */
 	private function process_schema_image( string $image_url, array $custom_args = [] ) {
+		// Check cache first
+		$cache_key = 'schema_' . md5($image_url . serialize($custom_args));
+		$cached_result = wp_cache_get($cache_key, Cache::CACHE_GROUP);
+		if ($cached_result !== false) {
+			return $cached_result;
+		}
+
 		$image_id = Helpers::get_attachment_id( $image_url );
 		if ( ! $image_id ) {
+			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return false;
 		}
 
 		$dimensions = Helpers::get_image_dimensions( $image_id );
 		if ( ! $dimensions ) {
+			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return false;
 		}
 
-		// Set default args.
+		// Set default args
 		$args = [
 			'width'   => self::SCHEMA_WIDTH,
 			'height'  => self::SCHEMA_HEIGHT,
@@ -115,10 +88,10 @@ class Schema_Images {
 			'sharpen' => (int) $dimensions['width'] < self::SCHEMA_WIDTH ? 3 : 2,
 		];
 
-		// Merge with custom args.
+		// Merge with custom args
 		$args = array_merge( $args, $custom_args );
 
-		// Tweak the behaviour for small images.
+		// Tweak the behaviour for small images
 		if ( (int) $dimensions['width'] < self::SCHEMA_WIDTH || (int) $dimensions['height'] < self::SCHEMA_HEIGHT ) {
 			$args['fit']     = 'pad';
 			$args['sharpen'] = 2;
@@ -126,14 +99,20 @@ class Schema_Images {
 
 		$edge_url = Helpers::edge_src( $image_url, $args );
 		if ( ! $edge_url ) {
+			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return false;
 		}
 
-		return [
+		$result = [
 			'url'     => $edge_url,
 			'width'   => $args['width'],
 			'height'  => $args['height'],
 		];
+
+		// Cache the result
+		wp_cache_set($cache_key, $result, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
+
+		return $result;
 	}
 
 	/**
@@ -166,20 +145,17 @@ class Schema_Images {
 	 * @return array The modified properties.
 	 */
 	public function edge_image( array $data ): array {
-		if ( ! isset( $data['url'] ) ) {
+		if (!isset($data['url'])) {
 			return $data;
 		}
 
-		$processed = $this->process_schema_image( 
-			$data['url'],
-			['fit' => 'contain']
-		);
+		$processed = $this->process_schema_image($data['url']);
 
-		if ( $processed ) {
-			$data['url']         = $processed['url'];
-			$data['contentUrl']  = $processed['url'];
-			$data['width']       = $processed['width'];
-			$data['height']      = $processed['height'];
+		if ($processed) {
+			$data['url'] = $processed['url'];
+			$data['contentUrl'] = $processed['url'];
+			$data['width'] = $processed['width'];
+			$data['height'] = $processed['height'];
 		}
 
 		return $data;
@@ -234,32 +210,18 @@ class Schema_Images {
 	}
 
 	/**
-	 * Checks if these filters should run.
+	 * Get default settings for this integration.
 	 *
-	 * @since 4.0.0
+	 * @since 4.5.0
 	 * 
-	 * @return bool Whether the filters should run.
+	 * @return array<string,mixed> Default settings.
 	 */
-	private function should_filter(): bool {
-		// Bail if the Yoast SEO integration is disabled.
-		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
-		if ( $disable_integration ) {
-			return false;
-		}
-
-		// Bail if schema image filtering is disabled.
-		$enabled = get_option( 'edge_images_yoast_schema_images', true );
-		if ( ! $enabled ) {
-			return false;
-		}
-
-		// Check if the provider is properly configured
-		if ( ! Helpers::is_provider_configured() ) {
-			return false;
-		}
-
-		return true;
+	public static function get_default_settings(): array {
+		return [
+			'edge_images_yoast_schema_images' => true,
+		];
 	}
+
 }
 
 

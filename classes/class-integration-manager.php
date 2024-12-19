@@ -56,6 +56,17 @@ class Integration_Manager {
 	];
 
 	/**
+	 * Get all available integrations.
+	 *
+	 * @since 4.1.0
+	 * 
+	 * @return array<string,array>
+	 */
+	public static function get_integrations() : array {
+		return self::$integrations;
+	}
+
+	/**
 	 * Optimize integration loading.
 	 */
 	private static $loaded_integrations = [];
@@ -71,12 +82,13 @@ class Integration_Manager {
 	 * @return void
 	 */
 	public static function register(): void {
+
 		// Skip if no integrations needed
 		if (!Helpers::should_transform_images()) {
 			return;
 		}
 
-		// Load integrations only once
+		// Load integrations (only once)
 		foreach (self::$integrations as $integration => $config) {
 			if (!isset(self::$loaded_integrations[$integration])) {
 				self::maybe_register_integration($integration, $config);

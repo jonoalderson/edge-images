@@ -12,22 +12,14 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Helpers, Image_Dimensions};
+use Edge_Images\{Helpers, Image_Dimensions, Integration};
 
 /**
  * Configures XML sitemaps to use the image rewriter.
  *
  * @since 4.0.0
  */
-class XML_Sitemaps {
-
-	/**
-	 * Cached result of should_filter check.
-	 *
-	 * @since 4.1.0
-	 * @var bool|null
-	 */
-	private static $should_filter = null;
+class XML_Sitemaps extends Integration {
 
 	/**
 	 * The width value to use for sitemap images.
@@ -46,48 +38,15 @@ class XML_Sitemaps {
 	public const IMAGE_HEIGHT = 675;
 
 	/**
-	 * Whether the integration has been registered.
-	 *
-	 * @since 4.5.0
-	 * @var bool
-	 */
-	private static bool $registered = false;
-
-	/**
-	 * Register the integration.
-	 *
-	 * Sets up filters to transform image URLs in XML sitemaps.
+	 * Add integration-specific filters.
 	 *
 	 * @since 4.0.0
 	 * 
 	 * @return void
 	 */
-	public static function register(): void {
-		
-		// Prevent double registration.
-		if (self::$registered) {
-			return;
-		}
-
-		$instance = new self();
-
-		// Use cached result if available.
-		if ( null === self::$should_filter ) {
-			self::$should_filter = $instance->should_filter();
-		}
-
-		// Bail if these filters shouldn't run.
-		if ( ! self::$should_filter ) {
-			return;
-		}
-
-
-		add_filter( 'wpseo_sitemap_url_images', [ $instance, 'transform_sitemap_images' ], 10, 2 );
-		add_filter( 'wpseo_sitemap_entry', [ $instance, 'transform_sitemap_entry' ], 10, 3 );
-		add_action( 'wpseo_sitemap_entries', [ $instance, 'debug_sitemap_entries' ], 10, 2 );
-		add_action( 'wpseo_sitemap_content', [ $instance, 'debug_sitemap_content' ], 10, 2 );
-
-		self::$registered = true;
+	protected function add_filters(): void {
+		add_filter( 'wpseo_sitemap_url_images', [ $this, 'transform_sitemap_images' ], 10, 2 );
+		add_filter( 'wpseo_sitemap_entry', [ $this, 'transform_sitemap_entry' ], 10, 3 );
 	}
 
 	/**
@@ -153,57 +112,6 @@ class XML_Sitemaps {
 	}
 
 	/**
-	 * Checks if these filters should run.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return bool Whether the filters should run.
-	 */
-	private function should_filter(): bool {
-		$disable_integration = apply_filters( 'edge_images_yoast_disable', false );
-		if ( $disable_integration ) {
-			return false;
-		}
-
-		$disable_feature = apply_filters( 'edge_images_yoast_disable_xml_sitemap_images', false );
-		if ( $disable_feature ) {
-			return false;
-		}
-
-		if ( ! Helpers::is_provider_configured() ) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Debugs the sitemap entries.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @param array $entries The sitemap entries.
-	 * @param string $type The sitemap type.
-	 * @return array The debugged entries.
-	 */
-	public function debug_sitemap_entries( $entries, $type ): array {
-		return $entries;
-	}
-
-	/**
-	 * Debugs the sitemap content.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @param string $content The sitemap content.
-	 * @param string $type The sitemap type.
-	 * @return string The debugged content.
-	 */
-	public function debug_sitemap_content( $content, $type ): string {
-		return $content;
-	}
-
-	/**
 	 * Transforms a sitemap entry.
 	 *
 	 * @since 4.0.0
@@ -245,8 +153,6 @@ class XML_Sitemaps {
 				$args['sharpen'] = 2;
 			}
 
-			$args = apply_filters( 'edge_images_yoast_sitemap_image_args', $args );
-
 			$edge_url = Helpers::edge_src( $image_url, $args );
 
 			if (isset($image['image:loc'])) {
@@ -258,6 +164,19 @@ class XML_Sitemaps {
 		}
 
 		return $url;
+	}
+
+	/**
+	 * Get default settings for this integration.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return array<string,mixed> Default settings.
+	 */
+	public static function get_default_settings(): array {
+		return [
+			'edge_images_yoast_xml_sitemap_images' => true,
+		];
 	}
 
 }

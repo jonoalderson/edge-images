@@ -20,7 +20,7 @@ class Cache {
 	 * @since 4.5.0
 	 * @var string
 	 */
-	private const CACHE_GROUP = 'edge_images';
+	public const CACHE_GROUP = 'edge_images';
 
 	/**
 	 * Cache expiration time in seconds (24 hours).
@@ -28,7 +28,39 @@ class Cache {
 	 * @since 4.5.0
 	 * @var int 
 	 */
-	private const CACHE_EXPIRATION = DAY_IN_SECONDS;
+	public const CACHE_EXPIRATION = DAY_IN_SECONDS;
+
+	/**
+	 * Whether hooks have been registered.
+	 *
+	 * @since 4.5.0
+	 * @var bool
+	 */
+	private static bool $registered = false;
+
+	/**
+	 * Register cache busting hooks.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return void
+	 */
+	public static function register(): void {
+		if (self::$registered) {
+			return;
+		}
+
+		// Core post-related hooks
+		add_action('save_post', [self::class, 'purge_post_images']);
+		add_action('deleted_post', [self::class, 'purge_post_images']);
+		add_action('attachment_updated', [self::class, 'purge_attachment'], 10, 3);
+		add_action('delete_attachment', [self::class, 'purge_attachment']);
+
+		// Allow integrations to register their own cache hooks
+		do_action('edge_images_register_cache_hooks');
+
+		self::$registered = true;
+	}
 
 	/**
 	 * Get cached transformed image HTML.
@@ -69,29 +101,7 @@ class Cache {
 	}
 
 	/**
-	 * Purge cache for a specific attachment.
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param int $attachment_id The attachment ID.
-	 * @return void
-	 */
-	public static function purge_attachment(int $attachment_id): void {
-		// Get all cached keys for this attachment
-		$keys_cache_key = self::get_keys_cache_key($attachment_id);
-		$cached_keys = wp_cache_get($keys_cache_key, self::CACHE_GROUP) ?: [];
-
-		// Delete each cached variation
-		foreach ($cached_keys as $key) {
-			wp_cache_delete($key, self::CACHE_GROUP);
-		}
-
-		// Delete the keys cache itself
-		wp_cache_delete($keys_cache_key, self::CACHE_GROUP);
-	}
-
-	/**
-	 * Purge cache for all images in a post.
+	 * Purge all caches for a specific post.
 	 *
 	 * @since 4.5.0
 	 * 
@@ -111,6 +121,36 @@ class Cache {
 		foreach ($images as $image_id) {
 			self::purge_attachment($image_id);
 		}
+
+		// Allow integrations to purge their specific caches
+		do_action('edge_images_purge_post_cache', $post_id);
+	}
+
+	/**
+	 * Purge cache for a specific attachment.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int      $attachment_id The attachment ID.
+	 * @param array    $data         Optional. New attachment data.
+	 * @param array    $old_data     Optional. Old attachment data.
+	 * @return void
+	 */
+	public static function purge_attachment(int $attachment_id, array $data = [], array $old_data = []): void {
+		// Get all cached keys for this attachment
+		$keys_cache_key = self::get_keys_cache_key($attachment_id);
+		$cached_keys = wp_cache_get($keys_cache_key, self::CACHE_GROUP) ?: [];
+
+		// Delete each cached variation
+		foreach ($cached_keys as $key) {
+			wp_cache_delete($key, self::CACHE_GROUP);
+		}
+
+		// Delete the keys cache itself
+		wp_cache_delete($keys_cache_key, self::CACHE_GROUP);
+
+		// Allow integrations to purge their specific caches
+		do_action('edge_images_purge_attachment_cache', $attachment_id, $data, $old_data);
 	}
 
 	/**
