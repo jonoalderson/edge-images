@@ -126,13 +126,13 @@ abstract class Edge_Provider {
 	}
 
 	/**
-	 * Get all valid edge arguments.
+	 * Get all valid transformation arguments.
 	 *
-	 * @since 4.0.0
+	 * @since 4.5.0
 	 * 
-	 * @return array<string,array|null> Array of all valid arguments and their aliases.
+	 * @return array<string,array|null> Array of valid arguments and their aliases.
 	 */
-	final public static function get_valid_args(): array {
+	public static function get_valid_args(): array {
 		return self::$valid_args;
 	}
 

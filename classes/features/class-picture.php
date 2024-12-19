@@ -34,22 +34,55 @@ class Picture extends Integration {
 	}
 
 	/**
-	 * Create a picture element wrapper.
+	 * Process srcset attribute.
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param string $img_html   The image HTML to wrap.
-	 * @param array  $dimensions The image dimensions.
-	 * @param string $class      Optional additional class.
-	 * @param array  $styles     Optional additional styles.
-	 * @return string The wrapped HTML.
+	 * @param string $srcset The srcset attribute value.
+	 * @return string The processed srcset.
 	 */
-	public static function create(
-		string $img_html, 
-		array $dimensions, 
-		string $class = '', 
-		array $styles = []
-	): string {
+	private static function process_srcset(string $srcset): string {
+		// Split srcset into individual sources
+		$sources = explode(',', $srcset);
+		$processed_sources = [];
+
+		foreach ($sources as $source) {
+			// Split into URL and descriptor
+			if (preg_match('/^(.+?)(\s+\d+[wx])$/i', trim($source), $matches)) {
+				$url = $matches[1];
+				$descriptor = $matches[2];
+
+				// Clean transformation parameters from URL
+				$clean_url = Helpers::clean_transform_params($url);
+				$processed_sources[] = $clean_url . $descriptor;
+			}
+		}
+
+		return implode(', ', $processed_sources);
+	}
+
+	/**
+	 * Create a picture element.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $img_html  The image HTML.
+	 * @param array  $dimensions Image dimensions.
+	 * @param string $class     Optional. CSS class for the picture element.
+	 * @return string The picture element HTML.
+	 */
+	public static function create(string $img_html, array $dimensions, string $class = ''): string {
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if (!$processor->next_tag('img')) {
+			return $img_html;
+		}
+
+		// Process srcset if it exists
+		$srcset = $processor->get_attribute('srcset');
+		if ($srcset) {
+			$processor->set_attribute('srcset', self::process_srcset($srcset));
+		}
+
 		// Skip if picture wrapping is disabled
 		if (!Feature_Manager::is_feature_enabled('picture_wrap')) {
 			return $img_html;
@@ -69,10 +102,10 @@ class Picture extends Integration {
 		}
 
 		// Build inline styles
-		$style_array = array_merge([
+		$style_array = [
 			'--aspect-ratio' => $aspect_ratio,
 			'--max-width' => $max_width . 'px',
-		], $styles);
+		];
 
 		$style_string = self::build_style_string($style_array);
 		

@@ -83,6 +83,9 @@ class Handler {
 
 		// Prevent WordPress from scaling images
 		add_filter('big_image_size_threshold', [$this, 'adjust_image_size_threshold'], 10, 4);
+
+		// Clean transformation attributes from attachment images
+		add_filter('wp_get_attachment_image_attributes', [$this, 'clean_attachment_image_attributes'], 99);
 	}
 
 	/**
@@ -458,19 +461,61 @@ class Handler {
 	}
 
 	/**
-	 * Transform an image tag using the processor.
+	 * Clean transformation attributes from an image tag.
 	 *
-	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
-	 * @param int|null               $attachment_id The attachment ID.
-	 * @param string                 $original_html Original HTML string.
-	 * @param string                 $context       The context (content, header, etc).
-	 * @param array                  $transform_args Optional transformation arguments.
-	 * @return \WP_HTML_Tag_Processor The modified processor.
+	 * @since 4.5.0
+	 * 
+	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
+	 * @return \WP_HTML_Tag_Processor The cleaned processor.
 	 */
-	public function transform_image_tag(\WP_HTML_Tag_Processor $processor, ?int $attachment_id, string $original_html, string $context = '', array $transform_args = []): \WP_HTML_Tag_Processor {
+	private function clean_transform_attributes(\WP_HTML_Tag_Processor $processor): \WP_HTML_Tag_Processor {
+		// Get all valid transformation parameters
+		$valid_args = Edge_Provider::get_valid_args();
+		$all_params = [];
+
+		// Include both short forms and aliases
+		foreach ($valid_args as $short => $aliases) {
+			// Skip width and height as they're valid HTML attributes
+			if ($short === 'w' || $short === 'h') {
+				continue;
+			}
+			
+			$all_params[] = $short;
+			if (is_array($aliases)) {
+				$all_params = array_merge($all_params, $aliases);
+			}
+		}
+
+		// Remove transformation attributes
+		foreach ($all_params as $param) {
+			$processor->remove_attribute($param);
+		}
+
+		return $processor;
+	}
+
+	/**
+	 * Transform an image tag using the HTML Tag Processor.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
+	 * @param int|null               $image_id  Optional. The image attachment ID.
+	 * @param string                 $html      Optional. The original HTML.
+	 * @param string                 $context   Optional. The transformation context.
+	 * @param array                  $args      Optional. Additional transformation arguments.
+	 * @return \WP_HTML_Tag_Processor The transformed processor.
+	 */
+	public function transform_image_tag(
+		\WP_HTML_Tag_Processor $processor,
+		?int $image_id = null,
+		string $html = '',
+		string $context = '',
+		array $args = []
+	): \WP_HTML_Tag_Processor {
 		// Check cache first
-		$cache_key = 'img_' . md5($original_html . serialize($transform_args));
-		$cached_html = Cache::get_image_html($attachment_id ?: 0, $cache_key, []);
+		$cache_key = 'img_' . md5($html . serialize($args));
+		$cached_html = Cache::get_image_html($image_id ?: 0, $cache_key, []);
 		
 		if ($cached_html !== false) {
 			return new \WP_HTML_Tag_Processor($cached_html);
@@ -501,22 +546,23 @@ class Handler {
 
 		// If no dimensions from attributes, try Image_Dimensions::get
 		if (!$dimensions) {
-			$dimensions = Image_Dimensions::get($processor, $attachment_id);
+			$dimensions = Image_Dimensions::get($processor, $image_id);
 		}
 
 		// Transform the URL if we have dimensions
 		if ($dimensions) {
 			// Use transform_image_urls for consistent behavior
-			$this->transform_image_urls($processor, $dimensions, $original_html, $context, $transform_args);
+			$this->transform_image_urls($processor, $dimensions, $html, $context, $args);
 		}
 
 		// Always add the processed class
 		$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
 
 		// Cache the result
-		Cache::set_image_html($attachment_id ?: 0, $cache_key, [], $processor->get_updated_html());
+		Cache::set_image_html($image_id ?: 0, $cache_key, [], $processor->get_updated_html());
 
-		return $processor;
+		// Clean transformation attributes before returning
+		return $this->clean_transform_attributes($processor);
 	}
 
 	/**
@@ -538,7 +584,7 @@ class Handler {
 	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
 	 * @param array|null             $dimensions    Optional dimensions.
 	 * @param string                 $original_html The original HTML.
-	 * @param string               $context       The context (content, header, etc).
+	 * @param string                 $context       The context (content, header, etc).
 	 * 
 	 * @return void
 	 */
@@ -589,7 +635,7 @@ class Handler {
 			array_filter([
 				'width' => $dimensions['width'],
 				'height' => $dimensions['height'],
-				'fit' => $fit ?? 'cover', // Use the fit mode we determined from registered size
+				'fit' => $fit ?? 'cover',
 			])
 		);
 		
@@ -617,6 +663,12 @@ class Handler {
 		if ($srcset) {
 			$processor->set_attribute('srcset', $srcset);
 		}
+
+		// Clean transformation attributes before adding classes
+		$this->clean_transform_attributes($processor);
+
+		// Add our classes
+		$this->add_image_classes($processor);
 	}
 
 	/**
@@ -1516,6 +1568,40 @@ class Handler {
 			'width' => (string) $new_width,
 			'height' => (string) $new_height
 		];
+	}
+
+	/**
+	 * Clean transformation attributes from attachment image attributes.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param array $attr Image attributes.
+	 * @return array Cleaned attributes.
+	 */
+	public function clean_attachment_image_attributes(array $attr): array {
+		// Get all valid transformation parameters
+		$valid_args = Edge_Provider::get_valid_args();
+		$all_params = [];
+
+		// Include both short forms and aliases
+		foreach ($valid_args as $short => $aliases) {
+			// Skip width and height as they're valid HTML attributes
+			if ($short === 'w' || $short === 'h') {
+				continue;
+			}
+			
+			$all_params[] = $short;
+			if (is_array($aliases)) {
+				$all_params = array_merge($all_params, $aliases);
+			}
+		}
+
+		// Remove transformation attributes
+		foreach ($all_params as $param) {
+			unset($attr[$param]);
+		}
+
+		return $attr;
 	}
 
 }
