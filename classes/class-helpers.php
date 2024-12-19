@@ -503,49 +503,4 @@ class Helpers {
 		return $url;
 	}
 
-	/**
-	 * Clean transformation parameters from a URL.
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param string $url The URL to clean.
-	 * @return string The cleaned URL.
-	 */
-	public static function clean_transform_params(string $url): string {
-		// Parse the URL
-		$parts = parse_url($url);
-		if (!isset($parts['query'])) {
-			return $url;
-		}
-
-		// Get all valid transformation parameters
-		$valid_args = Edge_Provider::get_valid_args();
-		$all_params = [];
-
-		// Include both short forms and aliases
-		foreach ($valid_args as $short => $aliases) {
-			$all_params[] = $short;
-			if (is_array($aliases)) {
-				$all_params = array_merge($all_params, $aliases);
-			}
-		}
-
-		// Parse the query string
-		parse_str($parts['query'], $query_params);
-
-		// Remove transformation parameters
-		foreach ($all_params as $param) {
-			unset($query_params[$param]);
-		}
-
-		// Rebuild the URL
-		$clean_query = http_build_query($query_params);
-		$clean_url = $parts['path'];
-		if ($clean_query) {
-			$clean_url .= '?' . $clean_query;
-		}
-
-		return $clean_url;
-	}
-
 }

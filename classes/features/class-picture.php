@@ -53,8 +53,7 @@ class Picture extends Integration {
 				$descriptor = $matches[2];
 
 				// Clean transformation parameters from URL
-				$clean_url = Helpers::clean_transform_params($url);
-				$processed_sources[] = $clean_url . $descriptor;
+				$processed_sources[] = $url . $descriptor;
 			}
 		}
 
