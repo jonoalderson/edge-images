@@ -23,12 +23,12 @@ class Cache {
 	public const CACHE_GROUP = 'edge_images';
 
 	/**
-	 * Cache expiration time in seconds (24 hours).
+	 * Cache expiration time
 	 *
 	 * @since 4.5.0
 	 * @var int 
 	 */
-	public const CACHE_EXPIRATION = DAY_IN_SECONDS;
+	public const CACHE_EXPIRATION = DAY_IN_SECONDS * 30;
 
 	/**
 	 * Whether hooks have been registered.
@@ -50,6 +50,19 @@ class Cache {
 			return;
 		}
 
+		$instance = new self();
+		$instance->add_filters();
+
+		self::$registered = true;
+	}
+
+	/**
+	 * Add filters.
+	 *
+	 * @return void
+	 */
+	private function add_filters() : void {
+
 		// Core post-related hooks
 		add_action('save_post', [self::class, 'purge_post_images']);
 		add_action('deleted_post', [self::class, 'purge_post_images']);
@@ -58,8 +71,6 @@ class Cache {
 
 		// Allow integrations to register their own cache hooks
 		do_action('edge_images_register_cache_hooks');
-
-		self::$registered = true;
 	}
 
 	/**

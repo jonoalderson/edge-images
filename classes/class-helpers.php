@@ -115,61 +115,41 @@ class Helpers {
 	/**
 	 * Replace a SRC string with an edge version.
 	 *
-	 * Takes an image URL and transformation arguments and returns
-	 * a URL that will be processed by the edge provider.
-	 *
 	 * @since 4.0.0
 	 * 
 	 * @param  string $src  The source URL.
 	 * @param  array  $args The transformation arguments.
 	 * @return string      The modified URL.
 	 */
-	public static function edge_src( string $src, array $args ): string {
+	public static function edge_src(string $src, array $args): string {
 		// Skip SVGs and AVIFs
 		if (preg_match('/\.(svg|avif)$/i', $src)) {
 			return $src;
 		}
 
-		// Bail if we shouldn't transform the src.
+		// Bail if we shouldn't transform the src
 		if (!self::should_transform_url($src)) {
 			return $src;
 		}
 
-		// Get the provider name.
+		// Get the provider name
 		$provider = self::get_provider_name();
 		
-		// If provider is 'none', return original src.
-		if ( $provider === 'none' ) {
+		// If provider is 'none', return original src
+		if ($provider === 'none') {
 			return $src;
 		}
 
-		// Get the provider class.
-		$provider_class = Provider_Registry::get_provider_class( $provider );
+		// Get the provider class
+		$provider_class = Provider_Registry::get_provider_class($provider);
 
-		// Bail if we can't find one.
-		if ( ! class_exists( $provider_class ) ) {
+		// Bail if we can't find one
+		if (!class_exists($provider_class)) {
 			return $src;
 		}
 
-		// If URL is already transformed, extract the original path.
-		if ( strpos( $src, $provider_class::get_url_pattern() ) !== false ) {
-			$upload_dir = wp_get_upload_dir();
-			$upload_path = str_replace( site_url('/'), '', $upload_dir['baseurl'] );
-			
-			// Extract everything after the upload path.
-			if ( preg_match( '#' . preg_quote( $upload_path ) . '/.*$#', $src, $matches ) ) {
-				$src = $matches[0];
-			}
-		}
-
-		// Get the image path from the URL.
-		$url  = wp_parse_url( $src );
-		$path = ( isset( $url['path'] ) ) ? $url['path'] : '';
-
-		// Create our provider instance.
-		$provider_instance = new $provider_class( $path, $args );
-
-		// Get the edge URL.
+		// Create our provider instance and get edge URL
+		$provider_instance = new $provider_class($src, $args);
 		return $provider_instance->get_edge_url();
 	}
 
@@ -433,8 +413,31 @@ class Helpers {
 			return false;
 		}
 
-		// WP non-page scenarios.
-		if ( is_favicon() || is_feed() || is_robots() || wp_is_json_request() || wp_is_jsonp_request() || wp_is_xml_request() ) {
+		// Get the request URI for pattern matching
+		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+
+		// Check common non-page URLs
+		$non_page_patterns = [
+			'/favicon.ico',      // Favicon
+			'/feed/',           // Main feed
+			'/feed/atom/',      // Atom feed
+			'/feed/rss/',       // RSS feed
+			'/robots.txt',      // Robots
+			'/wp-json/',        // REST API
+			'.xml',             // XML files (including sitemaps)
+			'.kml',             // KML files
+		];
+
+		foreach ($non_page_patterns as $pattern) {
+			if (strpos($request_uri, $pattern) !== false) {
+				return false;
+			}
+		}
+
+		// Check content type for JSON/JSONP requests
+		$content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+		if (strpos($content_type, 'application/json') !== false || 
+			strpos($content_type, 'application/javascript') !== false) {
 			return false;
 		}
 
@@ -459,14 +462,28 @@ class Helpers {
 		if ( $wp_query && get_query_var( 'sitemap', false ) ) {
 			return false;
 		}
-		if ( strpos( $_SERVER['REQUEST_URI'], '.xml' ) !== false ) {
-			return false;
-		}
-		if ( strpos( $_SERVER['REQUEST_URI'], '.kml' ) !== false ) {
-			return false;
-		}
 
 		return true;
+	}
+
+	/**
+	 * Clean a URL by removing the site domain and protocol.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $url The URL to clean.
+	 * @return string The cleaned path.
+	 */
+	public static function clean_url(string $url): string {
+		// Get the home URL without trailing slash
+		$home_url = untrailingslashit(home_url());
+		
+		// If the URL starts with the home URL, remove it
+		if (str_starts_with($url, $home_url)) {
+			return substr($url, strlen($home_url));
+		}
+		
+		return $url;
 	}
 
 }

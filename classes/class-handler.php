@@ -668,38 +668,62 @@ class Handler {
 	}
 
 	/**
-	 * Transform an image tag with processor
+	 * Transform an image tag using the processor.
 	 *
 	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
-	 * @param int|null              $attachment_id The attachment ID.
-	 * @param string               $original_html  The original HTML.
-	 * @param string               $context       The context (content, header, etc).
-	 * 
-	 * @return \WP_HTML_Tag_Processor The modified processor
+	 * @param int|null               $attachment_id The attachment ID if known.
+	 * @param string                 $original_html Original HTML string.
+	 * @param string                 $context       The context (content, header, etc).
+	 * @param array                  $transform_args Optional transformation arguments.
+	 * @return \WP_HTML_Tag_Processor The modified processor.
 	 */
-	public function transform_image_tag( 
-		\WP_HTML_Tag_Processor $processor, 
-		?int $attachment_id, 
-		string $original_html = '',
-		string $context = '',
-		array $transform_args = []
-	): \WP_HTML_Tag_Processor {
+	public function transform_image_tag(\WP_HTML_Tag_Processor $processor, ?int $attachment_id, string $original_html, string $context = '', array $transform_args = []): \WP_HTML_Tag_Processor {
+		// Check cache first
+		$cache_key = 'img_' . md5($original_html . serialize($transform_args));
+		$cached_html = Cache::get_image_html($attachment_id ?: 0, $cache_key, []);
+		
+		if ($cached_html !== false) {
+			$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
+			return new \WP_HTML_Tag_Processor($cached_html);
+		}
+
 		// Get dimensions
-		$dimensions = $this->get_image_dimensions($processor, $attachment_id);
+		$dimensions = Image_Dimensions::get($processor, $attachment_id);
 		if (!$dimensions) {
 			return $processor;
 		}
 
-		// Add our classes
-		$this->add_image_classes($processor);
-
-		// Get attachment ID if not provided
-		if (!$attachment_id) {
-			$attachment_id = $this->get_attachment_id_from_classes($processor);
+		// Get src
+		$src = $processor->get_attribute('src');
+		if (!$src || !Helpers::should_transform_url($src)) {
+			return $processor;
 		}
 
-		// Transform URLs with context
-		$this->transform_image_urls($processor, $dimensions, $original_html, $context, $transform_args);
+		// Transform the URL
+		$edge_url = Helpers::edge_src($src, array_merge(
+			$transform_args,
+			[
+				'w' => $dimensions['width'],
+				'h' => $dimensions['height']
+			]
+		));
+
+		// Generate srcset
+		$srcset = Srcset_Transformer::transform(
+			$src,
+			$dimensions,
+			$processor->get_attribute('sizes') ?? ''
+		);
+
+		// Update attributes
+		$processor->set_attribute('src', $edge_url);
+		if ($srcset) {
+			$processor->set_attribute('srcset', $srcset);
+		}
+		$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
+
+		// Cache the result
+		Cache::set_image_html($attachment_id ?: 0, $cache_key, [], $processor->get_updated_html());
 
 		return $processor;
 	}

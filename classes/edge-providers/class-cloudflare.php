@@ -55,6 +55,7 @@ class Cloudflare extends Edge_Provider {
 			'%2C' // comma
 		);
 		
+		// The path is already cleaned in the constructor
 		return $edge_url . $this->path;
 	}
 

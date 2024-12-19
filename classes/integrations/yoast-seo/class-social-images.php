@@ -71,15 +71,23 @@ class Social_Images extends Integration {
 	 * @return string The processed image URL.
 	 */
 	private function process_social_image( string $url ): string {
-
 		// Use static cache for already processed URLs in this request.
 		if ( isset( self::$processed_urls[$url] ) ) {
 			return self::$processed_urls[$url];
 		}
 
+		// Check object cache
+		$cache_key = 'social_' . md5($url);
+		$cached_url = wp_cache_get($cache_key, \Edge_Images\Cache::CACHE_GROUP);
+		if ($cached_url !== false) {
+			self::$processed_urls[$url] = $cached_url;
+			return $cached_url;
+		}
+
 		// Skip if URL is already transformed.
 		if ( Helpers::is_transformed_url( $url ) ) {
 			self::$processed_urls[$url] = $url;
+			wp_cache_set($cache_key, $url, \Edge_Images\Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return $url;
 		}
 
@@ -87,6 +95,7 @@ class Social_Images extends Integration {
 		$image_id = Helpers::get_attachment_id( $url );
 		if ( ! $image_id ) {
 			self::$processed_urls[$url] = $url;
+			wp_cache_set($cache_key, $url, \Edge_Images\Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return $url;
 		}
 
@@ -94,6 +103,7 @@ class Social_Images extends Integration {
 		$dimensions = Helpers::get_image_dimensions( $image_id );
 		if ( ! $dimensions ) {
 			self::$processed_urls[$url] = $url;
+			wp_cache_set($cache_key, $url, \Edge_Images\Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return $url;
 		}
 
@@ -116,6 +126,9 @@ class Social_Images extends Integration {
 		// Convert the image src to an edge SRC.
 		$transformed_url = Helpers::edge_src( $url, $args );
 		self::$processed_urls[$url] = $transformed_url;
+
+		// Cache the transformed URL
+		wp_cache_set($cache_key, $transformed_url, \Edge_Images\Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 
 		return $transformed_url;
 	}

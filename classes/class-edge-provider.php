@@ -91,7 +91,7 @@ abstract class Edge_Provider {
 	 * @param array  $args The transformation arguments.
 	 */
 	final public function __construct(string $path, array $args = []) {
-		$this->path = $path;
+		$this->path = Helpers::clean_url($path);
 		$this->args = $this->validate_args($args);
 		$this->normalize_args();
 	}

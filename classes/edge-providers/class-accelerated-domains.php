@@ -45,7 +45,7 @@ class Accelerated_Domains extends Edge_Provider {
 	public function get_edge_url(): string {
 		$edge_prefix = Helpers::get_rewrite_domain() . self::EDGE_ROOT;
 
-		// Build the URL with query parameters.
+		// Build the URL with query parameters
 		$edge_url = sprintf(
 			'%s%s?%s',
 			$edge_prefix,
@@ -57,7 +57,7 @@ class Accelerated_Domains extends Edge_Provider {
 			)
 		);
 
-		return esc_attr( $edge_url ); // Escape the ampersands to match WP's image handling.
+		return esc_attr($edge_url);
 	}
 
 	/**
