@@ -7,7 +7,7 @@
 
 namespace Edge_Images\Integrations\Relevanssi;
 
-use Edge_Images\{Integration, Handler, Helpers, Cache};
+use Edge_Images\{Integration, Handler, Helpers, Cache, Features\Picture, Feature_Manager};
 
 /**
  * Handles integration with Relevanssi Live Ajax Search plugin.
@@ -62,17 +62,33 @@ class Live_Ajax_Search extends Integration {
 				'search-results'
 			);
 
-			// Get the transformed HTML.
+			// Get dimensions for picture element if enabled
+			if ( Feature_Manager::is_enabled( 'picture_wrap' ) ) {
+				$dimensions = $this->get_dimensions_from_processor( $processor );
+				if ( $dimensions ) {
+					$transformed_html = Picture::create(
+						$processor->get_updated_html(),
+						$dimensions,
+						'search-result-image'
+					);
+					
+					// Update offset adjustment
+					$offset_adjustment += strlen( $transformed_html ) - strlen( $original_html );
+					continue;
+				}
+			}
+
+			// Get the transformed HTML
 			$transformed_html = $processor->get_updated_html();
 
-			// Update offset adjustment.
+			// Update offset adjustment
 			$offset_adjustment += strlen( $transformed_html ) - strlen( $original_html );
 		}
 
-		// Get final HTML.
+		// Get final HTML
 		$template = $processor->get_updated_html();
 
-		// Transform any figures with images.
+		// Transform any figures with images
 		if ( str_contains( $template, '<figure' ) ) {
 			$template = $this->transform_figures( $template );
 		}
@@ -122,23 +138,37 @@ class Live_Ajax_Search extends Integration {
 				'search-results'
 			);
 
-			// Get dimensions for picture element.
-			$dimensions = $this->get_dimensions_from_processor( $processor );
-			if ( ! $dimensions ) {
-				continue;
+			// Get dimensions for picture element if enabled
+			if ( Feature_Manager::is_enabled( 'picture_wrap' ) ) {
+				$dimensions = $this->get_dimensions_from_processor( $processor );
+				if ( $dimensions ) {
+					$transformed_html = Picture::create(
+						$processor->get_updated_html(),
+						$dimensions,
+						'search-result-image'
+					);
+					
+					// Replace in content
+					$new_figure_html = str_replace( $img_html, $transformed_html, $figure_html );
+					
+					$content = substr_replace(
+						$content,
+						$new_figure_html,
+						$figure_position + $offset_adjustment,
+						strlen( $figure_html )
+					);
+					
+					// Update offset
+					$offset_adjustment += strlen( $new_figure_html ) - strlen( $figure_html );
+					continue;
+				}
 			}
 
-			// Create picture element.
-			$picture_html = $handler->create_picture_element( 
-				$processor->get_updated_html(), 
-				$dimensions,
-				'search-result-image'
-			);
+			// If picture wrapping is disabled or dimensions not found, use regular transformed image
+			$transformed_html = $processor->get_updated_html();
+			$new_figure_html = str_replace( $img_html, $transformed_html, $figure_html );
 
-			// Replace the figure content.
-			$new_figure_html = str_replace( $img_html, $picture_html, $figure_html );
-
-			// Replace in content.
+			// Replace in content
 			$content = substr_replace(
 				$content,
 				$new_figure_html,
@@ -146,7 +176,7 @@ class Live_Ajax_Search extends Integration {
 				strlen( $figure_html )
 			);
 
-			// Update offset.
+			// Update offset
 			$offset_adjustment += strlen( $new_figure_html ) - strlen( $figure_html );
 		}
 

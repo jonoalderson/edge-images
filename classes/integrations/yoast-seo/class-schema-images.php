@@ -22,6 +22,14 @@ use Edge_Images\{Helpers, Integration, Cache, Settings, Integration_Manager};
 class Schema_Images extends Integration {
 
 	/**
+	 * Cache group for schema image processing.
+	 *
+	 * @since 4.5.0
+	 * @var string
+	 */
+	private const SCHEMA_CACHE_GROUP = 'edge_images_schema';
+
+	/**
 	 * The image width value for schema images.
 	 *
 	 * @since 1.0.0
@@ -45,10 +53,107 @@ class Schema_Images extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+		// Schema filters
 		add_filter('wpseo_schema_imageobject', [$this, 'edge_image']);
 		add_filter('wpseo_schema_organization', [$this, 'edge_organization_logo']);
 		add_filter('wpseo_schema_webpage', [$this, 'edge_thumbnail']);
 		add_filter('wpseo_schema_article', [$this, 'edge_thumbnail']);
+
+		// Cache busting hooks
+		add_action('save_post', [$this, 'bust_schema_cache']);
+		add_action('deleted_post', [$this, 'bust_schema_cache']);
+		add_action('attachment_updated', [$this, 'bust_attachment_schema_cache'], 10, 3);
+		add_action('delete_attachment', [$this, 'bust_attachment_schema_cache']);
+		add_action('wpseo_save_indexable', [$this, 'bust_indexable_schema_cache']);
+	}
+
+	/**
+	 * Bust schema cache for a post.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int $post_id The post ID.
+	 * @return void
+	 */
+	public function bust_schema_cache(int $post_id): void {
+		if (!$post_id || wp_is_post_revision($post_id)) {
+			return;
+		}
+
+		$cache_key = 'schema_' . $post_id;
+		wp_cache_delete($cache_key, self::SCHEMA_CACHE_GROUP);
+
+		// Also bust cache for any images associated with this post
+		$images = $this->get_post_schema_images($post_id);
+		foreach ($images as $image_id) {
+			$this->bust_attachment_schema_cache($image_id);
+		}
+	}
+
+	/**
+	 * Bust schema cache for an attachment.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int   $attachment_id The attachment ID.
+	 * @param array $data         Optional. New attachment data.
+	 * @param array $old_data     Optional. Old attachment data.
+	 * @return void
+	 */
+	public function bust_attachment_schema_cache(int $attachment_id, array $data = [], array $old_data = []): void {
+		if (!$attachment_id) {
+			return;
+		}
+
+		$cache_key = 'schema_attachment_' . $attachment_id;
+		wp_cache_delete($cache_key, self::SCHEMA_CACHE_GROUP);
+
+		// Also bust cache for the parent post if this is an attachment
+		$parent_id = wp_get_post_parent_id($attachment_id);
+		if ($parent_id) {
+			$this->bust_schema_cache($parent_id);
+		}
+	}
+
+	/**
+	 * Bust schema cache when a Yoast indexable is updated.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param \Yoast\WP\SEO\Models\Indexable $indexable The indexable that was saved.
+	 * @return void
+	 */
+	public function bust_indexable_schema_cache($indexable): void {
+		if (!$indexable || !isset($indexable->object_id)) {
+			return;
+		}
+
+		$this->bust_schema_cache($indexable->object_id);
+	}
+
+	/**
+	 * Get all images that might be used in schema for a post.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int $post_id The post ID.
+	 * @return array Array of image IDs.
+	 */
+	private function get_post_schema_images(int $post_id): array {
+		$images = [];
+
+		// Featured image
+		if (has_post_thumbnail($post_id)) {
+			$images[] = get_post_thumbnail_id($post_id);
+		}
+
+		// Organization logo
+		$company_logo_id = YoastSEO()->meta->for_current_page()->company_logo_id;
+		if ($company_logo_id) {
+			$images[] = $company_logo_id;
+		}
+
+		return array_unique(array_filter($images));
 	}
 
 	/**

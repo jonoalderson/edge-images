@@ -25,9 +25,9 @@ class Feature_Manager {
 	 * @var array<string,array>
 	 */
 	private static array $features = [
-		'comments' => [
+		'avatars' => [
 			'name' => 'Avatars',
-			'description' => 'Transform avatar images.',
+			'description' => 'Transform avatar images in comments and user profiles.',
 			'class' => 'Features\Avatars',
 			'default' => true,
 		],
