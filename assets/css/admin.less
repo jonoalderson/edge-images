@@ -268,4 +268,58 @@
             transform: none !important;
         }
     }
+}
+
+// Features section styling
+.edge-images-features {
+	display: grid;
+	gap: 16px;
+	margin-top: 1em;
+
+	.feature-card {
+		background: #fff;
+		border: 1px solid #e2e4e7;
+		border-radius: 12px;
+		overflow: hidden;
+
+		.feature-header {
+			padding: 16px;
+			background: #fafafa;
+			border-bottom: 1px solid #eee;
+
+			strong {
+				font-size: 14px;
+				font-weight: 600;
+				color: #1d2327;
+			}
+		}
+
+		.feature-settings {
+			padding: 16px;
+
+			fieldset {
+				margin: 0;
+
+				p {
+					margin: 8px 0;
+
+					&:first-child {
+						margin-top: 0;
+					}
+
+					&:last-child {
+						margin-bottom: 0;
+					}
+
+					&.description {
+						color: #757575;
+						font-size: 13px;
+						margin-top: 12px;
+						padding-top: 12px;
+						border-top: 1px solid #eee;
+					}
+				}
+			}
+		}
+	}
 } 

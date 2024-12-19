@@ -178,7 +178,7 @@ class Integration_Manager {
 	 * @param string $integration The integration identifier.
 	 * @return bool Whether the integration is active.
 	 */
-	public static function is_integration_active( string $integration ): bool {
+	public static function is_enabled( string $integration ): bool {
 		if ( ! isset( self::$integrations[$integration] ) ) {
 			return false;
 		}

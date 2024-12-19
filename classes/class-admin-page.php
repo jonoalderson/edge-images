@@ -35,14 +35,6 @@ class Admin_Page {
 	private const PROVIDER_OPTION = 'edge_images_provider';
 
 	/**
-	 * The picture wrap option name.
-	 *
-	 * @since 4.0.0
-	 * @var string
-	 */
-	private const PICTURE_WRAP_OPTION = 'edge_images_disable_picture_wrap';
-
-	/**
 	 * The Imgix subdomain option name.
 	 *
 	 * @since 4.1.0
@@ -89,6 +81,14 @@ class Admin_Page {
 	 * @var string
 	 */
 	private const INTEGRATIONS_SECTION = 'edge_images_integrations_section';
+
+	/**
+	 * The features section ID.
+	 *
+	 * @since 4.5.0
+	 * @var string
+	 */
+	private const FEATURES_SECTION = 'edge_images_features_section';
 
 	/**
 	 * Registers the admin page and its hooks.
@@ -151,18 +151,6 @@ class Admin_Page {
 			]
 		);
 
-		// Register picture wrap setting.
-		register_setting(
-			self::OPTION_GROUP,
-			self::PICTURE_WRAP_OPTION,
-			[
-				'type'              => 'boolean',
-				'description'       => __( 'Disable wrapping images in picture element', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => false,
-			]
-		);
-
 		// Register Imgix subdomain setting.
 		register_setting(
 			self::OPTION_GROUP,
@@ -218,6 +206,9 @@ class Admin_Page {
 				'description'       => __( 'The maximum width for images when content width is not set', 'edge-images' ),
 				'sanitize_callback' => 'absint',
 				'default'           => 800,
+				'update_callback'   => function($old_value, $value) {
+					Settings::reset_cache();
+				},
 			]
 		);
 
@@ -234,15 +225,6 @@ class Admin_Page {
 			'edge_images_provider',
 			__( 'Edge Provider', 'edge-images' ),
 			[ self::class, 'render_provider_field' ],
-			'edge_images',
-			'edge_images_main_section'
-		);
-
-		// Add picture wrap field.
-		add_settings_field(
-			'edge_images_picture_wrap',
-			__( 'Image Wrapping', 'edge-images' ),
-			[ self::class, 'render_picture_wrap_field' ],
 			'edge_images',
 			'edge_images_main_section'
 		);
@@ -266,13 +248,39 @@ class Admin_Page {
 			'edge_images_main_section'
 		);
 
+
+
+		// Add features section
+		add_settings_section(
+			self::FEATURES_SECTION,
+			__('Features', 'edge-images'),
+			[self::class, 'render_features_section'],
+			'edge_images'
+		);
+
 		// Add integrations section
 		add_settings_section(
 			self::INTEGRATIONS_SECTION,
-			__( 'Active Integrations', 'edge-images' ),
+			__( 'Integrations', 'edge-images' ),
 			[ self::class, 'render_integrations_section' ],
 			'edge_images'
 		);
+
+		// Register feature settings
+		foreach (Feature_Manager::get_features() as $id => $feature) {
+			// Get the option name (either custom or default)
+			$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
+
+			register_setting(
+				self::OPTION_GROUP,
+				$option_name,
+				[
+					'type' => 'boolean',
+					'default' => $feature['default'],
+					'sanitize_callback' => [self::class, 'sanitize_boolean'],
+				]
+			);
+		}
 	}
 
 	/**
@@ -414,36 +422,6 @@ class Admin_Page {
 				</label>
 			<?php endforeach; ?>
 		</div>
-		<?php
-	}
-
-	/**
-	 * Renders the picture wrap field.
-	 *
-	 * Creates the checkbox interface for toggling picture element wrapping.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @return void
-	 */
-	public static function render_picture_wrap_field(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$disabled = get_option( self::PICTURE_WRAP_OPTION, false );
-		?>
-		<label>
-			<input type="checkbox" 
-				name="<?php echo esc_attr( self::PICTURE_WRAP_OPTION ); ?>" 
-				value="1" 
-				<?php checked( $disabled ); ?>
-			>
-			<?php esc_html_e( 'Disable wrapping images in picture elements', 'edge-images' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'By default, images are wrapped in picture elements to provide better responsive behavior. Disable this if you want simpler markup or if it conflicts with your theme.', 'edge-images' ); ?>
-		</p>
 		<?php
 	}
 
@@ -639,6 +617,51 @@ class Admin_Page {
 				<?php esc_html_e( 'Edge Images can optimize images in Yoast SEO\'s schema.org output, social media tags, and XML sitemaps. Enable or disable these features as needed.', 'edge-images' ); ?>
 			</p>
 		</fieldset>
+		<?php
+	}
+
+	/**
+	 * Render the features section.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return void
+	 */
+	public static function render_features_section(): void {
+		if (!current_user_can('manage_options')) {
+			return;
+		}
+		?>
+		<div class="edge-images-features">
+			<?php foreach (Feature_Manager::get_features() as $id => $feature): ?>
+				<div class="feature-card">
+					<div class="feature-header">
+						<strong><?php echo esc_html($feature['name']); ?></strong>
+					</div>
+					<div class="feature-settings">
+						<fieldset>
+							<p>
+								<label>
+									<?php 
+									$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
+									$is_enabled = Feature_Manager::is_feature_enabled($id);
+									?>
+									<input type="checkbox" 
+										name="<?php echo esc_attr($option_name); ?>" 
+										value="1" 
+										<?php checked($is_enabled); ?>
+									>
+									<?php esc_html_e('Enable this feature', 'edge-images'); ?>
+								</label>
+							</p>
+							<p class="description">
+								<?php echo esc_html($feature['description']); ?>
+							</p>
+						</fieldset>
+					</div>
+				</div>
+			<?php endforeach; ?>
+		</div>
 		<?php
 	}
 } 

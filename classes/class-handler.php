@@ -7,6 +7,8 @@
 
 namespace Edge_Images;
 
+use Edge_Images\Features\Picture;
+
 /**
  * Filters image attributes to use the edge provider.
  */
@@ -81,10 +83,6 @@ class Handler {
 
 		// Prevent WordPress from scaling images
 		add_filter('big_image_size_threshold', [$this, 'adjust_image_size_threshold'], 10, 4);
-
-		// Avatar transformations
-		add_filter( 'get_avatar_url', [ $this, 'transform_avatar_url' ], 10, 3 );
-		add_filter( 'get_avatar', [ $this, 'transform_avatar_html' ], 10, 6 );
 	}
 
 	/**
@@ -168,221 +166,42 @@ class Handler {
 	}
 
 	/**
-	 * Transform attachment image attributes
+	 * Transform attachment image
 	 *
-	 * @param array   $attr       Array of attribute values for the image markup.
-	 * @param WP_Post $attachment Image attachment post.
-	 * @param string  $size       Requested size.
-	 * 
+	 * @param array        $attr        Array of attribute values.
+	 * @param \WP_Post    $attachment  Attachment post object.
+	 * @param string|array $size        Requested size.
 	 * @return array Modified attributes
 	 */
-	public function transform_attachment_image(array $attr, $attachment, $size): array {
-		// Check cache first
-		$cached_html = Cache::get_image_html($attachment->ID, $size, $attr);
-		if ($cached_html !== false) {
-			// Parse cached HTML back into attributes
-			$processor = new \WP_HTML_Tag_Processor($cached_html);
-			if ($processor->next_tag('img')) {
-				$cached_attr = [];
-				foreach ($processor->get_attribute_names() as $name) {
-					$cached_attr[$name] = $processor->get_attribute($name);
-				}
-				return $cached_attr;
-			}
-		}
-
-		// Bail early if no attachment
-		if (!$attachment) {
+	public function transform_attachment_image(array $attr, \WP_Post $attachment, $size): array {
+		// Skip if already processed
+		if (isset($attr['class']) && strpos($attr['class'], 'edge-images-processed') !== false) {
 			return $attr;
 		}
 
-		// Check if this is an SVG
-		$is_svg = get_post_mime_type($attachment->ID) === 'image/svg+xml';
-
-		// Extract any transformation arguments from the attributes first
-		$transform_args = [];
-		foreach ($attr as $key => $value) {
-			if (Edge_Provider::get_canonical_arg($key)) {
-				$transform_args[$key] = $value;
-				unset($attr[$key]); // Remove from HTML attributes
-			}
-		}
-
-		// First priority: Check if size is an array with explicit dimensions
-		if (is_array($size)) {
-			// Ensure both dimensions are set with fallbacks
-			$dimensions = [
-				'width' => isset($size[0]) ? (int) $size[0] : 0,
-				'height' => isset($size[1]) ? (int) $size[1] : 0
-			];
-			
-			// If either dimension is 0, try to calculate it based on the other
-			if ($dimensions['width'] === 0 || $dimensions['height'] === 0) {
-				$original_dimensions = Image_Dimensions::from_attachment($attachment->ID);
-				if ($original_dimensions) {
-					$ratio = (int) $original_dimensions['height'] / (int) $original_dimensions['width'];
-					
-					if ($dimensions['width'] === 0) {
-						$dimensions['width'] = round($dimensions['height'] / $ratio);
-					}
-					if ($dimensions['height'] === 0) {
-						$dimensions['height'] = round($dimensions['width'] * $ratio);
-					}
-				}
-			}
-			
-			// Set transform args for explicit dimensions, preserving user-specified fit
-			$transform_args = array_merge(
-				$transform_args,
-				[
-					'w' => $dimensions['width'],
-					'h' => $dimensions['height'],
-					'fit' => $transform_args['fit'] ?? 'cover' // Only use cover as fallback
-				]
-			);
-
-			// Force these dimensions throughout the process
-			$attr['width'] = (string) $dimensions['width'];
-			$attr['height'] = (string) $dimensions['height'];
-			$attr['data-original-width'] = (string) $dimensions['width'];
-			$attr['data-original-height'] = (string) $dimensions['height'];
-			
-			// Store the fit mode for the picture element
-			$attr['data-fit'] = $transform_args['fit'];
-
-			// For SVG, return early with dimensions preserved
-			if ($is_svg) {
-				$attr['class'] = isset($attr['class']) 
-						? $attr['class'] . ' edge-images-img edge-images-processed' 
-						: 'edge-images-img edge-images-processed';
-				$attr['data-attachment-id'] = $attachment->ID;
-				return $attr;
-			}
-			
-			return $this->apply_transform($attr, $dimensions, $transform_args, $attachment);
-		}
-
-		// Second priority: Check registered sizes
-		if (is_string($size)) {
-			$registered_sizes = wp_get_registered_image_subsizes();
-			if (isset($registered_sizes[$size])) {
-				$dimensions = [
-					'width' => (int) $registered_sizes[$size]['width'],
-					'height' => (int) $registered_sizes[$size]['height']
-				];
-				
-				// Set transform args for registered size
-				$transform_args = array_merge(
-					$this->get_registered_size_args(
-						$dimensions,
-						$registered_sizes[$size]['crop']
-					),
-					$transform_args // Put user args last so they override defaults
-				);
-
-				// Force these dimensions throughout the process
-				$attr['width'] = (string) $dimensions['width'];
-				$attr['height'] = (string) $dimensions['height'];
-				$attr['data-original-width'] = (string) $dimensions['width'];
-				$attr['data-original-height'] = (string) $dimensions['height'];
-				
-				// For SVG, return early with dimensions preserved
-				if ($is_svg) {
-					$attr['class'] = isset($attr['class']) 
-						? $attr['class'] . ' edge-images-img edge-images-processed' 
-						: 'edge-images-img edge-images-processed';
-					$attr['data-attachment-id'] = $attachment->ID;
-					return $attr;
-				}
-				
-				return $this->apply_transform($attr, $dimensions, $transform_args, $attachment);
-			}
-		}
-
-		// Third priority: For SVGs, use width/height from attributes
-		if ($is_svg && isset($attr['width'], $attr['height'])) {
-			$dimensions = [
-				'width' => (int) $attr['width'],
-				'height' => (int) $attr['height']
-			];
-		} else {
-			// Fourth priority: Check metadata
-			$metadata = wp_get_attachment_metadata($attachment->ID);
-			$dimensions = $metadata['_edge_images_dimensions'] ?? null;
-		}
-
-		// Fifth priority: Try size dimensions
-		if (!$dimensions) {
-			$dimensions = $this->get_size_dimensions($size, $attachment->ID);
-		}
-
-		// If we still don't have dimensions, return unmodified attributes
+		// Get dimensions and transform args
+		$dimensions = $this->get_size_dimensions($size, $attachment->ID);
 		if (!$dimensions) {
 			return $attr;
 		}
 
-		// Set the dimensions in attributes
-		$attr['width'] = (string) $dimensions['width'];
-		$attr['height'] = (string) $dimensions['height'];
-		$attr['data-original-width'] = (string) $dimensions['width'];
-		$attr['data-original-height'] = (string) $dimensions['height'];
+		// Check for special formats (SVG/AVIF)
+		$is_special_format = isset($attr['src']) && 
+			(Helpers::is_svg($attr['src']) || strpos($attr['src'], '.avif') !== false);
 
-		return $this->apply_transform($attr, $dimensions, $transform_args, $attachment);
-	}
-
-	/**
-	 * Apply transformation to attributes
-	 *
-	 * @param array   $attr          The attributes array.
-	 * @param array   $dimensions    The image dimensions.
-	 * @param array   $transform_args The transformation arguments.
-	 * @param WP_Post $attachment    The attachment post.
-	 * @return array Modified attributes
-	 */
-	private function apply_transform(array $attr, array $dimensions, array $transform_args, $attachment): array {
-		// List of valid HTML image attributes
-		$valid_html_attrs = Helpers::$valid_html_attrs;
-		
-		// Move all non-HTML attributes to transform args
-		$filtered_attr = [];
-		foreach ($attr as $key => $value) {
-			if (in_array($key, $valid_html_attrs, true)) {
-				$filtered_attr[$key] = $value;
-			} else if (Edge_Provider::get_canonical_arg($key)) {
-				// Move transform args to transform_args array
-				$transform_args[$key] = $value;
-			} else {
-				// Keep other custom attributes
-				$filtered_attr[$key] = $value;
-			}
-		}
-		$attr = $filtered_attr;
-
-		// Get file type
-		$file = get_attached_file($attachment->ID);
-		$is_special_format = preg_match('/\.(svg|avif)$/i', $file);
-
-		// If no alt text is set, try to get it from the attachment
-		if (!isset($attr['alt']) && $attachment) {
-			$alt_text = get_post_meta($attachment->ID, '_wp_attachment_image_alt', true);
-			if ($alt_text) {
-				$attr['alt'] = $alt_text;
-			} else {
-				// Fallback to attachment title if no alt text
-				$attr['alt'] = $attachment->post_title;
-			}
-		}
+		// Get transform args based on size
+		$transform_args = $this->get_registered_size_args($dimensions);
 
 		// Transform src (skip for SVG/AVIF)
 		if (isset($attr['src']) && !$is_special_format) {
 			$provider = $this->get_provider_instance();
 			$edge_args = array_merge(
 				$provider->get_default_args(),
-				$transform_args, // Put transform_args before dimensions so they don't get overwritten
+				$transform_args,
 				array_filter([
 					'w' => $dimensions['width'] ?? null,
 					'h' => $dimensions['height'] ?? null,
-					'fit' => $transform_args['fit'] ?? 'cover', // Use the fit mode from transform_args
+					'fit' => $transform_args['fit'] ?? 'cover',
 				])
 			);
 			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
@@ -408,39 +227,11 @@ class Handler {
 			? $attr['class'] . ' edge-images-img edge-images-processed' 
 			: 'edge-images-img edge-images-processed';
 
-		// Add attachment ID as data attribute
-		$attr['data-attachment-id'] = $attachment->ID;
-
-		// Add picture wrap flag if needed
-		if (!get_option('edge_images_disable_picture_wrap', false)) {
+		// Add picture wrap flag if picture wrapping is enabled
+		if (Feature_Manager::is_feature_enabled('picture_wrap')) {
 			$attr['data-wrap-in-picture'] = 'true';
 		}
 
-		// Store the fit mode for the picture element
-		$attr['data-fit'] = $transform_args['fit'] ?? 'cover';
-
-		// Handle sizes attribute
-		if (!isset($attr['sizes']) && isset($dimensions['width'])) {
-			$attr['sizes'] = "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
-		}
-
-		// Synthesize size from dimensions if not already set
-		$size = isset($size) ? $size : [
-			$dimensions['width'],
-			$dimensions['height']
-		];
-
-		// Cache the result before returning
-		$html = '<img ' . implode(' ', array_map(
-			function($key, $value) {
-				return sprintf('%s="%s"', $key, esc_attr($value));
-			},
-			array_keys($attr),
-			$attr
-		)) . '>';
-		
-		Cache::set_image_html($attachment->ID, $size, $attr, $html);
-		
 		return $attr;
 	}
 
@@ -546,8 +337,8 @@ class Handler {
 			$attr = [];
 		}
 
-		// Skip if already wrapped or if we shouldn't wrap
-		if (strpos($html, '<picture') !== false || get_option('edge_images_disable_picture_wrap', false)) {
+		// Skip if already wrapped or if picture wrapping is disabled.
+		if (strpos($html, '<picture') !== false || !Feature_Manager::is_feature_enabled('picture_wrap')) {
 			return $html;
 		}
 
@@ -628,50 +419,49 @@ class Handler {
 	 * 
 	 * @return string The transformed image HTML
 	 */
-	public function transform_image( $value, string $image_html, string $context, $attachment_id ): string {
-
+	public function transform_image($value, string $image_html, string $context, $attachment_id): string {
 		// Skip if already processed
-		if ( strpos( $image_html, 'edge-images-processed' ) !== false ) {
+		if (strpos($image_html, 'edge-images-processed') !== false) {
 			return $image_html;
 		}
 
-		$processor = new \WP_HTML_Tag_Processor( $image_html );
-		if ( ! $processor->next_tag( 'img' ) ) {
+		$processor = new \WP_HTML_Tag_Processor($image_html);
+		if (!$processor->next_tag('img')) {
 			return $image_html;
 		}
 
 		// Transform the image with context
-		$processor = $this->transform_image_tag( $processor, $attachment_id, $image_html, $context );
+		$processor = $this->transform_image_tag($processor, $attachment_id, $image_html, $context);
 		$transformed = $processor->get_updated_html();
 
-		// Check if picture wrapping is disabled
-		if ( get_option( 'edge_images_disable_picture_wrap', false ) ) {
+		// Check if picture wrapping is disabled.
+		if (Feature_Manager::is_disabled('picture_wrap')) {
 			return $transformed;
 		}
 
 		// Get dimensions for the picture element
-		$dimensions = $this->get_dimensions_from_html( new \WP_HTML_Tag_Processor( $transformed ) );
-		if ( ! $dimensions ) {
+		$dimensions = $this->get_dimensions_from_html(new \WP_HTML_Tag_Processor($transformed));
+		if (!$dimensions) {
 			return $transformed;
 		}
 
 		// If we have a figure, replace it with picture
-		if ( strpos( $image_html, '<figure' ) !== false ) {
-			$figure_classes = $this->extract_figure_classes( $image_html, [] );
-			$img_html = $this->extract_img_tag( $transformed );
+		if (strpos($image_html, '<figure') !== false) {
+			$figure_classes = $this->extract_figure_classes($image_html, []);
+			$img_html = $this->extract_img_tag($transformed);
 			
-			return $this->create_picture_element( $img_html, $dimensions, $figure_classes );
+			return $this->create_picture_element($img_html, $dimensions, $figure_classes);
 		}
 
 		// Otherwise create picture element with just the image
-		return $this->create_picture_element( $transformed, $dimensions );
+		return $this->create_picture_element($transformed, $dimensions);
 	}
 
 	/**
 	 * Transform an image tag using the processor.
 	 *
 	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
-	 * @param int|null               $attachment_id The attachment ID if known.
+	 * @param int|null               $attachment_id The attachment ID.
 	 * @param string                 $original_html Original HTML string.
 	 * @param string                 $context       The context (content, header, etc).
 	 * @param array                  $transform_args Optional transformation arguments.
@@ -683,43 +473,44 @@ class Handler {
 		$cached_html = Cache::get_image_html($attachment_id ?: 0, $cache_key, []);
 		
 		if ($cached_html !== false) {
-			$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
 			return new \WP_HTML_Tag_Processor($cached_html);
-		}
-
-		// Get dimensions
-		$dimensions = Image_Dimensions::get($processor, $attachment_id);
-		if (!$dimensions) {
-			return $processor;
 		}
 
 		// Get src
 		$src = $processor->get_attribute('src');
-		if (!$src || !Helpers::should_transform_url($src)) {
+		if (!$src) {
 			return $processor;
 		}
 
-		// Transform the URL
-		$edge_url = Helpers::edge_src($src, array_merge(
-			$transform_args,
-			[
-				'w' => $dimensions['width'],
-				'h' => $dimensions['height']
-			]
-		));
-
-		// Generate srcset
-		$srcset = Srcset_Transformer::transform(
-			$src,
-			$dimensions,
-			$processor->get_attribute('sizes') ?? ''
-		);
-
-		// Update attributes
-		$processor->set_attribute('src', $edge_url);
-		if ($srcset) {
-			$processor->set_attribute('srcset', $srcset);
+		// Check if we should transform this URL
+		if (!Helpers::should_transform_url($src)) {
+			return $processor;
 		}
+
+		// Get dimensions - first try width/height attributes
+		$width = $processor->get_attribute('width');
+		$height = $processor->get_attribute('height');
+		
+		$dimensions = null;
+		if ($width && $height) {
+			$dimensions = [
+				'width' => (string) $width,
+				'height' => (string) $height
+			];
+		}
+
+		// If no dimensions from attributes, try Image_Dimensions::get
+		if (!$dimensions) {
+			$dimensions = Image_Dimensions::get($processor, $attachment_id);
+		}
+
+		// Transform the URL if we have dimensions
+		if ($dimensions) {
+			// Use transform_image_urls for consistent behavior
+			$this->transform_image_urls($processor, $dimensions, $original_html, $context, $transform_args);
+		}
+
+		// Always add the processed class
 		$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
 
 		// Cache the result
@@ -745,8 +536,8 @@ class Handler {
 	 * Transform image URLs
 	 *
 	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
-	 * @param array|null            $dimensions    Optional dimensions.
-	 * @param string               $original_html  The original HTML.
+	 * @param array|null             $dimensions    Optional dimensions.
+	 * @param string                 $original_html The original HTML.
 	 * @param string               $context       The context (content, header, etc).
 	 * 
 	 * @return void
@@ -781,9 +572,11 @@ class Handler {
 
 		// Get content width if we're constraining
 		if ($should_constrain) {
-			global $content_width;
-			$max_width = $content_width ?? (int) get_option('edge_images_max_width', 650);
-			$dimensions = $this->constrain_dimensions($dimensions, $max_width);
+			$max_width = min($dimensions['width'], Settings::get_max_width());
+			$dimensions = $this->constrain_dimensions($dimensions, [
+				'width' => $max_width,
+				'height' => null
+			]);
 		}
 
 		// Get a provider instance to access default args
@@ -812,54 +605,18 @@ class Handler {
 		$processor->set_attribute('data-original-height', (string)$original_dimensions['height']);
 		
 		// Get sizes attribute (or set default)
-		$sizes = $processor->get_attribute('sizes');
-		if (!$sizes || strpos($sizes, 'auto') !== false) {
-			if ($should_constrain) {
-				$sizes = "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
-			} else {
-				$sizes = "100vw"; // Full width
-			}
-			$processor->set_attribute('sizes', $sizes);
-		}
+		$sizes = "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
+		$processor->set_attribute('sizes', $sizes);
 		
-		// Generate srcset using the Srcset_Transformer with appropriate dimensions
+		// Generate srcset using the Srcset_Transformer with original dimensions
 		$srcset = Srcset_Transformer::transform(
 			$full_src, 
-			$should_constrain ? $dimensions : $original_dimensions,
-			$sizes,
-			$transform_args
+			$dimensions,
+			$sizes
 		);
 		if ($srcset) {
 			$processor->set_attribute('srcset', $srcset);
 		}
-	}
-
-	/**
-	 * Constrain dimensions to content width while maintaining aspect ratio
-	 *
-	 * @param array $dimensions Original dimensions.
-	 * @param int   $max_width  Maximum allowed width.
-	 * 
-	 * @return array Constrained dimensions
-	 */
-	private function constrain_dimensions(array $dimensions, int $max_width): array {
-		$width = (int)$dimensions['width'];
-		$height = (int)$dimensions['height'];
-		
-		// If width is already smaller than max_width, return original dimensions
-		if ($width <= $max_width) {
-			return $dimensions;
-		}
-		
-		// Calculate new height maintaining aspect ratio
-		$ratio = $height / $width;
-		$new_width = $max_width;
-		$new_height = round($max_width * $ratio);
-		
-		return [
-			'width' => $new_width,
-			'height' => $new_height
-		];
 	}
 
 	/**
@@ -897,7 +654,7 @@ class Handler {
 			return $block_content;
 		}
 
-		$disable_picture_wrap = get_option( 'edge_images_disable_picture_wrap', false );
+		$disable_picture_wrap = Feature_Manager::is_disabled('picture_wrap');
 		$offset_adjustment = 0;
 
 		foreach ( $matches[0] as $match ) {
@@ -1603,68 +1360,15 @@ class Handler {
 	}
 
 	/**
-	 * Create picture element with given components
+	 * Create a picture element wrapper.
 	 *
-	 * @param string $img_html      The image HTML.
-	 * @param array  $dimensions    The image dimensions.
-	 * @param string $extra_classes Additional classes to add.
-	 * 
-	 * @return string The picture element HTML
+	 * @param string $img_html   The image HTML to wrap.
+	 * @param array  $dimensions The image dimensions.
+	 * @param string $class      Optional additional class.
+	 * @return string The wrapped HTML.
 	 */
-	public function create_picture_element(string $img_html, array $dimensions, string $extra_classes = ''): string {
-
-		// Start with base classes
-		$classes = ['edge-images-container'];
-		
-		// Add any extra classes
-		if ($extra_classes) {
-			$classes = array_merge($classes, explode(' ', $extra_classes));
-		}
-		
-		// Get dimensions from data-original attributes first
-		$processor = new \WP_HTML_Tag_Processor($img_html);
-		if ($processor->next_tag('img')) {
-			// Check for container-class attribute
-			$container_class = $processor->get_attribute('container-class');
-			if ($container_class) {
-				$classes = array_merge($classes, explode(' ', $container_class));
-				// Remove the container-class attribute from the img tag
-				$processor->remove_attribute('container-class');
-				$img_html = $processor->get_updated_html();
-			}
-
-			// Get the fit mode from data-fit attribute
-			$fit = $processor->get_attribute('data-fit');
-			if ($fit) {
-				$classes[] = $fit;
-				// Remove the data-fit attribute as we don't need it anymore
-				$processor->remove_attribute('data-fit');
-				$img_html = $processor->get_updated_html();
-			}
-
-			// Use data-original dimensions if available
-			$original_width = $processor->get_attribute('data-original-width');
-			$original_height = $processor->get_attribute('data-original-height');
-			if ($original_width && $original_height) {
-				$dimensions = [
-					'width' => (int) $original_width,
-					'height' => (int) $original_height
-				];
-			}
-		}
-
-		// Get reduced aspect ratio from actual dimensions
-		$ratio = Image_Dimensions::reduce_ratio($dimensions['width'], $dimensions['height']);
-
-		// Create the picture element with the actual dimensions
-		return sprintf(
-			'<picture class="%s" style="--aspect-ratio: %d/%d; --max-width: %dpx;">%s</picture>',
-			esc_attr(implode(' ', array_unique($classes))),
-			$ratio['width'],
-			$ratio['height'],
-			$dimensions['width'],
-			$img_html
-		);
+	private function create_picture_element(string $img_html, array $dimensions, string $class = ''): string {
+		return Picture::create($img_html, $dimensions, $class);
 	}
 
 	/**
@@ -1781,102 +1485,37 @@ class Handler {
 	}
 
 	/**
-	 * Transform avatar URLs.
+	 * Constrain dimensions while maintaining aspect ratio.
 	 *
-	 * @since 4.2.0
-	 * 
-	 * @param string $url         The URL of the avatar.
-	 * @param mixed  $id_or_email The Gravatar to retrieve.
-	 * @param array  $args        Arguments passed to get_avatar_data().
-	 * @return string The transformed URL.
+	 * @param array $dimensions Original dimensions ['width' => int, 'height' => int].
+	 * @param array $max_dimensions Maximum dimensions ['width' => int|null, 'height' => int|null].
+	 * @return array Constrained dimensions.
 	 */
-	public function transform_avatar_url( string $url, $id_or_email, array $args ): string {
-		// Skip if URL is empty or remote.
-		if ( empty( $url ) || ! Helpers::is_local_url( $url ) ) {
-			return $url;
+	private function constrain_dimensions(array $dimensions, array $max_dimensions): array {
+		$width = (int) $dimensions['width'];
+		$height = (int) $dimensions['height'];
+		$max_width = $max_dimensions['width'];
+		$max_height = $max_dimensions['height'];
+
+		// If no constraints or image is smaller than constraints, return original
+		if ((!$max_width || $width <= $max_width) && (!$max_height || $height <= $max_height)) {
+			return $dimensions;
 		}
 
-		// Get size from args.
-		$size = $args['size'] ?? 96;
+		$ratio = $width / $height;
 
-		// Transform URL using edge provider.
-		return Helpers::edge_src( $url, [
-			'width'  => $size,
-			'height' => $size,
-			'sharpen' => 1,
-		]);
-	}
-
-	/**
-	 * Transform avatar HTML.
-	 *
-	 * @since 4.2.0
-	 * 
-	 * @param string $avatar      HTML for the user's avatar.
-	 * @param mixed  $id_or_email The Gravatar to retrieve.
-	 * @param int    $size        Square avatar width and height in pixels.
-	 * @param string $default     URL for the default image.
-	 * @param string $alt         Alternative text.
-	 * @param array  $args        Arguments passed to get_avatar_data().
-	 * @return string The transformed avatar HTML.
-	 */
-	public function transform_avatar_html( string $avatar, $id_or_email, int $size, string $default, string $alt, array $args ): string {
-		// Skip if avatar is empty.
-		if ( empty( $avatar ) ) {
-			return $avatar;
+		if ($max_width && (!$max_height || ($max_width / $max_height <= $ratio))) {
+			$new_width = $max_width;
+			$new_height = round($max_width / $ratio);
+		} else {
+			$new_height = $max_height;
+			$new_width = round($max_height * $ratio);
 		}
 
-		// Create HTML processor.
-		$processor = new \WP_HTML_Tag_Processor( $avatar );
-		if ( ! $processor->next_tag( 'img' ) ) {
-			return $avatar;
-		}
-
-		// Skip if remote URL.
-		$src = $processor->get_attribute( 'src' );
-		if ( ! $src || ! Helpers::is_local_url( $src ) ) {
-			return $avatar;
-		}
-
-		// Get container class if it exists
-		$container_class = $processor->get_attribute( 'container-class' );
-
-		// Transform the image.
-		$transform_args = [
-			'width'  => $size,
-			'height' => $size,
-			'sharpen' => 1,
+		return [
+			'width' => (string) $new_width,
+			'height' => (string) $new_height
 		];
-
-		// Create processor with transform args
-		$processor = new \WP_HTML_Tag_Processor( $avatar );
-		$processor->next_tag( 'img' );
-		$processor = $this->transform_image_tag( $processor, null, $avatar, 'avatar', $transform_args );
-		$transformed = $processor->get_updated_html();
-
-		// Check if picture wrapping is disabled
-		if ( get_option( 'edge_images_disable_picture_wrap', false ) ) {
-			return $transformed;
-		}
-
-		// Create dimensions array for picture element
-		$dimensions = [
-			'width'  => $size,
-			'height' => $size,
-		];
-
-		// Create picture element with container class if it exists
-		$classes = ['avatar-picture'];
-		if ( $container_class ) {
-			$classes[] = $container_class;
-		}
-
-		// Create picture element
-		return $this->create_picture_element( 
-			$transformed, 
-			$dimensions, 
-			implode( ' ', $classes )
-		);
 	}
 
 }

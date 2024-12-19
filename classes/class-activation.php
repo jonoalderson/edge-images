@@ -64,6 +64,14 @@ class Activation {
 				update_option($option, $default);
 			}
 		}
+
+		// Set feature defaults
+		$feature_defaults = Feature_Manager::get_default_settings();
+		foreach ($feature_defaults as $option => $default) {
+			if (get_option($option) === false) {
+				update_option($option, $default);
+			}
+		}
 	}
 
 	/**

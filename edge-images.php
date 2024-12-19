@@ -59,3 +59,6 @@ add_action( 'init', [ Handler::class, 'register' ], 5 );
  * We use 'plugins_loaded' to ensure all plugins are available.
  */
 add_action( 'plugins_loaded', [ Integration_Manager::class, 'register' ], 5 );
+
+// Add this line where other features/integrations are registered
+add_action('init', [Feature_Manager::class, 'register'], 5);

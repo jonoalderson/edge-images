@@ -12,7 +12,7 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Helpers, Integration, Cache};
+use Edge_Images\{Helpers, Integration, Cache, Settings, Integration_Manager};
 
 /**
  * Configures Yoast SEO schema output to use the image rewriter.
@@ -220,6 +220,23 @@ class Schema_Images extends Integration {
 		return [
 			'edge_images_yoast_schema_images' => true,
 		];
+	}
+
+	/**
+	 * Check if this integration should filter.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return bool Whether the integration should filter.
+	 */
+	protected function should_filter(): bool {
+
+		// Bail if the Yoast SEO integration is disabled
+		if ( ! Integration_Manager::is_enabled('yoast-seo') ) {
+			return false;
+		}
+
+		return Settings::get_option('edge_images_yoast_schema_images');
 	}
 
 }

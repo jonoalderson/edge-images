@@ -98,8 +98,9 @@ class Helpers {
 	 * @return string The provider name.
 	 */
 	private static function get_provider_name(): string {
-		// Get the provider from options.
-		$provider = get_option( 'edge_images_provider', Provider_Registry::DEFAULT_PROVIDER );
+		
+		// Get the provider.
+		$provider = Settings::get_provider();
 		
 		// Allow filtering.
 		$provider = apply_filters( 'edge_images_provider', $provider );
@@ -126,6 +127,9 @@ class Helpers {
 		if (preg_match('/\.(svg|avif)$/i', $src)) {
 			return $src;
 		}
+
+		// Get original URL if this is a WordPress resized image
+		$src = preg_replace('/-\d+x\d+\.(jpg|jpeg|png|gif|webp)$/i', '.$1', $src);
 
 		// Bail if we shouldn't transform the src
 		if (!self::should_transform_url($src)) {
@@ -201,38 +205,6 @@ class Helpers {
 	}
 
 	/**
-	 * Get an edge provider instance.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @param string $path Optional path to the image.
-	 * @param array  $args Optional transformation arguments.
-	 * @return Edge_Provider The provider instance.
-	 */
-	private static $provider_instances = [];
-
-	public static function get_edge_provider(string $path = '', array $args = []): Edge_Provider {
-		// Create cache key from path and args
-		$cache_key = md5($path . serialize($args));
-		
-		// Return cached instance if exists
-		if (isset(self::$provider_instances[$cache_key])) {
-			return self::$provider_instances[$cache_key];
-		}
-		
-		$provider = self::get_provider_name();
-		$provider_class = Provider_Registry::get_provider_class($provider);
-
-		if (!class_exists($provider_class)) {
-			$provider_class = Edge_Provider::class;
-		}
-
-		// Cache and return new instance
-		self::$provider_instances[$cache_key] = new $provider_class($path, $args);
-		return self::$provider_instances[$cache_key];
-	}
-
-	/**
 	 * Get the domain to use as the edge rewrite base.
 	 *
 	 * @since 4.0.0
@@ -253,7 +225,8 @@ class Helpers {
 	 * @return bool Whether the provider is properly configured.
 	 */
 	public static function is_provider_configured(): bool {
-		$provider = get_option('edge_images_provider', 'none');
+
+		$provider = Settings::get_provider();
 		
 		// Bail if no provider is selected.
 		if ($provider === 'none') {
@@ -284,18 +257,29 @@ class Helpers {
 	}
 
 	/**
-	 * Check if we should transform an image URL.
+	 * Check if a URL should be transformed.
 	 *
-	 * @param string $url The image URL to check.
-	 * @return bool Whether we should transform the image.
+	 * @param string $url The URL to check.
+	 * @return bool Whether the URL should be transformed.
 	 */
 	public static function should_transform_url(string $url): bool {
-		// Skip if no URL
-		if (!$url) {
+	
+		// Skip empty URLs
+		if (empty($url)) {
 			return false;
 		}
 
-		// Skip if already transformed
+		// Skip data URLs
+		if (strpos($url, 'data:') === 0) {
+			return false;
+		}
+
+		// Skip SVGs
+		if (self::is_svg($url)) {
+			return false;
+		}
+
+		// Skip already transformed URLs
 		if (self::is_transformed_url($url)) {
 			return false;
 		}
@@ -305,7 +289,56 @@ class Helpers {
 			return false;
 		}
 
+		// Get the provider
+		$provider = self::get_edge_provider();
+		if (!$provider) {
+			return false;
+		}
+
+		if (!$provider::is_configured()) {
+			return false;
+		}
+
 		return true;
+	}
+
+	/**
+	 * Check if a URL is local.
+	 *
+	 * @param string $url The URL to check.
+	 * @return bool Whether the URL is local.
+	 */
+	public static function is_local_url(string $url): bool {
+		$site_url = site_url();
+		$home_url = home_url();
+		
+		// Remove protocol and www
+		$url = preg_replace('#^https?://(www\.)?#', '', $url);
+		$site_url = preg_replace('#^https?://(www\.)?#', '', $site_url);
+		$home_url = preg_replace('#^https?://(www\.)?#', '', $home_url);
+		
+		// Check if URL starts with either site_url or home_url
+		$is_local = (strpos($url, $site_url) === 0) || (strpos($url, $home_url) === 0);
+		
+		return $is_local;
+	}
+
+	/**
+	 * Get the edge provider instance.
+	 *
+	 * @return Edge_Provider|null The provider instance or null if none configured.
+	 */
+	public static function get_edge_provider(): ?Edge_Provider {
+		// Get the provider name
+		$provider_name = self::get_provider_name();
+
+		// Get the provider class
+		$provider_class = Provider_Registry::get_provider_class($provider_name);
+
+		// Create a test instance with a dummy path
+		$provider = new $provider_class('/test.jpg');
+
+		return $provider;
 	}
 
 	/**
@@ -330,22 +363,6 @@ class Helpers {
 		
 		// Check if URL contains the provider's pattern
 		return strpos($url, $pattern) !== false;
-	}
-
-	/**
-	 * Check if a URL is local to the current site.
-	 *
-	 * @since 4.1.0
-	 * 
-	 * @param string $url The URL to check.
-	 * @return bool Whether the URL is local.
-	 */
-	public static function is_local_url(string $url): bool {
-		$site_url = site_url();
-		$upload_url = wp_get_upload_dir()['baseurl'];
-		
-		// Check if URL starts with site URL or uploads URL
-		return strpos($url, $site_url) === 0 || strpos($url, $upload_url) === 0;
 	}
 
 	/**

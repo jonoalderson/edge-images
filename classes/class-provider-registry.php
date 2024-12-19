@@ -96,7 +96,11 @@ class Provider_Registry {
 		if (!self::is_valid_provider($provider_name) || $provider_name === 'none') {
 			$class = Edge_Provider::class;
 		} else {
-			$class = 'Edge_Images\Edge_Providers\\' . ucfirst($provider_name);
+			$parts = explode('_', $provider_name);
+			$parts = array_map('ucfirst', $parts);
+			$class_name = implode('_', $parts);
+			
+			$class = 'Edge_Images\Edge_Providers\\' . $class_name;
 		}
 
 		self::$provider_class_cache[$provider_name] = $class;
