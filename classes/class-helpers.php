@@ -373,7 +373,7 @@ class Helpers {
 	 * @param string $url The image URL.
 	 * @return int|null The attachment ID or null if not found.
 	 */
-	public static function get_attachment_id( string $url ): ?int {
+	public static function get_attachment_id_from_url( string $url ): ?int {
 		// Remove query string for attachment lookup
 		$clean_url = preg_replace('/\?.*/', '', $url);
 
@@ -501,6 +501,33 @@ class Helpers {
 		}
 		
 		return $url;
+	}
+
+	/**
+	 * Get attachment ID from image classes.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
+	 * @return int|null Attachment ID or null if not found.
+	 */
+	public static function get_attachment_id_from_classes(\WP_HTML_Tag_Processor $processor): ?int {
+		$classes = $processor->get_attribute('class');
+		if (!$classes) {
+			return null;
+		}
+
+		// Look for wp-image-{ID} class
+		if (preg_match('/wp-image-(\d+)/', $classes, $matches)) {
+			return (int) $matches[1];
+		}
+
+		// Look for attachment-{ID} class
+		if (preg_match('/attachment-(\d+)/', $classes, $matches)) {
+			return (int) $matches[1];
+		}
+
+		return null;
 	}
 
 }

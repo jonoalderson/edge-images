@@ -173,7 +173,7 @@ class Schema_Images extends Integration {
 			return $cached_result;
 		}
 
-		$image_id = Helpers::get_attachment_id( $image_url );
+		$image_id = Helpers::get_attachment_id_from_url( $image_url );
 		if ( ! $image_id ) {
 			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return false;

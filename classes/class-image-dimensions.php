@@ -94,20 +94,13 @@ class Image_Dimensions {
     /**
      * Get attachment ID from image classes.
      *
-     * Extracts the WordPress attachment ID from an image's class attribute.
-     *
      * @since 4.0.0
      * 
      * @param \WP_HTML_Tag_Processor $processor The HTML processor.
      * @return int|null Attachment ID or null if not found.
      */
     public static function get_attachment_id( \WP_HTML_Tag_Processor $processor ): ?int {
-        $classes = $processor->get_attribute( 'class' );
-        if ( ! $classes || ! preg_match( '/wp-image-(\d+)/', $classes, $matches ) ) {
-            return null;
-        }
-
-        return (int) $matches[1];
+        return Helpers::get_attachment_id_from_classes($processor);
     }
 
     /**

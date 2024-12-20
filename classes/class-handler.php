@@ -169,6 +169,28 @@ class Handler {
 	}
 
 	/**
+	 * Get transform args for a registered size
+	 *
+	 * @param array $dimensions The image dimensions.
+	 * @param bool  $crop      Whether the size is cropped.
+	 * @return array The transform arguments
+	 */
+	private function get_registered_size_args(array $dimensions, bool $crop = true): array {
+		
+		// Get provider instance to access default args
+		$provider = $this->get_provider_instance();
+		
+		return array_merge(
+			$provider->get_default_args(),
+			[
+				'w' => $dimensions['width'],
+				'h' => $dimensions['height'],
+				'fit' => $crop ? 'cover' : 'contain',
+			]
+		);
+	}
+
+	/**
 	 * Transform attachment image
 	 *
 	 * @param array        $attr        Array of attribute values.
@@ -602,7 +624,7 @@ class Handler {
 		}
 
 		// Get attachment ID
-		$attachment_id = $this->get_attachment_id_from_classes($processor);
+		$attachment_id = Helpers::get_attachment_id_from_classes($processor);
 		if (!$attachment_id) {
 			$attachment_id = attachment_url_to_postid($src);
 		}
@@ -1068,100 +1090,35 @@ class Handler {
 	 * Get image dimensions, trying multiple sources
 	 *
 	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
-	 * @param int|null              $attachment_id The attachment ID.
-	 * 
-	 * @return array|null Array with width and height, or null if not found
+	 * @param int|null               $attachment_id The attachment ID.
+	 * @param string                $size          Optional size name.
+	 * @return array<string,string>|null Array with width and height, or null if not found.
 	 */
-	private function get_image_dimensions(\WP_HTML_Tag_Processor $processor, ?int $attachment_id = null ): ?array {
-
+	private function get_dimensions(\WP_HTML_Tag_Processor $processor, ?int $attachment_id = null, string $size = 'full'): ?array {
 		// Try HTML first
-		$dimensions = $this->get_dimensions_from_html( $processor );
-		if ( $dimensions ) {
+		$dimensions = Image_Dimensions::from_html($processor);
+		if ($dimensions) {
 			return $dimensions;
 		}
 
 		// Try attachment ID from parameter
-		if ( $attachment_id ) {
-			$dimensions = $this->get_dimensions_from_attachment( $attachment_id );
-			if ( $dimensions ) {
+		if ($attachment_id) {
+			$dimensions = Image_Dimensions::from_attachment($attachment_id, $size);
+			if ($dimensions) {
 				return $dimensions;
 			}
 		}
 
 		// Try getting attachment ID from classes
-		$found_id = $this->get_attachment_id_from_classes( $processor );
-		if ( $found_id ) {
-			$dimensions = $this->get_dimensions_from_attachment( $found_id );
-			if ( $dimensions ) {
+		$found_id = Helpers::get_attachment_id_from_classes($processor);
+		if ($found_id) {
+			$dimensions = Image_Dimensions::from_attachment($found_id, $size);
+			if ($dimensions) {
 				return $dimensions;
 			}
 		}
 
-		// Try getting the ID from the URL.
-		$src = $processor->get_attribute( 'src' );
-		if ( $src ) {
-			$attachment_id = attachment_url_to_postid( $src );
-			if ( $attachment_id ) {
-				$dimensions = $this->get_dimensions_from_attachment( $attachment_id );
-			}
-		}
-
-		// Try getting the dimensions from the image file.
-		if ($src) {
-			$dimensions = $this->get_dimensions_from_image_file( $src );
-			if ( $dimensions ) {
-				return $dimensions;
-			}
-		}
-		
 		return null;
-	}
-
-	/**
-	 * Get dimensions from image file
-	 *
-	 * @param string $src The image URL.
-	 * 
-	 * @return array|null Array with width and height, or null if failed
-	 */
-	private function get_dimensions_from_image_file( string $src ): ?array {
-		
-		// Get upload directory info
-		$upload_dir = wp_get_upload_dir();
-		
-		// First try to handle upload directory URLs
-		if ( strpos( $src, $upload_dir['baseurl'] ) !== false ) {
-			$file_path = str_replace( 
-				$upload_dir['baseurl'], 
-				$upload_dir['basedir'], 
-				$src 
-			);
-		} 
-		// Then try theme/plugin URLs
-		else {
-			$relative_path = str_replace( 
-				site_url('/'), 
-				'', 
-				$src 
-			);
-			$file_path = ABSPATH . wp_normalize_path( $relative_path );
-		}
-
-		// Check if file exists and is readable
-		if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
-			return null;
-		}
-
-		// Get image dimensions
-		$dimensions = @getimagesize( $file_path );
-		if ( ! $dimensions ) {
-			return null;
-		}
-
-		return [
-			'width' => (string) $dimensions[0],
-			'height' => (string) $dimensions[1]
-		];
 	}
 
 	/**
@@ -1477,28 +1434,6 @@ class Handler {
 	}
 
 	/**
-	 * Get transform args for a registered size
-	 *
-	 * @param array $dimensions The image dimensions.
-	 * @param bool  $crop      Whether the size is cropped.
-	 * @return array The transform arguments
-	 */
-	private function get_registered_size_args(array $dimensions, bool $crop = true): array {
-		
-		// Get provider instance to access default args
-		$provider = $this->get_provider_instance();
-		
-		return array_merge(
-			$provider->get_default_args(),
-			[
-				'w' => $dimensions['width'],
-				'h' => $dimensions['height'],
-				'fit' => $crop ? 'cover' : 'contain',
-			]
-		);
-	}
-
-	/**
 	 * Get the edge provider instance.
 	 * 
 	 * @return Edge_Provider The provider instance.
@@ -1508,32 +1443,6 @@ class Handler {
 			self::$provider_instance = Helpers::get_edge_provider();
 		}
 		return self::$provider_instance;
-	}
-
-	/**
-	 * Get attachment ID from image classes
-	 *
-	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
-	 * 
-	 * @return int|null Attachment ID or null if not found
-	 */
-	private function get_attachment_id_from_classes(\WP_HTML_Tag_Processor $processor): ?int {
-		$classes = $processor->get_attribute('class');
-		if (!$classes) {
-			return null;
-		}
-
-		// Look for wp-image-{ID} class
-		if (preg_match('/wp-image-(\d+)/', $classes, $matches)) {
-			return (int) $matches[1];
-		}
-
-		// Look for attachment-{ID} class
-		if (preg_match('/attachment-(\d+)/', $classes, $matches)) {
-			return (int) $matches[1];
-		}
-
-		return null;
 	}
 
 	/**

@@ -205,7 +205,7 @@ class Social_Images extends Integration {
 		}
 
 		// Get the image ID from the URL.
-		$image_id = Helpers::get_attachment_id( $url );
+		$image_id = Helpers::get_attachment_id_from_url( $url );
 		if ( ! $image_id ) {
 			self::$processed_urls[$url] = $url;
 			wp_cache_set($cache_key, $url, \Edge_Images\Cache::CACHE_GROUP, HOUR_IN_SECONDS);
