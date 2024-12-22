@@ -95,6 +95,25 @@ class Avatars extends Integration {
 		$transformed_url = $this->transform_avatar_url( $src, $id_or_email, $args );
 		$processor->set_attribute( 'src', $transformed_url );
 
+		// Generate srcset using our transformer
+		$dimensions = ['width' => $size, 'height' => $size];
+		$sizes = "(max-width: {$size}px) 100vw, {$size}px";
+		
+		$srcset = \Edge_Images\Srcset_Transformer::transform(
+			$src,
+			$dimensions,
+			$sizes,
+			[
+				'fit' => 'cover',
+				'sharpen' => 1,
+			]
+		);
+		
+		if ( $srcset ) {
+			$processor->set_attribute( 'srcset', $srcset );
+			$processor->set_attribute( 'sizes', $sizes );
+		}
+
 		// Add our classes
 		$classes = $processor->get_attribute( 'class' ) ?? '';
 		$processor->set_attribute( 'class', trim( $classes . ' edge-images-img edge-images-processed' ) );
