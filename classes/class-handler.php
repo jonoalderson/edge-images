@@ -621,11 +621,15 @@ class Handler {
 
 		// Get content width if we're constraining
 		if ($should_constrain) {
-			$max_width = min($dimensions['width'], Settings::get_max_width());
+			$max_width = min((int)$dimensions['width'], Settings::get_max_width());
+			
 			$dimensions = $this->constrain_dimensions($dimensions, [
 				'width' => $max_width,
 				'height' => null
 			]);
+
+			// Update original dimensions to match constrained dimensions
+			$original_dimensions = $dimensions;
 		}
 
 		// Get a provider instance to access default args
@@ -643,9 +647,8 @@ class Handler {
 		);
 		
 		$transformed_src = Helpers::edge_src($full_src, $edge_args);
-		$processor->set_attribute('src', $transformed_src);
 		
-		// Update width and height attributes to match the dimensions we're using
+		// Update width and height attributes
 		$processor->set_attribute('width', (string)$dimensions['width']);
 		$processor->set_attribute('height', (string)$dimensions['height']);
 		
@@ -653,11 +656,10 @@ class Handler {
 		$processor->set_attribute('data-original-width', (string)$original_dimensions['width']);
 		$processor->set_attribute('data-original-height', (string)$original_dimensions['height']);
 		
-		// Get sizes attribute (or set default)
+		// Get sizes attribute
 		$sizes = "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
-		$processor->set_attribute('sizes', $sizes);
 		
-		// Generate srcset using the Srcset_Transformer with original dimensions
+		// Generate srcset
 		$srcset = Srcset_Transformer::transform(
 			$full_src, 
 			$dimensions,
@@ -666,12 +668,6 @@ class Handler {
 		if ($srcset) {
 			$processor->set_attribute('srcset', $srcset);
 		}
-
-		// Clean transformation attributes before adding classes
-		$this->clean_transform_attributes($processor);
-
-		// Add our classes
-		$this->add_image_classes($processor);
 	}
 
 	/**
@@ -704,34 +700,140 @@ class Handler {
 	 * 
 	 * @return string Modified block content
 	 */
-	private function transform_figures_in_block( string $block_content ): string {
-		if ( ! preg_match_all( '/<figure[^>]*>.*?<\/figure>/s', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
+	private function transform_figures_in_block(string $block_content): string {
+		if (!preg_match_all('/<figure[^>]*>.*?<\/figure>/s', $block_content, $matches, PREG_OFFSET_CAPTURE)) {
 			return $block_content;
 		}
 
-		$disable_picture_wrap = Feature_Manager::is_disabled('picture_wrap');
 		$offset_adjustment = 0;
 
-		foreach ( $matches[0] as $match ) {
+		foreach ($matches[0] as $match) {
 			$figure_html = $match[0];
+			$position = $match[1];
 
-			if ( ! $this->should_transform_figure( $figure_html ) ) {
+			// If the figure already contains a picture element, extract and use it
+			if (preg_match('/<picture[^>]*>.*?<\/picture>/s', $figure_html, $picture_matches)) {
+				$picture_html = $picture_matches[0];
+				
+				// Extract figure classes
+				$figure_classes = $this->extract_figure_classes($figure_html);
+				
+				// Extract picture classes
+				if (preg_match('/class=["\']([^"\']*)["\']/', $picture_html, $picture_class_matches)) {
+					$picture_classes = array_filter(explode(' ', $picture_class_matches[1]));
+					
+					// Merge classes
+					$all_classes = array_unique(array_merge($figure_classes, $picture_classes));
+					
+					// Replace picture classes with merged classes
+					$picture_html = preg_replace(
+						'/class=["\'][^"\']*["\']/',
+						'class="' . implode(' ', $all_classes) . '"',
+						$picture_html
+					);
+				} else {
+					// If picture has no class, add figure classes
+					$picture_html = str_replace('<picture', '<picture class="' . implode(' ', $figure_classes) . '"', $picture_html);
+				}
+				
+				// Extract any link wrapping and move it inside the picture element
+				if (preg_match('/<a[^>]*>.*?<\/a>/s', $figure_html, $link_matches)) {
+					$link_open = substr($link_matches[0], 0, strpos($link_matches[0], '>') + 1);
+					
+					// Insert the link opening tag after the picture opening tag
+					$picture_html = preg_replace(
+						'/(<picture[^>]*>)/',
+						'$1' . $link_open,
+						$picture_html
+					);
+					
+					// Insert the link closing tag before the picture closing tag
+					$picture_html = str_replace('</picture>', '</a></picture>', $picture_html);
+				}
+				
+				// Extract any caption
+				if (preg_match('/<figcaption.*?>(.*?)<\/figcaption>/s', $figure_html, $caption_matches)) {
+					$picture_html .= $caption_matches[0];
+				}
+
+				// Replace the entire figure with our picture element
+				$block_content = substr_replace(
+					$block_content,
+					$picture_html,
+					$position + $offset_adjustment,
+					strlen($figure_html)
+				);
+				
+				$offset_adjustment += strlen($picture_html) - strlen($figure_html);
 				continue;
 			}
 
-			$transformed_html = $this->transform_figure_content( 
-				$figure_html, 
-				$disable_picture_wrap 
+			// Extract figure classes
+			$figure_classes = $this->extract_figure_classes($figure_html);
+
+			// Extract the image and any wrapping link
+			$img_html = $this->extract_img_tag($figure_html);
+			if (!$img_html) {
+				continue;
+			}
+
+			// Get dimensions from the image
+			$processor = new \WP_HTML_Tag_Processor($img_html);
+			if (!$processor->next_tag('img')) {
+				continue;
+			}
+
+			$width = $processor->get_attribute('width');
+			$height = $processor->get_attribute('height');
+
+			if (!$width || !$height) {
+				continue;
+			}
+
+			$dimensions = [
+				'width' => $width,
+				'height' => $height
+			];
+
+			// Transform the image first
+			$transformed_img = $this->transform_image(true, $img_html, 'block', 0);
+
+			// Create picture element with figure classes
+			$picture_html = Picture::create(
+				$transformed_img,
+				$dimensions,
+				implode(' ', array_merge($figure_classes, ['edge-images-container']))
 			);
 
-			$block_content = $this->replace_content_at_offset(
+			// If there's a link wrapping the image, move it inside the picture element
+			if (preg_match('/<a[^>]*>.*?<\/a>/s', $figure_html, $link_matches)) {
+				$link_open = substr($link_matches[0], 0, strpos($link_matches[0], '>') + 1);
+				
+				// Insert the link opening tag after the picture opening tag
+				$picture_html = preg_replace(
+					'/(<picture[^>]*>)/',
+					'$1' . $link_open,
+					$picture_html
+				);
+				
+				// Insert the link closing tag before the picture closing tag
+				$picture_html = str_replace('</picture>', '</a></picture>', $picture_html);
+			}
+
+			// Extract any caption from the figure
+			if (preg_match('/<figcaption.*?>(.*?)<\/figcaption>/s', $figure_html, $caption_matches)) {
+				$picture_html .= $caption_matches[0];
+			}
+
+			// Replace the entire figure with our new markup
+			$block_content = substr_replace(
 				$block_content,
-				$transformed_html,
-				$match[1] + $offset_adjustment,
-				strlen( $figure_html )
+				$picture_html,
+				$position + $offset_adjustment,
+				strlen($figure_html)
 			);
 			
-			$offset_adjustment += strlen( $transformed_html ) - strlen( $figure_html );
+			$offset_adjustment += strlen($picture_html) - strlen($figure_html);
 		}
 
 		return $block_content;
@@ -744,30 +846,31 @@ class Handler {
 	 * 
 	 * @return string Modified block content
 	 */
-	private function transform_standalone_images_in_block( string $block_content ): string {
-		if ( ! preg_match_all( '/<img[^>]*>/', $block_content, $matches, PREG_OFFSET_CAPTURE ) ) {
+	private function transform_standalone_images_in_block(string $block_content): string {
+		if (!preg_match_all('/<img[^>]*>/', $block_content, $matches, PREG_OFFSET_CAPTURE)) {
 			return $block_content;
 		}
 
 		$offset_adjustment = 0;
 
-		foreach ( $matches[0] as $match ) {
+		foreach ($matches[0] as $match) {
 			$img_html = $match[0];
+			$position = $match[1];
 			
-			if ( ! $this->should_transform_standalone_image( $img_html, $block_content, $match[1] ) ) {
+			if (!$this->should_transform_standalone_image($img_html, $block_content, $position)) {
 				continue;
 			}
 
-			$transformed_html = $this->transform_image( true, $img_html, 'block', 0 );
+			$transformed_html = $this->transform_image(true, $img_html, 'block', 0);
 			
-			$block_content = $this->replace_content_at_offset(
+			$block_content = substr_replace(
 				$block_content,
 				$transformed_html,
-				$match[1] + $offset_adjustment,
-				strlen( $img_html )
+				$position + $offset_adjustment,
+				strlen($img_html)
 			);
 			
-			$offset_adjustment += strlen( $transformed_html ) - strlen( $img_html );
+			$offset_adjustment += strlen($transformed_html) - strlen($img_html);
 		}
 
 		return $block_content;
@@ -811,16 +914,16 @@ class Handler {
 	 */
 	private function transform_figure_content( string $figure_html, bool $disable_picture_wrap ): string {
 		// Extract figure classes, passing empty array as second parameter
-		$figure_classes = $this->extract_figure_classes( $figure_html );
+		$figure_classes = $this->extract_figure_classes($figure_html);
 
-		if ( $disable_picture_wrap ) {
-			$img_html = $this->extract_img_tag( $figure_html );
-			if ( ! $img_html ) {
+		if ($disable_picture_wrap) {
+			$img_html = $this->extract_img_tag($figure_html);
+			if (!$img_html) {
 				return $figure_html;
 			}
 
-			$transformed_img = $this->transform_image( true, $img_html, 'block', 0 );
-			return str_replace( $img_html, $transformed_img, $figure_html );
+			$transformed_img = $this->transform_image(true, $img_html, 'block', 0);
+			return str_replace($img_html, $transformed_img, $figure_html);
 		}
 
 		// Extract the entire linked image if it exists
@@ -835,18 +938,18 @@ class Handler {
 		}
 
 		// Transform the image
-		$transformed_img = $this->transform_image( true, $img_html, 'block', 0 );
+		$transformed_img = $this->transform_image(true, $img_html, 'block', 0);
 		
 		// Get dimensions from the transformed image
-		$processor = new \WP_HTML_Tag_Processor( $transformed_img );
-		if ( ! $processor->next_tag( 'img' ) ) {
+		$processor = new \WP_HTML_Tag_Processor($transformed_img);
+		if (!$processor->next_tag('img')) {
 			return $figure_html;
 		}
 
-		$width = $processor->get_attribute( 'width' );
-		$height = $processor->get_attribute( 'height' );
+		$width = $processor->get_attribute('width');
+		$height = $processor->get_attribute('height');
 
-		if ( ! $width || ! $height ) {
+		if (!$width || !$height) {
 			return $figure_html;
 		}
 
@@ -855,12 +958,17 @@ class Handler {
 			'height' => $height
 		];
 
-		// Create picture element with the transformed image
-		return Picture::create( 
-			$img_html,  // Pass the original HTML with link
-			$dimensions, 
-			implode( ' ', array_filter( $figure_classes ) ) 
+		// Create picture element with figure classes
+		$picture_html = Picture::create(
+			$transformed_img,
+			$dimensions,
+			implode(' ', $figure_classes)
 		);
+
+		// Replace the original image with the picture element
+		$result = str_replace($img_html, $picture_html, $figure_html);
+
+		return $result;
 	}
 
 	/**
@@ -1415,6 +1523,7 @@ class Handler {
 
 		// Check for alignment classes that indicate full-width
 		$classes = $processor->get_attribute('class') ?? '';
+		
 		if (preg_match('/(alignfull|alignwide|full-width|width-full)/i', $classes)) {
 			return false;
 		}
@@ -1426,26 +1535,6 @@ class Handler {
 					return false;
 				}
 			}
-		}
-
-		// Check for explicit width attribute or style
-		$width_attr = $processor->get_attribute('width');
-		$style_attr = $processor->get_attribute('style');
-		
-		// Check for vw units in width
-		if ($width_attr && strpos($width_attr, 'vw') !== false) {
-			return false;
-		}
-
-		// Check for percentage or vw units in style
-		if ($style_attr && preg_match('/width\s*:\s*(100%|[0-9]+vw)/', $style_attr)) {
-			return false;
-		}
-
-		// Check for size-full class on image or parent figure
-		if (strpos($classes, 'size-full') !== false || 
-				strpos($original_html, 'size-full') !== false) {
-			return false;
 		}
 
 		return true;
@@ -1483,17 +1572,31 @@ class Handler {
 
 		$ratio = $width / $height;
 
-		if ($max_width && (!$max_height || ($max_width / $max_height <= $ratio))) {
-			$new_width = $max_width;
-			$new_height = round($max_width / $ratio);
-		} else {
-			$new_height = $max_height;
-			$new_width = round($max_height * $ratio);
+		// If max width is set, scale based on that
+		if ($max_width) {
+			$new_width = min($width, $max_width);
+			$new_height = round($new_width / $ratio);
+
+			// If max height is also set and we exceed it, scale based on height instead
+			if ($max_height && $new_height > $max_height) {
+				$new_height = $max_height;
+				$new_width = round($new_height * $ratio);
+			}
+		}
+		// If only max height is set, scale based on that
+		elseif ($max_height) {
+			$new_height = min($height, $max_height);
+			$new_width = round($new_height * $ratio);
+		}
+		// If no constraints, return original dimensions
+		else {
+			$new_width = $width;
+			$new_height = $height;
 		}
 
 		return [
-			'width' => (string) $new_width,
-			'height' => (string) $new_height
+			'width' => $new_width,
+			'height' => $new_height
 		];
 	}
 
