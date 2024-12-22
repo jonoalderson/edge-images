@@ -38,6 +38,12 @@ class Feature_Manager {
 			'class' => 'Features\Picture',
 			'default' => false,
 		],
+		'htaccess_caching' => [
+			'name' => 'Browser Caching',
+			'description' => 'Create .htaccess rules to enable long-term browser caching for images.',
+			'class' => 'Features\Htaccess_Cache',
+			'default' => false,
+		],
 	];
 
     public static function is_disabled(string $feature_id): bool {
@@ -74,13 +80,9 @@ class Feature_Manager {
 
 		$feature = self::$features[$feature_id];
 		$option_name = $feature['option'] ?? "edge_images_feature_{$feature_id}";
+		$value = get_option($option_name, $feature['default']);
 		
-		// For picture wrapping, we now check the positive value
-		if ($feature_id === 'picture_wrap') {
-			return get_option($option_name, false);
-		}
-
-		return get_option($option_name, $feature['default']);
+		return $value;
 	}
 
 	/**

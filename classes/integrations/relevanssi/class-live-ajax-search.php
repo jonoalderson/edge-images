@@ -32,6 +32,7 @@ class Live_Ajax_Search extends Integration {
 	 * @return string Modified template HTML.
 	 */
 	public function transform_search_results( string $template ): string {
+		
 		// Skip if no images.
 		if ( ! str_contains( $template, '<img' ) ) {
 			return $template;

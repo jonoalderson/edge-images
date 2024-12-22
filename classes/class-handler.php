@@ -57,10 +57,6 @@ class Handler {
 	 * @return void
 	 */
 	private function add_filters() : void {
-
-		// Hook into the earliest possible filter for image dimensions
-		add_filter('wp_get_attachment_metadata', [$this, 'filter_attachment_metadata'], 1, 2);
-
 		// First transform the attributes
 		add_filter('wp_get_attachment_image_attributes', [$this, 'transform_attachment_image'], 10, 3);
 		
@@ -73,6 +69,7 @@ class Handler {
 
 		// Transform images in content
 		add_filter('wp_img_tag_add_width_and_height_attr', [$this, 'transform_image'], 5, 4);
+		add_filter('the_content', [$this, 'transform_content_images'], 5);
 		add_filter('render_block', [$this, 'transform_block_images'], 5, 2);
 
 		// Ensure WordPress's default dimension handling still runs
@@ -104,38 +101,6 @@ class Handler {
 			return max( $imagesize[0], $imagesize[1] );
 		}
 		return $threshold;
-	}
-
-	/**
-	 * Filter attachment metadata to ensure correct dimensions
-	 *
-	 * @param array|string $data    Array of metadata or empty string.
-	 * @param int         $post_id Attachment ID.
-	 * 
-	 * @return array Modified metadata
-	 */
-	public function filter_attachment_metadata($data, $post_id): array {
-		// If $data is not an array, initialize it as one
-		if (!is_array($data)) {
-			$data = [];
-		}
-
-		// Check if we're processing a size that matches our pattern
-		$size = get_post_meta($post_id, '_wp_attachment_requested_size', true);
-		if ($size && preg_match('/^(\d+)x(\d+)$/', $size, $matches)) {
-			$width = (int)$matches[1];
-			$height = (int)$matches[2];
-			
-			// Store the dimensions in the metadata
-			$data['sizes'][$size] = [
-				'width' => $width,
-				'height' => $height,
-				'file' => basename($data['file']),
-				'mime-type' => get_post_mime_type($post_id)
-			];
-		}
-		
-		return $data;
 	}
 
 	/**
@@ -185,7 +150,6 @@ class Handler {
 			[
 				'w' => $dimensions['width'],
 				'h' => $dimensions['height'],
-				'fit' => $crop ? 'cover' : 'contain',
 			]
 		);
 	}
@@ -204,8 +168,23 @@ class Handler {
 			return $attr;
 		}
 
-		// Get dimensions and transform args
-		$dimensions = $this->get_size_dimensions($size, $attachment->ID);
+		// Get dimensions from size
+		$dimensions = null;
+		if (is_array($size) && isset($size[0], $size[1])) {
+			$dimensions = [
+				'width' => (string) $size[0],
+				'height' => (string) $size[1]
+			];
+		} else {
+			// Get dimensions from attachment metadata for named size
+			$dimensions = Image_Dimensions::from_attachment($attachment->ID, $size);
+		}
+
+		// Fall back to original dimensions if no size-specific dimensions found
+		if (!$dimensions) {
+			$dimensions = Image_Dimensions::from_attachment($attachment->ID);
+		}
+
 		if (!$dimensions) {
 			return $attr;
 		}
@@ -214,26 +193,20 @@ class Handler {
 		$is_special_format = isset($attr['src']) && 
 			(Helpers::is_svg($attr['src']) || strpos($attr['src'], '.avif') !== false);
 
-		// Get transform args based on size
-		$transform_args = $this->get_registered_size_args($dimensions);
+		// Get transform args based on size and attributes
+		$transform_args = array_merge(
+			$this->get_registered_size_args($dimensions),
+			$this->extract_transform_args($attr)
+		);
 
 		// Transform src (skip for SVG/AVIF)
 		if (isset($attr['src']) && !$is_special_format) {
 			$provider = $this->get_provider_instance();
-			$edge_args = array_merge(
-				$provider->get_default_args(),
-				$transform_args,
-				array_filter([
-					'w' => $dimensions['width'] ?? null,
-					'h' => $dimensions['height'] ?? null,
-					'fit' => $transform_args['fit'] ?? 'cover',
-				])
-			);
 			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
-			$attr['src'] = Helpers::edge_src($full_src, $edge_args);
+			$attr['src'] = Helpers::edge_src($full_src, $transform_args);
 		}
 
-		// Generate srcset with the same transformation args (skip for SVG/AVIF)
+		// Generate srcset with the same transformation args
 		if (isset($attr['src']) && $dimensions && !$is_special_format) {
 			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
 			$srcset = Srcset_Transformer::transform(
@@ -247,12 +220,20 @@ class Handler {
 			}
 		}
 
+		// Store original dimensions
+		$attr['data-original-width'] = $dimensions['width'];
+		$attr['data-original-height'] = $dimensions['height'];
+
+		// Set dimensions
+		$attr['width'] = $dimensions['width'];
+		$attr['height'] = $dimensions['height'];
+
 		// Add our classes
 		$attr['class'] = isset($attr['class']) 
 			? $attr['class'] . ' edge-images-img edge-images-processed' 
 			: 'edge-images-img edge-images-processed';
 
-		// Add picture wrap flag if picture wrapping is enabled
+		// Add picture wrap flag if enabled
 		if (Feature_Manager::is_feature_enabled('picture_wrap')) {
 			$attr['data-wrap-in-picture'] = 'true';
 		}
@@ -435,7 +416,7 @@ class Handler {
 	}
 
 	/**
-	 * Transform an image tag
+	 * Transform image
 	 *
 	 * @param string|bool $value         The filtered value.
 	 * @param string     $image_html    The HTML image tag.
@@ -842,7 +823,44 @@ class Handler {
 			return str_replace( $img_html, $transformed_img, $figure_html );
 		}
 
-		return $this->transform_figure_block( $figure_html, $figure_classes );
+		// Extract the entire linked image if it exists
+		if (preg_match('/<a[^>]*>.*?<\/a>/s', $figure_html, $matches)) {
+			$img_html = $matches[0];
+		} else {
+			$img_html = $this->extract_img_tag($figure_html);
+		}
+
+		if (!$img_html) {
+			return $figure_html;
+		}
+
+		// Transform the image
+		$transformed_img = $this->transform_image( true, $img_html, 'block', 0 );
+		
+		// Get dimensions from the transformed image
+		$processor = new \WP_HTML_Tag_Processor( $transformed_img );
+		if ( ! $processor->next_tag( 'img' ) ) {
+			return $figure_html;
+		}
+
+		$width = $processor->get_attribute( 'width' );
+		$height = $processor->get_attribute( 'height' );
+
+		if ( ! $width || ! $height ) {
+			return $figure_html;
+		}
+
+		$dimensions = [
+			'width' => $width,
+			'height' => $height
+		];
+
+		// Create picture element with the transformed image
+		return Picture::create( 
+			$img_html,  // Pass the original HTML with link
+			$dimensions, 
+			implode( ' ', array_filter( $figure_classes ) ) 
+		);
 	}
 
 	/**
@@ -1513,7 +1531,145 @@ class Handler {
 		return $attr;
 	}
 
+	/**
+	 * Transform images in post content.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $content The post content.
+	 * @return string Modified content.
+	 */
+	public function transform_content_images(string $content): string {
+		if (!str_contains($content, '<img')) {
+			return $content;
+		}
+
+		// Find all img tags
+		if (!preg_match_all('/<img[^>]+>/i', $content, $matches, PREG_OFFSET_CAPTURE)) {
+			return $content;
+		}
+
+		$offset_adjustment = 0;
+
+		foreach ($matches[0] as $match) {
+			$img_html = $match[0];
+			$position = $match[1];
+
+			// Skip if already processed
+			if (str_contains($img_html, 'edge-images-processed')) {
+				continue;
+			}
+
+			// Get attachment ID from wp-image-X class
+			$attachment_id = null;
+			if (preg_match('/wp-image-(\d+)/', $img_html, $id_matches)) {
+				$attachment_id = (int) $id_matches[1];
+			}
+
+			// Create processor for this image
+			$processor = new \WP_HTML_Tag_Processor($img_html);
+			if (!$processor->next_tag('img')) {
+				continue;
+			}
+
+			// Transform the image
+			$processor = $this->transform_image_tag(
+				$processor,
+				$attachment_id,
+				$img_html,
+				'content'
+			);
+
+			// Get dimensions for picture wrapping
+			$dimensions = $this->get_dimensions($processor, $attachment_id);
+			if ($dimensions && Feature_Manager::is_feature_enabled('picture_wrap')) {
+				$transformed_html = Picture::create(
+					$processor->get_updated_html(),
+					$dimensions,
+					''
+				);
+			} else {
+				$transformed_html = $processor->get_updated_html();
+			}
+
+			// Replace in content
+			$content = substr_replace(
+				$content,
+				$transformed_html,
+				$position + $offset_adjustment,
+				strlen($img_html)
+			);
+
+			// Update offset
+			$offset_adjustment += strlen($transformed_html) - strlen($img_html);
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Transform featured image HTML.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string       $html              The post thumbnail HTML.
+	 * @param int         $post_id          Post ID.
+	 * @param int         $post_thumbnail_id Post thumbnail ID.
+	 * @param string|array $size             Requested size.
+	 * @param string|array $attr             Attributes.
+	 * @return string Modified HTML.
+	 */
+	public function transform_featured_image(string $html, int $post_id, int $post_thumbnail_id, $size, $attr = []): string {
+
+		// Bail if no thumbnail ID
+		if (!$post_thumbnail_id) {
+			return $html;
+		}
+
+		// Get original image dimensions
+		$original_dimensions = Helpers::get_image_dimensions($post_thumbnail_id);
+
+		if (!$original_dimensions) {
+			return $html;
+		}
+
+		// Convert attributes to array if string
+		$attributes = is_array($attr) ? $attr : [];
+
+		// Get fresh image HTML without any processing
+		$image_html = wp_get_attachment_image($post_thumbnail_id, $size, false, array_merge(
+			$attributes,
+			['class' => 'wp-post-image'] // Basic class only
+		));
+		
+		// Create processor for this image
+		$processor = new \WP_HTML_Tag_Processor($image_html);
+		if (!$processor->next_tag('img')) {
+			return $html;
+		}
+
+		// Transform the image
+		$processor = $this->transform_image_tag(
+			$processor,
+			$post_thumbnail_id,
+			$image_html,
+			'featured-image'
+		);
+
+		// Use original dimensions for picture wrapping
+		if (Feature_Manager::is_feature_enabled('picture_wrap')) {
+			return Picture::create(
+				$processor->get_updated_html(),
+				$original_dimensions,
+				''
+			);
+		}
+
+		return $processor->get_updated_html();
+	}
+
 }
+
 
 
 

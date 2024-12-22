@@ -84,6 +84,7 @@ class Srcset_Transformer {
         string $sizes,
         array $transform_args = []
     ): string {
+
         // Bail if SVG.
         if (Helpers::is_svg($src)) {
             return '';
@@ -91,6 +92,11 @@ class Srcset_Transformer {
        
         // Bail if no dimensions.
         if (!isset($dimensions['width'], $dimensions['height'])) {
+            return '';
+        }
+
+        // Bail if already transformed
+        if (Helpers::is_transformed_url($src)) {
             return '';
         }
 
@@ -142,15 +148,16 @@ class Srcset_Transformer {
         // Generate srcset entries.
         $srcset_parts = [];
         foreach ($widths as $width) {
+            // Calculate height maintaining aspect ratio
             $height = round($width * $aspect_ratio);
             
-            // Build edge arguments.
+            // Build edge arguments with dimensions first, then allow transform_args to override other properties
             $edge_args = array_merge(
                 self::$default_edge_args,
-                $transform_args,
+                $transform_args,  // Allow transform_args to set properties like fit, quality, etc.
                 [
                     'w' => $width,
-                    'h' => $height,
+                    'h' => $height,  // Always use calculated height based on aspect ratio
                 ]
             );
             

@@ -71,9 +71,30 @@ class Picture extends Integration {
 	 * @return string The picture element HTML.
 	 */
 	public static function create(string $img_html, array $dimensions, string $class = ''): string {
+
+		// Extract any wrapping anchor tag
+		$link_open = '';
+		$link_close = '';
+		if (preg_match('/<a[^>]*>(.*?)<\/a>/s', $img_html, $matches)) {
+			$link_open = substr($img_html, 0, strpos($img_html, '>') + 1);
+			$link_close = '</a>';
+			$img_html = $matches[1]; // Get just the img tag
+		}
+
 		$processor = new \WP_HTML_Tag_Processor($img_html);
 		if (!$processor->next_tag('img')) {
 			return $img_html;
+		}
+
+		// Get explicitly requested dimensions from width/height attributes
+		$width = $processor->get_attribute('width');
+		$height = $processor->get_attribute('height');
+
+		if ($width && $height) {
+			$dimensions = [
+				'width' => $width,
+				'height' => $height
+			];
 		}
 
 		// Process srcset if it exists
@@ -84,14 +105,12 @@ class Picture extends Integration {
 
 		// Skip if picture wrapping is disabled
 		if (!Feature_Manager::is_feature_enabled('picture_wrap')) {
-			return $img_html;
+			return $link_open . $img_html . $link_close;
 		}
 
 		// Transform the image URLs
 		$img_html = self::transform_image_urls($img_html, $dimensions);
 
-		$aspect_ratio = $dimensions['height'] / $dimensions['width'];
-		
 		// Get the max width, respecting the global setting
 		$max_width = min($dimensions['width'], Settings::get_max_width());
 		
@@ -102,17 +121,19 @@ class Picture extends Integration {
 
 		// Build inline styles
 		$style_array = [
-			'--aspect-ratio' => $aspect_ratio,
 			'--max-width' => $max_width . 'px',
 		];
 
 		$style_string = self::build_style_string($style_array);
 		
+		// Create picture element with the link if it exists
 		return sprintf(
-			'<picture class="%s" style="%s">%s</picture>',
+			'<picture class="%s" style="%s">%s%s%s</picture>',
 			esc_attr(implode(' ', $classes)),
 			esc_attr($style_string),
-			$img_html
+			$link_open,
+			$img_html,
+			$link_close
 		);
 	}
 
@@ -126,6 +147,7 @@ class Picture extends Integration {
 	 * @return string The transformed HTML.
 	 */
 	private static function transform_image_urls(string $img_html, array $dimensions): string {
+
 		$processor = new \WP_HTML_Tag_Processor($img_html);
 		if (!$processor->next_tag('img')) {
 			return $img_html;
@@ -138,13 +160,21 @@ class Picture extends Integration {
 		$ratio = $dimensions['height'] / $dimensions['width'];
 		$max_height = round($max_width * $ratio);
 
-		// Get constrained dimensions
+		// Get constrained dimensions for src
 		$constrained_dimensions = [
 			'width' => (string) $max_width,
 			'height' => (string) $max_height
 		];
 
-		// Transform src
+		// Set width and height attributes using original dimensions
+		if (!$processor->get_attribute('width')) {
+			$processor->set_attribute('width', $dimensions['width']);
+		}
+		if (!$processor->get_attribute('height')) {
+			$processor->set_attribute('height', $dimensions['height']);
+		}
+
+		// Transform src with constrained dimensions
 		$src = $processor->get_attribute('src');
 		if ($src) {
 			$transformed_src = Helpers::edge_src($src, [
@@ -154,11 +184,14 @@ class Picture extends Integration {
 			$processor->set_attribute('src', $transformed_src);
 		}
 
-		// Generate srcset using the Srcset_Transformer
+		// Generate srcset using the original dimensions
 		$srcset = \Edge_Images\Srcset_Transformer::transform(
 			$src,
-			$dimensions, // Use original dimensions for srcset generation
-			$processor->get_attribute('sizes') ?? ''
+			$dimensions,  // Use original dimensions for srcset
+			$processor->get_attribute('sizes') ?? '',
+			[
+				'height' => $dimensions['height']  // Force height to match original
+			]
 		);
 
 		if ($srcset) {

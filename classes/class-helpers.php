@@ -169,6 +169,8 @@ class Helpers {
 	 */
 	public static function should_transform_images(): bool {
 
+
+
 		// Bail if we're not on a page
 		if ( ! self::request_is_for_page() ) {
 			return false;
@@ -420,7 +422,7 @@ class Helpers {
 	public static function request_is_for_page(): bool {
 		
 		// Admin.
-		if ( is_admin() ) {
+		if ( is_admin() && !wp_doing_ajax() ) {
 			return false;
 		}
 
@@ -459,7 +461,7 @@ class Helpers {
 		}
 
 		// Bail if this is the login page.
-		if ( is_login() ) {
+		if ( function_exists( 'is_login' ) && is_login() ) {
 			return true;
 		}
 

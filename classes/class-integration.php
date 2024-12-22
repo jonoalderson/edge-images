@@ -42,33 +42,8 @@ abstract class Integration {
 	 * @return void
 	 */
 	public static function register(): void {
-
-        // Get the class name
-		$class_name = get_called_class();
-		
-        // Bail if the integration has already been registered
-		if (isset(self::$registered_integrations[$class_name])) {
-			return;
-		}
-
-        // Create an instance of the integration
 		$instance = new static();
-
-        // Cache the should_filter result
-		if (!isset(self::$should_filter_cache[$class_name])) {
-			self::$should_filter_cache[$class_name] = $instance->should_filter();
-		}
-
-        // Bail if the integration shouldn't filter
-		if (!self::$should_filter_cache[$class_name]) {
-			return;
-		}
-
-        // Add the filters
 		$instance->add_filters();
-
-		// Mark the integration as registered
-		self::$registered_integrations[$class_name] = true;
 	}
 
 	/**
