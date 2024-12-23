@@ -91,6 +91,14 @@ class Admin_Page {
 	private const FEATURES_SECTION = 'edge_images_features_section';
 
 	/**
+	 * The Bunny CDN subdomain option name.
+	 *
+	 * @since 4.5.4
+	 * @var string
+	 */
+	private const BUNNY_SUBDOMAIN_OPTION = 'edge_images_bunny_subdomain';
+
+	/**
 	 * Registers the admin page and its hooks.
 	 *
 	 * Sets up the admin menu, registers settings, and enqueues assets.
@@ -108,6 +116,140 @@ class Admin_Page {
 		add_action( 'admin_menu', [ self::class, 'add_admin_menu' ] );
 		add_action( 'admin_init', [ self::class, 'register_settings' ] );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_admin_assets' ] );
+		add_action( 'admin_post_edge_images_update_settings', [ self::class, 'handle_settings_update' ] );
+		add_action( 'admin_notices', [ self::class, 'show_no_provider_notice' ] );
+		
+		// Add settings link to plugins page.
+		$plugin_basename = plugin_basename( EDGE_IMAGES_PLUGIN_DIR . 'edge-images.php' );
+		add_filter( 'plugin_action_links_' . $plugin_basename, [ self::class, 'add_settings_link' ] );
+	}
+
+	/**
+	 * Shows an admin notice when no provider is selected.
+	 *
+	 * @since 4.5.4
+	 * 
+	 * @return void
+	 */
+	public static function show_no_provider_notice(): void {
+		// Only show to users who can manage options.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Get current screen.
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		// Only show on dashboard, plugins page, and our settings page.
+		$allowed_screens = [ 'dashboard', 'plugins', 'settings_page_edge-images' ];
+		if ( ! in_array( $screen->id, $allowed_screens, true ) ) {
+			return;
+		}
+
+		// Check if a provider is selected.
+		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
+		if ( $current_provider !== 'none' ) {
+			return;
+		}
+
+		$settings_url = admin_url( 'options-general.php?page=edge-images' );
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<?php
+				printf(
+					/* translators: %s: Settings page URL */
+					esc_html__( 'Edge Images is installed but no provider is selected. Images will not be optimized until you %sconfigure a provider%s.', 'edge-images' ),
+					'<a href="' . esc_url( $settings_url ) . '">',
+					'</a>'
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Adds a settings link to the plugins page.
+	 *
+	 * @since 4.5.4
+	 * 
+	 * @param array $links Array of plugin action links.
+	 * @return array Modified array of plugin action links.
+	 */
+	public static function add_settings_link( array $links ): array {
+		$settings_link = sprintf(
+			'<a href="%s">%s</a>',
+			esc_url( admin_url( 'options-general.php?page=edge-images' ) ),
+			esc_html__( 'Settings', 'edge-images' )
+		);
+		
+		array_unshift( $links, $settings_link );
+		return $links;
+	}
+
+	/**
+	 * Handles settings form submission.
+	 *
+	 * @since 4.5.4
+	 * 
+	 * @return void
+	 */
+	public static function handle_settings_update(): void {
+		// Verify user capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'edge-images' ) );
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), 'edge_images_settings-options' ) ) {
+			wp_die( esc_html__( 'Invalid nonce verification.', 'edge-images' ) );
+		}
+
+		// Process settings update.
+		if ( isset( $_POST[ self::PROVIDER_OPTION ] ) ) {
+			$provider = sanitize_text_field( wp_unslash( $_POST[ self::PROVIDER_OPTION ] ) );
+			if ( Provider_Registry::is_valid_provider( $provider ) ) {
+				update_option( self::PROVIDER_OPTION, $provider );
+			}
+		}
+
+		if ( isset( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) ) {
+			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) );
+			update_option( self::IMGIX_SUBDOMAIN_OPTION, $subdomain );
+		}
+
+		if ( isset( $_POST[ self::YOAST_SCHEMA_OPTION ] ) ) {
+			update_option( self::YOAST_SCHEMA_OPTION, (bool) $_POST[ self::YOAST_SCHEMA_OPTION ] );
+		}
+
+		if ( isset( $_POST[ self::YOAST_SOCIAL_OPTION ] ) ) {
+			update_option( self::YOAST_SOCIAL_OPTION, (bool) $_POST[ self::YOAST_SOCIAL_OPTION ] );
+		}
+
+		if ( isset( $_POST[ self::YOAST_SITEMAP_OPTION ] ) ) {
+			update_option( self::YOAST_SITEMAP_OPTION, (bool) $_POST[ self::YOAST_SITEMAP_OPTION ] );
+		}
+
+		if ( isset( $_POST[ self::MAX_WIDTH_OPTION ] ) ) {
+			$max_width = absint( $_POST[ self::MAX_WIDTH_OPTION ] );
+			if ( $max_width > 0 ) {
+				update_option( self::MAX_WIDTH_OPTION, $max_width );
+			}
+		}
+
+		// Redirect back to the settings page with a success message.
+		wp_safe_redirect( add_query_arg( 
+			[
+				'page' => 'edge-images',
+				'settings-updated' => 'true',
+			],
+			admin_url( 'options-general.php' )
+		) );
+		exit;
 	}
 
 	/**
@@ -148,6 +290,18 @@ class Admin_Page {
 				'description'       => __( 'The edge provider to use for image optimization', 'edge-images' ),
 				'sanitize_callback' => [ self::class, 'sanitize_provider' ],
 				'default'          => 'none',
+			]
+		);
+
+		// Register Bunny CDN subdomain setting.
+		register_setting(
+			self::OPTION_GROUP,
+			self::BUNNY_SUBDOMAIN_OPTION,
+			[
+				'type'              => 'string',
+				'description'       => __( 'Your Bunny CDN subdomain (e.g., your-site)', 'edge-images' ),
+				'sanitize_callback' => [ self::class, 'sanitize_subdomain' ],
+				'default'          => '',
 			]
 		);
 
@@ -227,6 +381,16 @@ class Admin_Page {
 			[ self::class, 'render_provider_field' ],
 			'edge_images',
 			'edge_images_main_section'
+		);
+
+		// Add Bunny CDN subdomain field.
+		add_settings_field(
+			'edge_images_bunny_subdomain',
+			__( 'Bunny CDN Subdomain', 'edge-images' ),
+			[ self::class, 'render_bunny_subdomain_field' ],
+			'edge_images',
+			'edge_images_main_section',
+			[ 'class' => 'edge-images-bunny-field' ]
 		);
 
 		// Add Imgix subdomain field.
@@ -357,6 +521,9 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_admin_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
 		?>
 		<div class="wrap edge-images-wrap">
 			<h1><?php esc_html_e( 'Edge Images Settings', 'edge-images' ); ?></h1>
@@ -405,8 +572,6 @@ class Admin_Page {
 
 		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
 		$providers       = Provider_Registry::get_providers();
-
-		wp_nonce_field( 'edge_images_provider_update', 'edge_images_nonce' );
 		?>
 		<div class="edge-images-provider-selector">
 			<?php foreach ( $providers as $value => $label ) : ?>
@@ -421,6 +586,67 @@ class Admin_Page {
 					</span>
 				</label>
 			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the Bunny CDN subdomain field.
+	 *
+	 * Creates the text input for configuring the Bunny CDN subdomain.
+	 * Only displays when Bunny CDN is selected as the provider.
+	 *
+	 * @since 4.5.4
+	 * 
+	 * @param array $args The field arguments.
+	 * @return void
+	 */
+	public static function render_bunny_subdomain_field( array $args ): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
+		$subdomain = get_option( self::BUNNY_SUBDOMAIN_OPTION, '' );
+		$display = $current_provider === 'bunny' ? 'block' : 'none';
+		?>
+		<script>
+		jQuery(document).ready(function($) {
+			// Show/hide Bunny CDN settings based on provider selection
+			function toggleBunnySettings() {
+				if ($('input[name="<?php echo esc_js( self::PROVIDER_OPTION ); ?>"]:checked').val() === 'bunny') {
+					$('.edge-images-bunny-field').show();
+				} else {
+					$('.edge-images-bunny-field').hide();
+				}
+			}
+
+			// Initial state
+			toggleBunnySettings();
+
+			// On change
+			$('input[name="<?php echo esc_js( self::PROVIDER_OPTION ); ?>"]').change(toggleBunnySettings);
+		});
+		</script>
+
+		<div class="edge-images-settings-field">
+			<input 
+				type="text" 
+				id="<?php echo esc_attr( self::BUNNY_SUBDOMAIN_OPTION ); ?>"
+				name="<?php echo esc_attr( self::BUNNY_SUBDOMAIN_OPTION ); ?>"
+				value="<?php echo esc_attr( $subdomain ); ?>"
+				class="regular-text"
+				placeholder="your-subdomain"
+			>
+			<p class="description">
+				<?php 
+				printf(
+					/* translators: %s: URL to Bunny CDN documentation */
+					esc_html__( 'Enter your Bunny CDN subdomain (e.g., if your Bunny CDN URL is "https://your-site.b-cdn.net", enter "your-site"). See the %s for more information.', 'edge-images' ),
+					'<a href="https://docs.bunny.net/docs/stream-image-processing" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Bunny CDN documentation', 'edge-images' ) . '</a>'
+				);
+				?>
+			</p>
 		</div>
 		<?php
 	}

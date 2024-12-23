@@ -52,7 +52,7 @@ echo wp_get_attachment_image(1, [640,400], false, ['fit' => 'contain', 'gravity'
 
 **HTML output: After**
 ```html
-<picture class="edge-images-container contain" style="aspect-ratio: 8/5; --max-width: 640px;"><img width="640" height="400" src="http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=400&amp;q=85&amp;width=640" class="attachment-640x400 size-640x400 edge-images-img edge-images-processed" alt="" decoding="async" loading="lazy" srcset="http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=188&amp;q=85&amp;width=300 300w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=200&amp;q=85&amp;width=320 320w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=400&amp;q=85&amp;width=640 640w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=600&amp;q=85&amp;width=960 960w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=800&amp;q=85&amp;width=1280 1280w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=1000&amp;q=85&amp;width=1600 1600w" sizes="(max-width: 640px) 100vw, 640px" data-attachment-id="11"></picture>
+<picture class="edge-images-container contain" style="--max-width: 640px;"><img width="640" height="400" src="http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=400&amp;q=85&amp;width=640" class="attachment-640x400 size-640x400 edge-images-img edge-images-processed" alt="" decoding="async" loading="lazy" srcset="http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=188&amp;q=85&amp;width=300 300w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=200&amp;q=85&amp;width=320 320w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=400&amp;q=85&amp;width=640 640w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=600&amp;q=85&amp;width=960 960w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=800&amp;q=85&amp;width=1280 1280w, http://edge-images-plugin.local/acd-cgi/img/v1/wp-content/uploads/2024/11/1.jpg?dpr=1&amp;f=auto&amp;fit=contain&amp;gravity=left&amp;height=1000&amp;q=85&amp;width=1600 1600w" sizes="(max-width: 640px) 100vw, 640px" data-attachment-id="11"></picture>
 ```
 
 ## Customization
@@ -183,3 +183,29 @@ All parameters are optional and will use sensible defaults if not specified.
 - **404 Errors**: Ensure your provider's image transformation service is properly enabled
 - **Broken Images**: Check that image paths are correctly formatted
 - **Missing Transformations**: Verify that your provider supports the requested transformations
+
+## Privacy
+Edge Images processes images through third-party edge providers. Here's what you need to know about privacy:
+
+### Data Processing
+- Images are processed through your chosen edge provider (Cloudflare, Accelerated Domains, etc.)
+- No personal data is collected or stored by the plugin itself
+- Image URLs are passed to the edge provider for transformation
+- Original images remain on your server; only public URLs are processed
+
+### Edge Provider Privacy
+Different providers have different privacy implications:
+- **Cloudflare**: Images are processed according to [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/)
+- **Accelerated Domains**: Images are processed according to [Accelerated Domains' Privacy Policy](https://accelerateddomains.com/privacy/)
+- **BunnyCDN**: Images are processed according to [BunnyCDN's Privacy Policy](https://bunny.net/privacy/)
+
+### Data Storage
+- The plugin stores your selected settings in your WordPress database
+- No user data is collected or stored
+- No analytics or tracking is performed
+- Cache files may be created in your uploads directory for optimization
+
+### GDPR Compliance
+- The plugin is GDPR-compliant as it does not collect, store, or process personal data
+- Users should review their chosen edge provider's privacy policy and data processing terms
+- Site owners should update their privacy policy to reflect their use of third-party image processing services

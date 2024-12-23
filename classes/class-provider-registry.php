@@ -25,7 +25,7 @@ class Provider_Registry {
 	 * @since 4.0.0
 	 * @var string
 	 */
-	public const DEFAULT_PROVIDER = 'cloudflare';
+	public const DEFAULT_PROVIDER = 'none';
 
 	/**
 	 * Cache for provider class names.

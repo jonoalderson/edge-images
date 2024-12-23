@@ -29,27 +29,48 @@ class Bunny extends Edge_Provider {
      * @since 4.1.0
      * @var string
      */
-    public const EDGE_ROOT = '/bunny-cdn/';
+    public const EDGE_ROOT = '.b-cdn.net';
+
+    /**
+     * Get the subdomain from settings.
+     *
+     * @since 4.5.4
+     * 
+     * @return string The configured subdomain or empty string.
+     */
+    private static function get_subdomain(): string {
+        return get_option('edge_images_bunny_subdomain', '');
+    }
 
     /**
      * Get the edge URL for an image.
      *
      * Transforms the image URL into a Bunny CDN-compatible format with
      * transformation parameters. Format:
-     * /bunny-cdn/width=200,height=200/path-to-image.jpg
+     * https://your-site.b-cdn.net/width=200,height=200/path-to-image.jpg
      *
      * @since 4.1.0
      * 
      * @return string The transformed edge URL.
      */
     public function get_edge_url(): string {
-        $edge_prefix = Helpers::get_rewrite_domain() . self::EDGE_ROOT;
+        // Get the Bunny CDN subdomain from settings
+        $subdomain = self::get_subdomain();
+        if (empty($subdomain)) {
+            // Return original URL if no subdomain is configured
+            return Helpers::get_rewrite_domain() . $this->path;
+        }
         
         // Map our standard args to Bunny CDN's parameters
         $transform_args = $this->get_bunny_transform_args();
 
         // Build the URL with comma-separated parameters
-        $edge_url = $edge_prefix . implode(',', $transform_args) . $this->path;
+        $edge_url = sprintf('https://%s%s/%s%s', 
+            $subdomain,
+            self::EDGE_ROOT,
+            implode(',', $transform_args),
+            $this->path
+        );
         
         return $edge_url;
     }
@@ -64,13 +85,31 @@ class Bunny extends Edge_Provider {
      * @return string The URL pattern.
      */
     public static function get_url_pattern(): string {
-        return self::EDGE_ROOT;
+        $subdomain = self::get_subdomain();
+        if (empty($subdomain)) {
+            return '';
+        }
+        return sprintf('https://%s%s/', $subdomain, self::EDGE_ROOT);
+    }
+
+    /**
+     * Get the transformation pattern for the provider.
+     *
+     * Used to detect transformation parameters in the URL.
+     *
+     * @since 4.5.4
+     * 
+     * @return string The transformation pattern.
+     */
+    public static function get_transform_pattern(): string {
+        return '/(?:width|height|aspect_ratio|quality|format|gravity|blur|sharpen|brightness|contrast)=[-\d]+/';
     }
 
     /**
      * Convert standard transform args to Bunny CDN format.
      *
      * Maps our standardized parameters to Bunny CDN's specific format.
+     * Reference: https://support.bunny.net/hc/en-us/articles/360027448392
      *
      * @since 4.1.0
      * 
@@ -90,32 +129,51 @@ class Bunny extends Edge_Provider {
 
         // Map fit/resize mode
         if (isset($args['fit'])) {
-            $bunny_args[] = 'mode=' . $this->map_fit_mode($args['fit']);
+            $bunny_args[] = 'aspect_ratio=' . $this->map_fit_mode($args['fit']);
         }
 
-        // Map quality
+        // Map quality (Bunny accepts 0-100)
         if (isset($args['q'])) {
             $bunny_args[] = "quality={$args['q']}";
         }
 
         // Map format
-        if (isset($args['f']) && $args['f'] !== 'auto') {
-            $bunny_args[] = "format={$args['f']}";
+        if (isset($args['f'])) {
+            if ($args['f'] === 'auto') {
+                // Let Bunny choose best format
+                $bunny_args[] = 'format=auto';
+            } else {
+                $bunny_args[] = "format={$args['f']}";
+            }
         }
 
         // Map gravity/focus point
-        if (isset($args['g']) && $args['g'] !== 'auto') {
-            $bunny_args[] = "gravity={$args['g']}";
+        if (isset($args['g'])) {
+            $bunny_args[] = 'gravity=' . $this->map_gravity($args['g']);
         }
 
-        // Map blur
+        // Map blur (Bunny accepts 0-100)
         if (isset($args['blur'])) {
-            $bunny_args[] = "blur={$args['blur']}";
+            $value = min(100, max(0, intval($args['blur'])));
+            $bunny_args[] = "blur={$value}";
         }
 
-        // Map sharpen
+        // Map sharpen (Bunny accepts 0-100)
         if (isset($args['sharpen'])) {
-            $bunny_args[] = "sharpen={$args['sharpen']}";
+            $value = min(100, max(0, intval($args['sharpen'])));
+            $bunny_args[] = "sharpen={$value}";
+        }
+
+        // Map brightness (Bunny accepts -100 to 100)
+        if (isset($args['brightness'])) {
+            $value = min(100, max(-100, intval($args['brightness'])));
+            $bunny_args[] = "brightness={$value}";
+        }
+
+        // Map contrast (Bunny accepts -100 to 100)
+        if (isset($args['contrast'])) {
+            $value = min(100, max(-100, intval($args['contrast'])));
+            $bunny_args[] = "contrast={$value}";
         }
 
         return $bunny_args;
@@ -125,6 +183,7 @@ class Bunny extends Edge_Provider {
      * Map standard fit modes to Bunny CDN modes.
      *
      * Converts our standardized fit modes to Bunny CDN's specific options.
+     * Reference: https://support.bunny.net/hc/en-us/articles/360027448392
      *
      * @since 4.1.0
      * 
@@ -133,13 +192,39 @@ class Bunny extends Edge_Provider {
      */
     private function map_fit_mode(string $fit): string {
         $mode_map = [
-            'cover'      => 'cover',
-            'contain'    => 'contain',
-            'scale-down' => 'max',
-            'crop'       => 'crop',
-            'pad'        => 'stretch',
+            'cover'      => 'force',    // Force resize and crop to exact dimensions
+            'contain'    => 'contain',   // Resize to fit within dimensions
+            'scale-down' => 'contain',   // Same as contain for Bunny
+            'crop'       => 'force',     // Force exact dimensions
+            'pad'        => 'stretch',   // Stretch to fill dimensions
         ];
 
-        return $mode_map[$fit] ?? 'cover';
+        return $mode_map[$fit] ?? 'force';
+    }
+
+    /**
+     * Map standard gravity options to Bunny CDN options.
+     *
+     * Converts our standardized gravity options to Bunny CDN's specific options.
+     * Reference: https://support.bunny.net/hc/en-us/articles/360027448392
+     *
+     * @since 4.1.0
+     * 
+     * @param string $gravity The standard gravity option.
+     * @return string The Bunny CDN gravity option.
+     */
+    private function map_gravity(string $gravity): string {
+        $gravity_map = [
+            'auto'   => 'center',  // Bunny doesn't have auto, default to center
+            'center' => 'center',
+            'north'  => 'top',
+            'south'  => 'bottom',
+            'east'   => 'right',
+            'west'   => 'left',
+            'left'   => 'left',
+            'right'  => 'right',
+        ];
+
+        return $gravity_map[$gravity] ?? 'center';
     }
 } 
