@@ -79,7 +79,10 @@ class Provider_Registry {
 	 * @return bool Whether the provider is valid.
 	 */
 	public static function is_valid_provider( string $provider_name ): bool {
-		return in_array( $provider_name, self::get_provider_slugs(), true );
+		// Convert provider name and valid providers to lowercase for case-insensitive comparison
+		$provider_name = strtolower($provider_name);
+		$valid_providers = array_map('strtolower', self::get_provider_slugs());
+		return in_array($provider_name, $valid_providers, true);
 	}
 
 	/**
@@ -89,13 +92,18 @@ class Provider_Registry {
 	 * @return string The fully qualified class name.
 	 */
 	public static function get_provider_class( string $provider_name ): string {
-		if (isset(self::$provider_class_cache[$provider_name])) {
-			return self::$provider_class_cache[$provider_name];
+		// Convert to lowercase for cache key
+		$cache_key = strtolower($provider_name);
+		
+		if (isset(self::$provider_class_cache[$cache_key])) {
+			return self::$provider_class_cache[$cache_key];
 		}
 
-		if (!self::is_valid_provider($provider_name) || $provider_name === 'none') {
+		if (!self::is_valid_provider($provider_name) || strtolower($provider_name) === 'none') {
 			$class = Edge_Provider::class;
 		} else {
+			// Always use the lowercase version for consistency
+			$provider_name = strtolower($provider_name);
 			$parts = explode('_', $provider_name);
 			$parts = array_map('ucfirst', $parts);
 			$class_name = implode('_', $parts);
@@ -103,7 +111,7 @@ class Provider_Registry {
 			$class = 'Edge_Images\Edge_Providers\\' . $class_name;
 		}
 
-		self::$provider_class_cache[$provider_name] = $class;
+		self::$provider_class_cache[$cache_key] = $class;
 		return $class;
 	}
 } 

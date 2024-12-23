@@ -103,10 +103,10 @@ class Helpers {
 		$provider = Settings::get_provider();
 		
 		// Allow filtering.
-		$provider = apply_filters( 'edge_images_provider', $provider );
+		$provider = apply_filters('edge_images_provider', $provider);
 		
 		// Validate provider name.
-		if ( ! Provider_Registry::is_valid_provider( $provider ) ) {
+		if (!Provider_Registry::is_valid_provider($provider)) {
 			return Provider_Registry::DEFAULT_PROVIDER;
 		}
 		
@@ -334,11 +334,20 @@ class Helpers {
 		// Get the provider name
 		$provider_name = self::get_provider_name();
 
+		// Return null for 'none' provider
+		if ($provider_name === 'none') {
+			return null;
+		}
+
 		// Get the provider class
 		$provider_class = Provider_Registry::get_provider_class($provider_name);
 
 		// Create a test instance with a dummy path
-		$provider = new $provider_class('/test.jpg');
+		$provider = new $provider_class('');
+
+		if (!$provider) {
+			return null;
+		}
 
 		return $provider;
 	}
