@@ -337,8 +337,8 @@ class Helpers {
 		// Get the provider class
 		$provider_class = Provider_Registry::get_provider_class($provider_name);
 
-		// Create a test instance with a dummy path
-		$provider = new $provider_class('/test.jpg');
+		// Create an instance with an empty path since we're only using it for configuration/patterns
+		$provider = new $provider_class('');
 
 		return $provider;
 	}

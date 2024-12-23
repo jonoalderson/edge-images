@@ -93,15 +93,13 @@ class Provider_Registry {
 			return self::$provider_class_cache[$provider_name];
 		}
 
-		if (!self::is_valid_provider($provider_name) || $provider_name === 'none') {
-			$class = Edge_Provider::class;
-		} else {
-			$parts = explode('_', $provider_name);
-			$parts = array_map('ucfirst', $parts);
-			$class_name = implode('_', $parts);
-			
-			$class = 'Edge_Images\Edge_Providers\\' . $class_name;
+		if (!self::is_valid_provider($provider_name)) {
+			$provider_name = 'none';
 		}
+
+		$parts = explode('_', $provider_name);
+		$parts = array_map('ucfirst', $parts);
+		$class = __NAMESPACE__ . '\\Edge_Providers\\' . implode('', $parts);
 
 		self::$provider_class_cache[$provider_name] = $class;
 		return $class;
