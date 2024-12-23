@@ -145,6 +145,14 @@ class Handler {
 		// Get provider instance to access default args
 		$provider = $this->get_provider_instance();
 		
+		// If no provider, return just the dimensions
+		if (!$provider) {
+			return [
+				'w' => $dimensions['width'],
+				'h' => $dimensions['height'],
+			];
+		}
+
 		return array_merge(
 			$provider->get_default_args(),
 			[
@@ -202,21 +210,26 @@ class Handler {
 		// Transform src (skip for SVG/AVIF)
 		if (isset($attr['src']) && !$is_special_format) {
 			$provider = $this->get_provider_instance();
-			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
-			$attr['src'] = Helpers::edge_src($full_src, $transform_args);
+			if ($provider) {
+				$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
+				$attr['src'] = Helpers::edge_src($full_src, $transform_args);
+			}
 		}
 
 		// Generate srcset with the same transformation args
 		if (isset($attr['src']) && $dimensions && !$is_special_format) {
-			$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
-			$srcset = Srcset_Transformer::transform(
-				$full_src,
-				$dimensions,
-				$attr['sizes'] ?? "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px",
-				$transform_args
-			);
-			if ($srcset) {
-				$attr['srcset'] = $srcset;
+			$provider = $this->get_provider_instance();
+			if ($provider) {
+				$full_src = $this->get_full_size_url($attr['src'], $attachment->ID);
+				$srcset = Srcset_Transformer::transform(
+					$full_src,
+					$dimensions,
+					"(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px",
+					$transform_args
+				);
+				if ($srcset) {
+					$attr['srcset'] = $srcset;
+				}
 			}
 		}
 
@@ -634,6 +647,11 @@ class Handler {
 
 		// Get a provider instance to access default args
 		$provider = Helpers::get_edge_provider();
+
+		// Bail if we don't have a provider
+		if (!$provider) {
+			return;
+		}
 		
 		// Transform src with constrained dimensions when appropriate
 		$edge_args = array_merge(
@@ -1400,6 +1418,11 @@ class Handler {
 		// Get the provider instance
 		$provider = $this->get_provider_instance();
 		
+		// If no provider, return original URL
+		if (!$provider) {
+			return $src;
+		}
+
 		// Remove any existing transformations
 		$src = $provider::clean_transformed_url($src);
 		
@@ -1408,18 +1431,8 @@ class Handler {
 		
 		// Ensure we have all required parts
 		$dirname = $path_parts['dirname'] ?? '';
-		$filename = $path_parts['filename'] ?? '';
-		$extension = $path_parts['extension'] ?? '';
 		
-		if (!$filename || !$extension) {
-			return $src; // Return original if we can't parse it
-		}
-		
-		// Remove any size suffix from filename
-		$clean_filename = preg_replace('/-\d+x\d+$/', '', $filename);
-		
-		// Reconstruct the URL
-		return $dirname . '/' . $clean_filename . '.' . $extension;
+		return $src;
 	}
 
 	/**
@@ -1543,9 +1556,9 @@ class Handler {
 	/**
 	 * Get the edge provider instance.
 	 * 
-	 * @return Edge_Provider The provider instance.
+	 * @return Edge_Provider|null The provider instance, or null if none configured.
 	 */
-	private function get_provider_instance(): Edge_Provider {
+	private function get_provider_instance(): ?Edge_Provider {
 		if (self::$provider_instance === null) {
 			self::$provider_instance = Helpers::get_edge_provider();
 		}
