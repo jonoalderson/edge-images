@@ -36,6 +36,7 @@ class Blocks {
 	 * @return void
 	 */
 	public static function register(): void {
+		
 		// Register block handlers
 		self::$handlers = [
 			'core/gallery' => new Blocks\Gallery(),

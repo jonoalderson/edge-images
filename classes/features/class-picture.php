@@ -1,9 +1,9 @@
 <?php
 /**
- * Picture element creation functionality.
+ * Picture element wrapper functionality.
  *
- * Handles the creation and configuration of picture elements for responsive images.
- * This feature:
+ * Handles wrapping images in picture elements for responsive images
+ * and art direction support. This feature:
  * - Creates responsive picture elements
  * - Handles image transformations
  * - Manages srcset and sizes attributes
@@ -20,8 +20,7 @@
 
 namespace Edge_Images\Features;
 
-use Edge_Images\{Integration, Features, Helpers};
-use Edge_Images\Settings;
+use Edge_Images\{Integration, Features, Images};
 
 class Picture extends Integration {
 
@@ -43,174 +42,206 @@ class Picture extends Integration {
 	}
 
 	/**
-	 * Process srcset attribute.
+	 * Create a picture element wrapper.
 	 *
-	 * Processes and validates srcset attribute values.
-	 * This method:
-	 * - Parses srcset strings
-	 * - Cleans image URLs
-	 * - Preserves descriptors
-	 * - Handles empty values
-	 * - Maintains URL formatting
-	 *
-	 * @since      4.5.0
+	 * @since 4.5.0
 	 * 
-	 * @param  string $srcset The srcset attribute value to process.
-	 * @return string         The processed srcset attribute value.
-	 */
-	private static function process_srcset(string $srcset): string {
-		// If the srcset is empty, return it as is.
-		if (empty($srcset)) {
-			return $srcset;
-		}
-
-		// Split srcset into individual sources.
-		$sources = explode(',', $srcset);
-		$processed_sources = [];
-
-		foreach ($sources as $source) {
-			// Split into URL and descriptor.
-			if (preg_match('/^(.+?)(\s+\d+[wx])$/i', trim($source), $matches)) {
-				$url = trim($matches[1]);
-				$descriptor = $matches[2];
-
-				// Only clean URL if it hasn't been transformed already.
-				if (!Helpers::is_transformed_url($url)) {
-					$url = Helpers::clean_url($url);
-				}
-
-				$processed_sources[] = $url . $descriptor;
-			}
-		}
-
-		return implode(', ', $processed_sources);
-	}
-
-	/**
-	 * Create a picture element.
-	 *
-	 * Generates a complete picture element with responsive image support.
-	 * This method:
-	 * - Handles link wrapping
-	 * - Processes image tags
-	 * - Manages dimensions
-	 * - Applies transformations
-	 * - Sets CSS classes
-	 * - Adds inline styles
-	 * - Ensures proper markup
-	 *
-	 * @since      4.5.0
-	 * 
-	 * @param  string $img_html  The original image HTML to transform.
-	 * @param  array  $dimensions The image dimensions array with width and height.
-	 * @param  string $class     Optional CSS class for the picture element.
-	 * @return string           The complete picture element HTML.
+	 * @param string $img_html   The image HTML to wrap.
+	 * @param array  $dimensions The image dimensions.
+	 * @param string $class      Optional additional class.
+	 * @return string The wrapped HTML.
 	 */
 	public static function create(string $img_html, array $dimensions, string $class = ''): string {
-		
-		// Extract any wrapping anchor tag.
-		$link_open = '';
-		$link_close = '';
-		if (preg_match('/<a[^>]*>(.*?)<\/a>/s', $img_html, $matches)) {
-			$link_open = substr($img_html, 0, strpos($img_html, '>') + 1);
-			$link_close = '</a>';
-			$img_html = $matches[1]; // Get just the img tag.
-		}
 
-		$processor = new \WP_HTML_Tag_Processor($img_html);
-		if (!$processor->next_tag('img')) {
+		// Skip if already wrapped
+		if (strpos($img_html, '<picture') !== false) {
 			return $img_html;
 		}
 
-		// Get sizes attribute before any modifications.
-		$sizes = $processor->get_attribute('sizes');
+		// Transform the image URLs
+		$img_html = self::transform_image_urls($img_html, $dimensions);
 
-		// Skip if picture wrapping is disabled.
-		if (!Features::is_feature_enabled('picture_wrap')) {
-			return $link_open . $img_html . $link_close;
-		}
-
-		// Get the max width, respecting the global setting.
-		$max_width = min($dimensions['width'], Settings::get_max_width());
-
-		// Transform the image URLs while preserving sizes.
-		$img_html = self::transform_image_urls($img_html, [
-			'width' => $max_width,
-			'height' => round($max_width * ($dimensions['height'] / $dimensions['width']))
-		], $sizes);
-		
-		// Build classes array.
+		// Build classes array
 		$classes = ['edge-images-container'];
 		if ($class) {
-			// Split the class string and merge with existing classes.
+			// Split the class string and merge with existing classes
 			$additional_classes = array_filter(explode(' ', $class));
 			$classes = array_merge($classes, $additional_classes);
 		}
 
-		// Build inline styles.
+		// Build inline styles
 		$style_array = [
-			'--max-width' => $max_width . 'px',
+			'--max-width' => $dimensions['width'] . 'px',
 		];
 
 		$style_string = self::build_style_string($style_array);
-		
-		// Create picture element with the link if it exists.
+
+		// Create the picture element
 		$picture_html = sprintf(
-			'<picture class="%s" style="%s">%s%s%s</picture>',
+			'<picture class="%s" style="%s">',
 			esc_attr(implode(' ', array_unique($classes))),
-			esc_attr($style_string),
-			$link_open,
-			$img_html,
-			$link_close
+			esc_attr($style_string)
 		);
+
+		// Add source elements for different formats
+		$picture_html .= self::get_source_elements($img_html, $dimensions);
+
+		// Add the original img tag
+		$picture_html .= $img_html;
+
+		// Close the picture element
+		$picture_html .= '</picture>';
 
 		return $picture_html;
 	}
 
 	/**
+	 * Get source elements for different formats.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $img_html   The image HTML.
+	 * @param array  $dimensions The image dimensions.
+	 * @return string The source elements HTML.
+	 */
+	private static function get_source_elements(string $img_html, array $dimensions): string {
+		$source_html = '';
+
+		// Extract src and srcset from img tag
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if (!$processor->next_tag('img')) {
+			return $source_html;
+		}
+
+		$src = $processor->get_attribute('src');
+		$srcset = $processor->get_attribute('srcset');
+		$sizes = $processor->get_attribute('sizes');
+
+		if (!$src) {
+			return $source_html;
+		}
+
+		// Add WebP source if not already WebP
+		if (strpos($src, '.webp') === false) {
+			$source_html .= self::get_webp_source($src, $dimensions, $sizes);
+		}
+
+		// Add AVIF source if not already AVIF
+		if (strpos($src, '.avif') === false) {
+			$source_html .= self::get_avif_source($src, $dimensions, $sizes);
+		}
+
+		return $source_html;
+	}
+
+	/**
+	 * Get WebP source element.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string      $src        The original image src.
+	 * @param array       $dimensions The image dimensions.
+	 * @param string|null $sizes      Optional sizes attribute.
+	 * @return string The WebP source element.
+	 */
+	private static function get_webp_source(string $src, array $dimensions, ?string $sizes = null): string {
+		// Transform the image URLs
+		$img_html = self::transform_image_urls($img_html, [
+			'width' => $dimensions['width'],
+			'height' => $dimensions['height'],
+			'format' => 'webp',
+		]);
+
+		// Extract the transformed src and srcset
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if (!$processor->next_tag('img')) {
+			return '';
+		}
+
+		$webp_src = $processor->get_attribute('src');
+		$webp_srcset = $processor->get_attribute('srcset');
+
+		if (!$webp_src) {
+			return '';
+		}
+
+		$source = '<source type="image/webp"';
+		if ($webp_srcset) {
+			$source .= ' srcset="' . esc_attr($webp_srcset) . '"';
+		}
+		if ($sizes) {
+			$source .= ' sizes="' . esc_attr($sizes) . '"';
+		}
+		$source .= '>';
+
+		return $source;
+	}
+
+	/**
+	 * Get AVIF source element.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string      $src        The original image src.
+	 * @param array       $dimensions The image dimensions.
+	 * @param string|null $sizes      Optional sizes attribute.
+	 * @return string The AVIF source element.
+	 */
+	private static function get_avif_source(string $src, array $dimensions, ?string $sizes = null): string {
+		// Transform the image URLs
+		$img_html = self::transform_image_urls($img_html, [
+			'width' => $dimensions['width'],
+			'height' => $dimensions['height'],
+			'format' => 'avif',
+		]);
+
+		// Extract the transformed src and srcset
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if (!$processor->next_tag('img')) {
+			return '';
+		}
+
+		$avif_src = $processor->get_attribute('src');
+		$avif_srcset = $processor->get_attribute('srcset');
+
+		if (!$avif_src) {
+			return '';
+		}
+
+		$source = '<source type="image/avif"';
+		if ($avif_srcset) {
+			$source .= ' srcset="' . esc_attr($avif_srcset) . '"';
+		}
+		if ($sizes) {
+			$source .= ' sizes="' . esc_attr($sizes) . '"';
+		}
+		$source .= '>';
+
+		return $source;
+	}
+
+	/**
 	 * Transform image URLs in HTML.
 	 *
-	 * Processes and transforms image URLs within HTML markup.
-	 * This method:
-	 * - Processes image tags
-	 * - Calculates dimensions
-	 * - Transforms source URLs
-	 * - Generates srcset values
-	 * - Updates attributes
-	 * - Maintains aspect ratios
-	 * - Ensures proper scaling
-	 *
-	 * @since      4.5.0
+	 * @since 4.5.0
 	 * 
-	 * @param  string $img_html   The image HTML to transform.
-	 * @param  array  $dimensions The target dimensions array with width and height.
-	 * @param  string $sizes     Optional sizes attribute value.
-	 * @return string           The transformed image HTML.
+	 * @param string      $img_html   The image HTML.
+	 * @param array       $dimensions The image dimensions.
+	 * @param string|null $sizes      Optional sizes attribute.
+	 * @return string The transformed HTML.
 	 */
 	private static function transform_image_urls(string $img_html, array $dimensions, ?string $sizes = null): string {
+
+		// Create a processor for the image
 		$processor = new \WP_HTML_Tag_Processor($img_html);
+
+		// Bail if no img tag
 		if (!$processor->next_tag('img')) {
 			return $img_html;
 		}
 
-		// Validate dimensions
-		if (empty($dimensions['width']) || empty($dimensions['height'])) {
-			return $img_html;
-		}
-
-		// Create a Handler instance to use its transform_image_urls method
-		$handler = new \Edge_Images\Handler();
-		
-		// Call the handler's transform_image_urls method
-		$handler->transform_image_urls(
-			$processor,
-			$dimensions,
-			$img_html,
-			'picture',
-			[
-				'fit' => 'cover',
-			]
-		);
+		// Transform the image URLs
+		Images::transform_image_urls($processor, $dimensions, $img_html, 'picture', []);
 
 		return $processor->get_updated_html();
 	}

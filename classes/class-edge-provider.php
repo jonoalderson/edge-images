@@ -78,7 +78,7 @@ abstract class Edge_Provider {
 	 * @since 4.0.0
 	 * @var string
 	 */
-	protected string $path;
+	protected string $path = '';
 
 	/**
 	 * The args to set for images.
@@ -92,14 +92,36 @@ abstract class Edge_Provider {
 	 * Create a new edge provider instance.
 	 *
 	 * @since 4.0.0
+	 */
+	final public function __construct() {
+		// Empty constructor - initialization is done through set_path() and set_args()
+	}
+
+	/**
+	 * Set the image path for transformation.
+	 *
+	 * @since 4.5.0
 	 * 
 	 * @param string $path The path to the image.
-	 * @param array  $args The transformation arguments.
+	 * @return self
 	 */
-	final public function __construct(string $path, array $args = []) {
+	final public function set_path(string $path): self {
 		$this->path = Helpers::clean_url($path);
+		return $this;
+	}
+
+	/**
+	 * Set the transformation arguments.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param array $args The transformation arguments.
+	 * @return self
+	 */
+	final public function set_args(array $args): self {
 		$this->args = $this->validate_args($args);
 		$this->normalize_args();
+		return $this;
 	}
 
 	/**
@@ -248,31 +270,27 @@ abstract class Edge_Provider {
 				return in_array($value, ['redirect', '404'], true);
 			
 			default:
-				return true;
+				return false;
 		}
 	}
 
 	/**
-	 * Normalize argument values.
+	 * Normalize transformation arguments.
 	 *
 	 * @since 4.0.0
 	 * 
 	 * @return void
 	 */
 	private function normalize_args(): void {
-		$normalized = [];
-		
-		foreach ($this->args as $key => $value) {
-			$canonical = self::get_canonical_arg($key);
-			if ($canonical) {
-				// Map the value if needed, but only if it's not null
-				$normalized[$canonical] = $value !== null ? self::get_mapped_value($canonical, (string)$value) : null;
+		// Merge with default args
+		$this->args = array_merge($this->default_edge_args, $this->args);
+
+		// Convert numeric values to integers where appropriate
+		foreach (['w', 'h', 'dpr', 'q', 'blur', 'brightness', 'contrast', 'gamma', 'sharpen', 'trim', 'rot'] as $numeric_arg) {
+			if (isset($this->args[$numeric_arg])) {
+				$this->args[$numeric_arg] = (int) $this->args[$numeric_arg];
 			}
 		}
-
-		$this->args = array_filter($normalized, function($value) {
-			return $value !== null && $value !== '';
-		});
 	}
 
 	/**
@@ -280,52 +298,29 @@ abstract class Edge_Provider {
 	 *
 	 * @since 4.0.0
 	 * 
-	 * @return array<string,mixed> The transformation arguments.
+	 * @return array The transformation arguments.
 	 */
 	protected function get_transform_args(): array {
-		$args = array_merge(
-			$this->default_edge_args,
-			array_filter([
-				'w' => $this->args['w'] ?? null,
-				'h' => $this->args['h'] ?? null,
-				'fit' => $this->args['fit'] ?? 'cover',
-				'f' => $this->args['f'] ?? 'auto',
-				'q' => $this->args['q'] ?? 85,
-				'dpr' => $this->args['dpr'] ?? 1,
-				'g' => $this->args['g'] ?? 'auto',
-				'sharpen' => $this->args['sharpen'] ?? null,
-				'blur' => $this->args['blur'] ?? null,
-			])
-		);
-
-		// Remove empty/null properties
-		$args = array_filter($args, function($value) {
-			return $value !== null && $value !== '';
-		});
-
-		// Sort our array
-		ksort($args);
-
-		return $args;
+		return $this->args;
 	}
 
 	/**
-	 * Get canonical form of an argument.
+	 * Get the canonical form of an argument.
 	 *
 	 * @since 4.0.0
 	 * 
-	 * @param string $arg The argument name to check.
-	 * @return string|null The canonical form or null if not valid.
+	 * @param string $arg The argument to get the canonical form for.
+	 * @return string|null The canonical form, or null if not found.
 	 */
 	public static function get_canonical_arg(string $arg): ?string {
-		// If it's already a canonical form (including those with null aliases)
-		if (array_key_exists($arg, self::$valid_args)) {
+		// If it's already a canonical arg, return it
+		if (isset(self::$valid_args[$arg])) {
 			return $arg;
 		}
 
 		// Search through aliases
 		foreach (self::$valid_args as $canonical => $aliases) {
-			if (is_array($aliases) && in_array($arg, $aliases)) {
+			if ($aliases && in_array($arg, $aliases, true)) {
 				return $canonical;
 			}
 		}
@@ -334,50 +329,49 @@ abstract class Edge_Provider {
 	}
 
 	/**
-	 * Get mapped value for a parameter.
+	 * Map a value to its provider-specific form.
 	 *
 	 * @since 4.0.0
 	 * 
 	 * @param string $param The parameter name.
 	 * @param string $value The value to map.
-	 * @return string The mapped value or original if no mapping exists.
+	 * @return string The mapped value.
 	 */
 	public static function get_mapped_value(string $param, string $value): string {
-		if (isset(self::$value_mappings[$param][$value])) {
-			return self::$value_mappings[$param][$value];
-		}
+		// By default, return the value unchanged
 		return $value;
 	}
 
 	/**
-	 * Get the pattern to identify transformed URLs.
+	 * Get the URL pattern used to transform images.
+	 *
+	 * @since 4.0.0
 	 * 
-	 * @since 4.5.0
-	 * 
-	 * @return string The pattern to match in transformed URLs.
+	 * @return string The transformation pattern.
 	 */
 	abstract public static function get_transform_pattern(): string;
 
 	/**
 	 * Clean a transformed URL back to its original form.
 	 *
-	 * @since 4.5.0
+	 * @since 4.0.0
 	 * 
-	 * @param string $url The transformed URL.
-	 * @return string The original URL.
+	 * @param string $url The URL to clean.
+	 * @return string The cleaned URL.
 	 */
 	public static function clean_transformed_url(string $url): string {
-		return preg_replace('#' . static::get_transform_pattern() . '#', '/', $url);
+		$pattern = static::get_transform_pattern();
+		return preg_replace($pattern, '', $url);
 	}
 
 	/**
-	 * Check if this provider is properly configured.
+	 * Check if the provider is properly configured.
 	 *
-	 * @since 4.1.0
+	 * @since 4.0.0
 	 * 
-	 * @return bool Whether the provider is properly configured.
+	 * @return bool Whether the provider is configured.
 	 */
 	public static function is_configured(): bool {
-		return true; // Base provider is always "configured".
+		return true;
 	}
 }

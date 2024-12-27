@@ -151,7 +151,9 @@ class Helpers {
 		}
 
 		// Create our provider instance and get edge URL
-		$provider_instance = new $provider_class($src, $args);
+		$provider_instance = new $provider_class();
+		$provider_instance->set_path($src);
+		$provider_instance->set_args($args);
 		return $provider_instance->get_edge_url();
 	}
 
@@ -553,13 +555,19 @@ class Helpers {
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param \WP_HTML_Tag_Processor|string $input Either a Tag Processor or HTML string.
+	 * @param \WP_HTML_Tag_Processor|string|null $input Either a Tag Processor or HTML string.
 	 * @return bool Whether the image has been processed.
 	 */
 	public static function is_image_processed($input): bool {
+
+		// Bail if no input
+		if (!$input) {
+			return false;
+		}
+
 		if ($input instanceof \WP_HTML_Tag_Processor) {
 			$class = $input->get_attribute('class') ?? '';
-			return str_contains($class, 'edge-images-processed');
+			return !empty($class) && str_contains($class, 'edge-images-processed');
 		}
 
 		if (is_string($input)) {
@@ -582,6 +590,41 @@ class Helpers {
 			return $matches[0];
 		}
 		return null;
+	}
+
+	/**
+	 * Convert WP_HTML_Tag_Processor to attributes array.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param \WP_HTML_Tag_Processor $processor The processor.
+	 * @return array The attributes array.
+	 */
+	public static function processor_to_attributes(\WP_HTML_Tag_Processor $processor): array {
+		$attributes = ['class' => ''];
+		foreach (self::$valid_html_attrs as $attr) {
+			$value = $processor->get_attribute($attr);
+			if ($value !== null) {
+				$attributes[$attr] = $value;
+			}
+		}
+		return $attributes;
+	}
+
+	/**
+	 * Convert attributes array to string.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param array $attributes The attributes array.
+	 * @return string The attributes string.
+	 */
+	public static function attributes_to_string(array $attributes): string {
+		$pairs = [];
+		foreach ($attributes as $name => $value) {
+			$pairs[] = sprintf('%s="%s"', $name, esc_attr($value));
+		}
+		return implode(' ', $pairs);
 	}
 
 }
