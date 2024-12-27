@@ -20,7 +20,7 @@
 
 namespace Edge_Images\Features;
 
-use Edge_Images\{Integration, Feature_Manager};
+use Edge_Images\{Integration, Features};
 
 class Htaccess_Cache extends Integration {
 
@@ -94,7 +94,7 @@ class Htaccess_Cache extends Integration {
 		add_action('admin_notices', [$this, 'display_admin_notices']);
 
 		// If the feature is enabled, ensure htaccess exists
-		if (Feature_Manager::is_enabled('htaccess_caching')) {
+		if (Features::is_enabled('htaccess_caching')) {
 			$upload_dir = wp_upload_dir();
 			$htaccess_path = $upload_dir['basedir'] . '/.htaccess';
 			

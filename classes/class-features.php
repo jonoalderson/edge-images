@@ -1,13 +1,15 @@
 <?php
 /**
- * Feature management functionality.
+ * Feature functionality.
  *
- * Manages the plugin's feature system, including:
- * - Feature registration and configuration
- * - Feature state management (enabled/disabled)
- * - Default settings management
- * - Feature class loading and initialization
- * - Integration with WordPress settings API
+ * Manages plugin features and their settings.
+ * This class handles:
+ * - Feature registration and management
+ * - Feature activation and deactivation
+ * - Feature configuration
+ * - Feature status tracking
+ * - Feature settings management
+ * - Feature option handling
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
@@ -17,7 +19,7 @@
 
 namespace Edge_Images;
 
-class Feature_Manager {
+class Features {
 
 	/**
 	 * Available features configuration.

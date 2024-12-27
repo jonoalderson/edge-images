@@ -20,7 +20,7 @@
 
 namespace Edge_Images\Features;
 
-use Edge_Images\{Integration, Feature_Manager, Helpers};
+use Edge_Images\{Integration, Features, Helpers};
 use Edge_Images\Settings;
 
 class Picture extends Integration {
@@ -126,7 +126,7 @@ class Picture extends Integration {
 		$sizes = $processor->get_attribute('sizes');
 
 		// Skip if picture wrapping is disabled.
-		if (!Feature_Manager::is_feature_enabled('picture_wrap')) {
+		if (!Features::is_feature_enabled('picture_wrap')) {
 			return $link_open . $img_html . $link_close;
 		}
 

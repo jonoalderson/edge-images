@@ -212,4 +212,120 @@ class Srcset_Transformer {
 
         return implode(', ', $srcset_parts);
     }
+
+    /**
+     * Fill gaps in srcset widths array.
+     *
+     * @since 4.5.0
+     * 
+     * @param array $widths Array of widths.
+     * @param int   $max_gap Maximum allowed gap between widths.
+     * @return array Modified array of widths.
+     */
+    public static function fill_srcset_gaps(array $widths, int $max_gap = 200): array {
+        $filled = [];
+        $count = count($widths);
+        
+        for ($i = 0; $i < $count - 1; $i++) {
+            $filled[] = $widths[$i];
+            $gap = $widths[$i + 1] - $widths[$i];
+            
+            // If gap is larger than max_gap, add intermediate values
+            if ($gap > $max_gap) {
+                $steps = ceil($gap / $max_gap);
+                $step_size = $gap / $steps;
+                
+                for ($j = 1; $j < $steps; $j++) {
+                    $intermediate = round($widths[$i] + ($j * $step_size));
+                    $filled[] = $intermediate;
+                }
+            }
+        }
+        
+        // Add the last width
+        $filled[] = end($widths);
+        
+        return $filled;
+    }
+
+    /**
+     * Get srcset widths and DPR variants based on sizes attribute.
+     *
+     * @since 4.5.0
+     * 
+     * @param string $sizes    The sizes attribute value.
+     * @param int    $max_width The maximum width of the image.
+     * @return array Array of widths for srcset.
+     */
+    public static function get_srcset_widths_from_sizes(string $sizes, int $max_width): array {
+        // Get DPR multipliers from Srcset_Transformer
+        $dprs = self::$width_multipliers;
+        
+        // Generate variants based on the original width
+        $variants = [];
+
+        // Always include minimum width if the image is large enough
+        if ($max_width >= self::$min_srcset_width * 2) {
+            $variants[] = self::$min_srcset_width;
+        }
+        
+        foreach ($dprs as $dpr) {
+            $scaled_width = round($max_width * $dpr);
+            
+            // If scaled width would exceed max_srcset_width
+            if ($scaled_width > self::$max_srcset_width) {
+                // Add max_srcset_width if we don't already have it
+                if (!in_array(self::$max_srcset_width, $variants)) {
+                    $variants[] = self::$max_srcset_width;
+                }
+            } 
+            // Otherwise add the scaled width if it meets our min/max criteria
+            elseif ($scaled_width >= self::$min_srcset_width) {
+                $variants[] = $scaled_width;
+            }
+        }
+
+        // Sort and remove duplicates
+        $variants = array_unique($variants);
+        sort($variants);
+
+        // Fill in any large gaps
+        $variants = self::fill_srcset_gaps($variants);
+
+        return $variants;
+    }
+
+    /**
+     * Generate srcset string based on image dimensions and sizes.
+     *
+     * @since 4.5.0
+     * 
+     * @param string $src     Original image URL.
+     * @param array  $dimensions Image dimensions.
+     * @param string $sizes    The sizes attribute value.
+     * @param array  $edge_args Default edge arguments.
+     * @return string Generated srcset.
+     */
+    public static function generate_srcset(string $src, array $dimensions, string $sizes, array $edge_args): string {
+        $max_width = (int) $dimensions['width'];
+        $ratio = $dimensions['height'] / $dimensions['width'];
+        
+        $widths = self::get_srcset_widths_from_sizes($sizes, $max_width);
+        
+        $srcset_parts = [];
+        foreach ($widths as $width) {
+            $height = round($width * $ratio);
+            $edge_args = array_merge(
+                $edge_args,
+                [
+                    'width' => $width,
+                    'height' => $height,
+                ]
+            );
+            $edge_url = Helpers::edge_src($src, $edge_args);
+            $srcset_parts[] = "$edge_url {$width}w";
+        }
+        
+        return implode(', ', $srcset_parts);
+    }
 } 

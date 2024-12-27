@@ -485,7 +485,7 @@ class Admin_Page {
 		);
 
 		// Register feature settings
-		foreach (Feature_Manager::get_features() as $id => $feature) {
+		foreach (Features::get_features() as $id => $feature) {
 			// Get the option name (either custom or default)
 			$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
 
@@ -923,7 +923,7 @@ class Admin_Page {
 		}
 		?>
 		<div class="edge-images-features">
-			<?php foreach (Feature_Manager::get_features() as $id => $feature): ?>
+			<?php foreach (Features::get_features() as $id => $feature): ?>
 				<div class="feature-card">
 					<div class="feature-header">
 						<strong><?php echo esc_html($feature['name']); ?></strong>
@@ -934,7 +934,7 @@ class Admin_Page {
 								<label>
 									<?php 
 									$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
-									$is_enabled = Feature_Manager::is_feature_enabled($id);
+									$is_enabled = Features::is_feature_enabled($id);
 									?>
 									<input type="checkbox" 
 										name="<?php echo esc_attr($option_name); ?>" 

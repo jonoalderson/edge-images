@@ -20,7 +20,7 @@
 
 namespace Edge_Images\Features;
 
-use Edge_Images\{Helpers, Integration, Feature_Manager};
+use Edge_Images\{Helpers, Integration, Features};
 
 class Avatars extends Integration {
 
@@ -152,7 +152,7 @@ class Avatars extends Integration {
 		$processor->set_attribute( 'height', (string) $size );
 
 		// Check if picture wrapping is enabled
-		if ( Feature_Manager::is_enabled( 'picture_wrap' ) ) {
+		if ( Features::is_enabled( 'picture_wrap' ) ) {
 			return Picture::create(
 				$processor->get_updated_html(),
 				['width' => $size, 'height' => $size],
@@ -198,6 +198,6 @@ class Avatars extends Integration {
 	 * @return bool True if avatar transformation should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-		return Feature_Manager::is_enabled( 'avatars' ) && Helpers::should_transform_images();
+		return Features::is_enabled( 'avatars' ) && Helpers::should_transform_images();
 	}
 } 

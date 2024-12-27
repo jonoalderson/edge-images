@@ -76,4 +76,12 @@ add_action( 'plugins_loaded', [ Integrations::class, 'register' ], 5 );
  * @since 4.0.0
  * @return void
  */
-add_action('init', [Feature_Manager::class, 'register'], 5);
+add_action('init', [Features::class, 'register'], 5);
+
+/**
+ * Initialize block management.
+ *
+ * @since 4.5.0
+ * @return void
+ */
+add_action('init', [Blocks::class, 'register'], 5);

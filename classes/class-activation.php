@@ -76,7 +76,7 @@ class Activation {
 		}
 
 		// Set feature defaults
-		$feature_defaults = Feature_Manager::get_default_settings();
+		$feature_defaults = Features::get_default_settings();
 		foreach ($feature_defaults as $option => $default) {
 			if (get_option($option) === false) {
 				update_option($option, $default);
@@ -124,7 +124,7 @@ class Activation {
 				'edge_images_imgix_subdomain' => '',
 				'edge_images_feature_picture_wrap' => false,
 			],
-			Feature_Manager::get_default_settings()
+			Features::get_default_settings()
 		);
 	}
 

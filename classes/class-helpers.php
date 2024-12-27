@@ -167,8 +167,6 @@ class Helpers {
 	 */
 	public static function should_transform_images(): bool {
 
-
-
 		// Bail if we're not on a page
 		if ( ! self::request_is_for_page() ) {
 			return false;
@@ -569,6 +567,21 @@ class Helpers {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Extract img tag from HTML.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $html The HTML containing the img tag.
+	 * @return string|null The img tag HTML or null if not found.
+	 */
+	public static function extract_img_tag(string $html): ?string {
+		if (preg_match('/<img[^>]*>/', $html, $matches)) {
+			return $matches[0];
+		}
+		return null;
 	}
 
 }

@@ -20,7 +20,7 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Integration, Helpers, Feature_Manager};
+use Edge_Images\{Integration, Helpers, Features};
 
 class XML_Sitemaps extends Integration {
 
@@ -131,6 +131,6 @@ class XML_Sitemaps extends Integration {
 	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-		return Feature_Manager::is_enabled('yoast_xml_sitemap_images') && Helpers::should_transform_images();
+		return Features::is_enabled('yoast_xml_sitemap_images') && Helpers::should_transform_images();
 	}
 }

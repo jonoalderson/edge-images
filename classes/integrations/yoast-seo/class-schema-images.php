@@ -13,7 +13,7 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Integration, Helpers, Feature_Manager, Cache};
+use Edge_Images\{Integration, Helpers, Features, Cache};
 
 
 class Schema_Images extends Integration {
@@ -284,7 +284,7 @@ class Schema_Images extends Integration {
 	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-		return Feature_Manager::is_enabled('edge_images_yoast_schema_images') && Helpers::should_transform_images();
+		return Features::is_enabled('edge_images_yoast_schema_images') && Helpers::should_transform_images();
 	}
 }
 

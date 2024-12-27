@@ -101,7 +101,6 @@ class Handler {
 		// Transform images in content
 		add_filter('wp_img_tag_add_width_and_height_attr', [$this, 'transform_image'], 5, 4);
 		add_filter('the_content', [$this, 'transform_content_images'], 5);
-		add_filter('render_block', [$this, 'transform_block_images'], 5, 2);
 
 		// Ensure WordPress's default dimension handling still runs
 		add_filter('wp_img_tag_add_width_and_height_attr', '__return_true', 999);
@@ -358,7 +357,7 @@ class Handler {
 			: 'edge-images-img edge-images-processed';
 
 		// Add picture wrap flag if enabled
-		if (Feature_Manager::is_feature_enabled('picture_wrap')) {
+		if (Features::is_feature_enabled('picture_wrap')) {
 			$attr['data-wrap-in-picture'] = 'true';
 		}
 
@@ -431,7 +430,7 @@ class Handler {
 		}
 
 		// Skip if already wrapped or if picture wrapping is disabled.
-		if (strpos($html, '<picture') !== false || !Feature_Manager::is_feature_enabled('picture_wrap')) {
+		if (strpos($html, '<picture') !== false || !Features::is_feature_enabled('picture_wrap')) {
 			return $html;
 		}
 
@@ -528,7 +527,7 @@ class Handler {
 		$transformed = $processor->get_updated_html();
 
 		// Check if picture wrapping is disabled or if we're in a block context (where wrapping happens later)
-		if (Feature_Manager::is_disabled('picture_wrap') || $context === 'block') {
+		if (Features::is_disabled('picture_wrap') || $context === 'block') {
 			return $transformed;
 		}
 
@@ -708,9 +707,6 @@ class Handler {
 			$attachment_id = attachment_url_to_postid($src);
 		}
 
-		// Get full size URL
-		$full_src = $this->get_full_size_url($src, $attachment_id);
-
 		// Calculate aspect ratio and validate dimensions
 		$width = (int) $dimensions['width'];
 		$height = (int) $dimensions['height'];
@@ -753,6 +749,9 @@ class Handler {
 				'fit' => 'cover',
 			]
 		);
+
+		// Get full size URL
+		$full_src = $this->get_full_size_url($src, $attachment_id);
 		
 		$transformed_src = Helpers::edge_src($full_src, $edge_args);
 		$processor->set_attribute('src', $transformed_src);
@@ -777,246 +776,6 @@ class Handler {
 			$processor->set_attribute('srcset', $srcset);
 			$processor->set_attribute('sizes', $sizes);
 		}
-	}
-
-	/**
-	 * Transform images in block content
-	 *
-	 * @param string $block_content The block content.
-	 * @param array  $block         The block data.
-	 * 
-	 * @return string The transformed block content
-	 */
-	public function transform_block_images( string $block_content, array $block ): string {
-		// Bail if we don't have any images
-		if ( ! str_contains( $block_content, '<img' ) ) {
-			return $block_content;
-		}
-
-		// Transform figures with images first
-		$block_content = $this->transform_figures_in_block( $block_content );
-
-		// Then transform standalone images
-		$block_content = $this->transform_standalone_images_in_block( $block_content );
-
-		return $block_content;
-	}
-
-	/**
-	 * Transform figures containing images in block content
-	 *
-	 * @param string $block_content The block content.
-	 * 
-	 * @return string Modified block content
-	 */
-	private function transform_figures_in_block(string $block_content): string {
-		// Bail if no figures found
-		if (!preg_match_all('/<figure[^>]*>.*?<\/figure>/s', $block_content, $matches, PREG_OFFSET_CAPTURE)) {
-			return $block_content;
-		}
-
-		$offset_adjustment = 0;
-
-		foreach ($matches[0] as $match) {
-			$figure_html = $match[0];
-			$position = $match[1];
-
-			// Extract the image and any wrapping link
-			$img_html = $this->extract_img_tag($figure_html);
-			if (!$img_html) {
-				continue;
-			}
-
-			// Check for a link wrapping the image
-			$link_html = '';
-			if (preg_match('/<a[^>]*>.*?' . preg_quote($img_html, '/') . '.*?<\/a>/s', $figure_html, $link_matches)) {
-				$link_html = $link_matches[0];
-				$img_html = $this->extract_img_tag($link_html);
-			}
-
-			// Transform the image first
-			$transformed_img = $this->transform_image(true, $img_html, 'block', 0);
-
-			// If Picture wrap is disabled, just replace the original image with the transformed one
-			if (!Feature_Manager::is_feature_enabled('picture_wrap')) {
-				$new_html = $transformed_img;
-				if ($link_html) {
-					$new_html = str_replace($img_html, $transformed_img, $link_html);
-				}
-				$new_figure_html = str_replace($link_html ?: $img_html, $new_html, $figure_html);
-				
-				$block_content = substr_replace(
-					$block_content,
-					$new_figure_html,
-					$position + $offset_adjustment,
-					strlen($figure_html)
-				);
-				
-				$offset_adjustment += strlen($new_figure_html) - strlen($figure_html);
-				continue;
-			}
-
-			// Get dimensions from the image
-			$processor = new \WP_HTML_Tag_Processor($transformed_img);
-			if (!$processor->next_tag('img')) {
-				continue;
-			}
-
-			// Get width and height
-			$width = $processor->get_attribute('width');
-			$height = $processor->get_attribute('height');
-
-			// Bail if no width or height
-			if (!$width || !$height) {
-				continue;
-			}
-
-			// Set the dimensions
-			$dimensions = [
-				'width' => $width,
-				'height' => $height
-			];
-
-			// Extract figure classes
-			$figure_classes = $this->extract_figure_classes($figure_html);
-
-			// If we have a link, wrap the transformed image in it
-			if ($link_html) {
-				// Extract the link opening tag
-				if (preg_match('/<a[^>]*>/', $link_html, $link_open_matches)) {
-					$transformed_img = $link_open_matches[0] . $transformed_img . '</a>';
-				}
-			}
-
-			// Create picture element with figure classes
-			$picture_html = Picture::create(
-				$transformed_img,
-				$dimensions,
-				implode(' ', array_merge($figure_classes, ['edge-images-container']))
-			);
-
-			// Extract any caption from the figure
-			if (preg_match('/<figcaption.*?>(.*?)<\/figcaption>/s', $figure_html, $caption_matches)) {
-				$picture_html .= $caption_matches[0];
-			}
-
-			// Replace the entire figure with our new markup
-			$block_content = substr_replace(
-				$block_content,
-				$picture_html,
-				$position + $offset_adjustment,
-				strlen($figure_html)
-			);
-			
-			// Adjust the offset adjustment
-			$offset_adjustment += strlen($picture_html) - strlen($figure_html);
-		}
-
-		return $block_content;
-	}
-
-	/**
-	 * Transform standalone images in block content
-	 *
-	 * @param string $block_content The block content.
-	 * 
-	 * @return string Modified block content
-	 */
-	private function transform_standalone_images_in_block(string $block_content): string {
-
-		// Bail if no images found
-		if (!preg_match_all('/<img[^>]*>/', $block_content, $matches, PREG_OFFSET_CAPTURE)) {
-			return $block_content;
-		}
-
-		// Initialize offset adjustment
-		$offset_adjustment = 0;
-
-		// Loop through each image
-		foreach ($matches[0] as $match) {
-
-			// Get the image HTML and its position
-			$img_html = $match[0];
-			$position = $match[1];
-
-			// Bail if image should not be transformed
-			if (!$this->should_transform_standalone_image($img_html, $block_content, $position)) {
-				continue;
-			}
-
-			// Transform the image
-			$transformed_html = $this->transform_image(true, $img_html, 'block', 0);
-			
-			// Replace the image with the transformed image
-			$block_content = substr_replace(
-				$block_content,
-				$transformed_html,
-				$position + $offset_adjustment,
-				strlen($img_html)
-			);
-			
-			// Adjust the offset adjustment
-			$offset_adjustment += strlen($transformed_html) - strlen($img_html);
-		}
-
-		return $block_content;
-	}
-
-	/**
-	 * Check if a figure should be transformed
-	 *
-	 * @param string $figure_html The figure HTML.
-	 * 
-	 * @return bool Whether the figure should be transformed
-	 */
-	private function should_transform_figure( string $figure_html ): bool {
-		return str_contains( $figure_html, '<img' ) && 
-			   ! str_contains( $figure_html, '<picture' );
-	}
-
-	/**
-	 * Check if a standalone image should be transformed
-	 *
-	 * @param string $img_html      The image HTML.
-	 * @param string $block_content The full block content.
-	 * @param int    $position      The position of the image in the content.
-	 * 
-	 * @return bool Whether the image should be transformed
-	 */
-	private function should_transform_standalone_image( string $img_html, string $block_content, int $position ): bool {
-		return ! str_contains( $img_html, 'edge-images-processed' ) && 
-			   ! str_contains( substr( $block_content, 0, $position ), '<picture' ) &&
-			   ! str_contains( substr( $block_content, 0, $position ), '<figure' );
-	}
-
-	/**
-	 * Extract figure classes from block content and attributes.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @param string $block_content The block content.
-	 * @param array  $block         Optional block data.
-	 * @return array The combined classes.
-	 */
-	private function extract_figure_classes(string $block_content, array $block = []): array {
-		$classes = [];
-
-		// Create a processor for the figure
-		$processor = new \WP_HTML_Tag_Processor($block_content);
-		if ($processor->next_tag('figure')) {
-			$figure_classes = $processor->get_attribute('class');
-			if ($figure_classes) {
-				$classes = array_filter(explode(' ', $figure_classes));
-			}
-		}
-
-		// Add alignment if present in block attributes
-		if (isset($block['attrs']['align'])) {
-			$classes[] = "align{$block['attrs']['align']}";
-		}
-
-		// Return unique classes
-		return array_unique($classes);
 	}
 
 	/**
@@ -1148,118 +907,6 @@ class Handler {
 	 */
 	private function constrain_dimensions(array $dimensions, array $max_dimensions): array {
 		return Image_Dimensions::constrain($dimensions, $max_dimensions);
-	}
-
-	/**
-	 * Fill gaps in srcset widths array
-	 *
-	 * @param array $widths Array of widths.
-	 * @param int   $max_gap Maximum allowed gap between widths.
-	 * 
-	 * @return array Modified array of widths
-	 */
-	private function fill_srcset_gaps(array $widths, int $max_gap = 200): array {
-		$filled = [];
-		$count = count($widths);
-		
-		for ($i = 0; $i < $count - 1; $i++) {
-			$filled[] = $widths[$i];
-			$gap = $widths[$i + 1] - $widths[$i];
-			
-			// If gap is larger than max_gap, add intermediate values
-			if ($gap > $max_gap) {
-				$steps = ceil($gap / $max_gap);
-				$step_size = $gap / $steps;
-				
-				for ($j = 1; $j < $steps; $j++) {
-					$intermediate = round($widths[$i] + ($j * $step_size));
-					$filled[] = $intermediate;
-				}
-			}
-		}
-		
-		// Add the last width
-		$filled[] = end($widths);
-		
-		return $filled;
-	}
-
-	/**
-	 * Get srcset widths and DPR variants based on sizes attribute
-	 *
-	 * @param string $sizes    The sizes attribute value.
-	 * @param int    $max_width The maximum width of the image.
-	 * 
-	 * @return array Array of widths for srcset
-	 */
-	private function get_srcset_widths_from_sizes( string $sizes, int $max_width ): array {
-		// Get DPR multipliers from Srcset_Transformer
-		$dprs = Srcset_Transformer::$width_multipliers;
-		
-		// Generate variants based on the original width
-		$variants = [];
-
-		// Always include minimum width if the image is large enough
-		if ($max_width >= Srcset_Transformer::$min_srcset_width * 2) {
-			$variants[] = Srcset_Transformer::$min_srcset_width;
-		}
-		
-		foreach ($dprs as $dpr) {
-			$scaled_width = round($max_width * $dpr);
-			
-			// If scaled width would exceed max_srcset_width
-			if ($scaled_width > Srcset_Transformer::$max_srcset_width) {
-				// Add max_srcset_width if we don't already have it
-				if (!in_array(Srcset_Transformer::$max_srcset_width, $variants)) {
-					$variants[] = Srcset_Transformer::$max_srcset_width;
-				}
-			} 
-			// Otherwise add the scaled width if it meets our min/max criteria
-			elseif ($scaled_width >= Srcset_Transformer::$min_srcset_width) {
-				$variants[] = $scaled_width;
-			}
-		}
-
-		// Sort and remove duplicates
-		$variants = array_unique($variants);
-		sort($variants);
-
-		// Fill in any large gaps
-		$variants = $this->fill_srcset_gaps($variants);
-
-		return $variants;
-	}
-
-	/**
-	 * Generate srcset string based on image dimensions and sizes
-	 *
-	 * @param string $src     Original image URL.
-	 * @param array  $dimensions Image dimensions.
-	 * @param string $sizes    The sizes attribute value.
-	 * 
-	 * @return string Generated srcset
-	 */
-	private function generate_srcset( string $src, array $dimensions, string $sizes ): string {
-		$max_width = (int) $dimensions['width'];
-		$ratio = $dimensions['height'] / $dimensions['width'];
-		
-		$widths = $this->get_srcset_widths_from_sizes($sizes, $max_width);
-		
-		$srcset_parts = [];
-		foreach ($widths as $width) {
-			$height = round($width * $ratio);
-			$edge_args = array_merge(
-				$this->default_edge_args,
-				[
-					'width' => $width,
-					'height' => $height,
-				]
-			);
-			$edge_url = Helpers::edge_src($src, $edge_args);
-			$srcset_parts[] = "$edge_url {$width}w";
-		}
-		
-		return implode(', ', $srcset_parts);
 	}
 
 	/**
@@ -1459,75 +1106,55 @@ class Handler {
 	 * @return string Modified content.
 	 */
 	public function transform_content_images(string $content): string {
-		// Bail if no images found
+		// Bail if we don't have any images
 		if (!str_contains($content, '<img')) {
 			return $content;
 		}
 
-		// Find all img tags
-		if (!preg_match_all('/<img[^>]+>/i', $content, $matches, PREG_OFFSET_CAPTURE)) {
-			return $content;
+		// Create a mock block to pass to the Blocks class
+		$block = [
+			'blockName' => 'core/paragraph',
+			'attrs' => [],
+			'innerHTML' => $content,
+			'innerContent' => [$content],
+		];
+
+		// Transform the content using the Blocks class
+		return Blocks::transform_block($content, $block);
+	}
+
+	/**
+	 * Transform image attributes
+	 *
+	 * @param array $attributes Image attributes.
+	 * @param array $dimensions Image dimensions.
+	 * 
+	 * @return array Modified attributes
+	 */
+	private function transform_image_attributes( array $attributes, array $dimensions ): array {
+		// Add edge-images-processed class
+		$attributes['class'] = isset($attributes['class']) ? $attributes['class'] . ' edge-images-processed' : 'edge-images-processed';
+
+		// Transform src
+		$attributes['src'] = Helpers::edge_src($attributes['src'], array_merge(
+			$this->default_edge_args,
+			[
+				'width' => $dimensions['width'],
+				'height' => $dimensions['height'],
+			]
+		));
+
+		// Transform srcset if sizes is present
+		if (isset($attributes['sizes'])) {
+			$attributes['srcset'] = Srcset_Transformer::generate_srcset(
+				$attributes['src'],
+				$dimensions,
+				$attributes['sizes'],
+				$this->default_edge_args
+			);
 		}
 
-		// Track our offset adjustment as we make replacements
-		$offset_adjustment = 0;
-
-		// Process each image
-		foreach ($matches[0] as $match) {
-			$img_html = $match[0];
-			$position = $match[1];
-
-			// Skip if already processed
-			if (Helpers::is_image_processed($img_html)) {
-				continue;
-			}
-
-			// Create a processor for this image
-			$processor = new \WP_HTML_Tag_Processor($img_html);
-			if (!$processor->next_tag('img')) {
-				continue;
-			}
-
-			// Get attachment ID from wp-image-X class
-			$attachment_id = null;
-			$class = $processor->get_attribute('class') ?? '';
-			if (preg_match('/wp-image-(\d+)/', $class, $id_matches)) {
-				$attachment_id = (int) $id_matches[1];
-			}
-
-			// Transform the image
-			$processor = $this->transform_image_tag(
-				$processor,
-				$attachment_id,
-				$img_html,
-				'content'
-			);
-
-			// Get dimensions for picture wrapping
-			$dimensions = $this->get_dimensions($processor, $attachment_id);
-			if ($dimensions && Feature_Manager::is_feature_enabled('picture_wrap')) {
-				$transformed_html = Picture::create(
-					$processor->get_updated_html(),
-					$dimensions,
-					''
-				);
-			} else {
-				$transformed_html = $processor->get_updated_html();
-			}
-
-			// Replace in content
-			$content = substr_replace(
-				$content,
-				$transformed_html,
-				$position + $offset_adjustment,
-				strlen($img_html)
-			);
-
-			// Update offset
-			$offset_adjustment += strlen($transformed_html) - strlen($img_html);
-		}
-
-		return $content;
+		return $attributes;
 	}
 
 }
