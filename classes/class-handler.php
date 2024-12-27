@@ -422,6 +422,7 @@ class Handler {
 	 * @return string Modified HTML with picture element wrapper if appropriate.
 	 */
 	public function wrap_attachment_image(string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null): string {
+		
 		// Handle flexible parameter order
 		$attr = is_array($attr_or_icon) ? $attr_or_icon : [];
 		if (is_bool($attr_or_icon)) {
@@ -526,8 +527,8 @@ class Handler {
 		$processor = $this->transform_image_tag($processor, $attachment_id, $image_html, $context);
 		$transformed = $processor->get_updated_html();
 
-		// Check if picture wrapping is disabled.
-		if (Feature_Manager::is_disabled('picture_wrap')) {
+		// Check if picture wrapping is disabled or if we're in a block context (where wrapping happens later)
+		if (Feature_Manager::is_disabled('picture_wrap') || $context === 'block') {
 			return $transformed;
 		}
 
@@ -688,7 +689,7 @@ class Handler {
 	 * @param array                  $transform_args Additional transformation arguments.
 	 * @return void
 	 */
-	private function transform_image_urls( 
+	public function transform_image_urls( 
 		\WP_HTML_Tag_Processor $processor, 
 		?array $dimensions, 
 		string $original_html = '',
@@ -826,12 +827,23 @@ class Handler {
 				continue;
 			}
 
+			// Check for a link wrapping the image
+			$link_html = '';
+			if (preg_match('/<a[^>]*>.*?' . preg_quote($img_html, '/') . '.*?<\/a>/s', $figure_html, $link_matches)) {
+				$link_html = $link_matches[0];
+				$img_html = $this->extract_img_tag($link_html);
+			}
+
 			// Transform the image first
 			$transformed_img = $this->transform_image(true, $img_html, 'block', 0);
 
 			// If Picture wrap is disabled, just replace the original image with the transformed one
 			if (!Feature_Manager::is_feature_enabled('picture_wrap')) {
-				$new_figure_html = str_replace($img_html, $transformed_img, $figure_html);
+				$new_html = $transformed_img;
+				if ($link_html) {
+					$new_html = str_replace($img_html, $transformed_img, $link_html);
+				}
+				$new_figure_html = str_replace($link_html ?: $img_html, $new_html, $figure_html);
 				
 				$block_content = substr_replace(
 					$block_content,
@@ -867,6 +879,14 @@ class Handler {
 
 			// Extract figure classes
 			$figure_classes = $this->extract_figure_classes($figure_html);
+
+			// If we have a link, wrap the transformed image in it
+			if ($link_html) {
+				// Extract the link opening tag
+				if (preg_match('/<a[^>]*>/', $link_html, $link_open_matches)) {
+					$transformed_img = $link_open_matches[0] . $transformed_img . '</a>';
+				}
+			}
 
 			// Create picture element with figure classes
 			$picture_html = Picture::create(

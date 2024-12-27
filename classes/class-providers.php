@@ -1,6 +1,6 @@
 <?php
 /**
- * Provider registry functionality.
+ * Provider functionality.
  *
  * Manages the registration and validation of edge providers.
  * This class handles:
@@ -21,7 +21,7 @@
 
 namespace Edge_Images;
 
-class Provider_Registry {
+class Providers {
 
 	/**
 	 * The default provider to use if none is configured.

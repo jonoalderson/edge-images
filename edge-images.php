@@ -68,7 +68,7 @@ add_action( 'init', [ Handler::class, 'register' ], 5 );
  * @since 4.0.0
  * @return void
  */
-add_action( 'plugins_loaded', [ Integration_Manager::class, 'register' ], 5 );
+add_action( 'plugins_loaded', [ Integrations::class, 'register' ], 5 );
 
 /**
  * Initialize feature management.

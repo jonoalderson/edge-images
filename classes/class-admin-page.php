@@ -240,7 +240,7 @@ class Admin_Page {
 		// Process provider setting
 		if ( isset( $_POST[ self::PROVIDER_OPTION ] ) ) {
 			$provider = sanitize_text_field( wp_unslash( $_POST[ self::PROVIDER_OPTION ] ) );
-			if ( Provider_Registry::is_valid_provider( $provider ) ) {
+			if ( Providers::is_valid_provider( $provider ) ) {
 				update_option( self::PROVIDER_OPTION, $provider );
 			}
 		}
@@ -513,7 +513,7 @@ class Admin_Page {
 	 * @return string Sanitized provider value.
 	 */
 	public static function sanitize_provider( string $value ): string {
-		return Provider_Registry::is_valid_provider( $value ) ? $value : 'none';
+		return Providers::is_valid_provider( $value ) ? $value : 'none';
 	}
 
 	/**
@@ -635,7 +635,7 @@ class Admin_Page {
 		}
 
 		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
-		$providers       = Provider_Registry::get_providers();
+		$providers       = Providers::get_providers();
 		?>
 		<div class="edge-images-provider-selector">
 			<?php foreach ( $providers as $value => $label ) : ?>
@@ -816,7 +816,7 @@ class Admin_Page {
 			return;
 		}
 
-		$integrations = Integration_Manager::get_registered_integrations();
+		$integrations = Integrations::get_registered_integrations();
 		if ( empty( $integrations ) ) {
 			return;
 		}
@@ -831,7 +831,7 @@ class Admin_Page {
 						<?php else : ?>
 							<span class="dashicons dashicons-no-alt" style="color: #DC3232;"></span>
 						<?php endif; ?>
-						<strong><?php echo esc_html( Integration_Manager::get_name( $id ) ); ?></strong>
+						<strong><?php echo esc_html( Integrations::get_name( $id ) ); ?></strong>
 					</div>
 
 					<?php if ( $integration['active'] && $id === 'yoast-seo' ) : ?>
