@@ -2,11 +2,19 @@
 /**
  * Htaccess caching functionality.
  *
- * Handles the creation and management of .htaccess rules
- * for image caching.
+ * Handles the creation and management of .htaccess rules for image caching.
+ * This feature:
+ * - Creates and manages .htaccess rules
+ * - Configures browser caching for images
+ * - Handles file permissions
+ * - Manages cache settings
+ * - Provides admin notifications
+ * - Ensures proper file handling
+ * - Supports multiple image types
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      4.5.0
  */
 
@@ -14,17 +22,20 @@ namespace Edge_Images\Features;
 
 use Edge_Images\{Integration, Feature_Manager};
 
-/**
- * Handles htaccess caching configuration.
- *
- * @since 4.5.0
- */
 class Htaccess_Cache extends Integration {
 
 	/**
 	 * The htaccess rules we want to add.
 	 *
-	 * @var string
+	 * Apache configuration rules for image caching.
+	 * These rules:
+	 * - Enable browser caching
+	 * - Set cache duration
+	 * - Support multiple formats
+	 * - Use mod_expires
+	 *
+	 * @since      4.5.0
+	 * @var        string
 	 */
 	private const HTACCESS_RULES = '
 # BEGIN Edge Images Cache Rules
@@ -38,8 +49,17 @@ class Htaccess_Cache extends Integration {
 # END Edge Images Cache Rules';
 
 	/**
-	 * Register the integration
+	 * Register the integration.
 	 *
+	 * Initializes the htaccess caching functionality.
+	 * This method:
+	 * - Creates class instance
+	 * - Sets up filters
+	 * - Initializes functionality
+	 * - Ensures proper registration
+	 *
+	 * @since      4.5.0
+	 * 
 	 * @return void
 	 */
 	public static function register(): void {
@@ -50,7 +70,15 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Add integration-specific filters.
 	 *
-	 * @since 4.5.0
+	 * Sets up required filters and actions for htaccess caching.
+	 * This method:
+	 * - Adds option update handlers
+	 * - Sets up admin notices
+	 * - Checks file existence
+	 * - Validates configuration
+	 * - Ensures proper setup
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
@@ -80,10 +108,17 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Check if htaccess file has our rules.
 	 *
-	 * @since 4.5.0
+	 * Validates the presence of caching rules in .htaccess.
+	 * This method:
+	 * - Checks file existence
+	 * - Reads file contents
+	 * - Searches for rules
+	 * - Validates configuration
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @param string $htaccess_path Path to htaccess file.
-	 * @return bool Whether the file has our rules.
+	 * @param  string $htaccess_path Full path to the .htaccess file.
+	 * @return bool                 True if rules exist, false otherwise.
 	 */
 	private function has_our_rules(string $htaccess_path): bool {
 		if (!file_exists($htaccess_path)) {
@@ -97,10 +132,18 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Handle the option being updated.
 	 *
-	 * @since 4.5.0
+	 * Processes changes to the htaccess caching option.
+	 * This method:
+	 * - Handles option changes
+	 * - Creates/removes rules
+	 * - Updates configuration
+	 * - Provides feedback
+	 * - Ensures proper state
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @param mixed $old_value The old option value.
-	 * @param mixed $new_value The new option value.
+	 * @param  mixed $old_value Previous option value.
+	 * @param  mixed $new_value New option value.
 	 * @return void
 	 */
 	public function handle_option_update($old_value, $new_value): void {
@@ -117,9 +160,17 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Store an admin notice for later display.
 	 *
-	 * @since 4.5.0
+	 * Manages temporary storage of admin notifications.
+	 * This method:
+	 * - Stores notice data
+	 * - Sets notice type
+	 * - Manages timing
+	 * - Ensures persistence
+	 * - Handles cleanup
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @param array{success: bool, message: string} $result Operation result.
+	 * @param  array{success: bool, message: string} $result Operation result array.
 	 * @return void
 	 */
 	private function store_admin_notice(array $result): void {
@@ -135,7 +186,15 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Display admin notices.
 	 *
-	 * @since 4.5.0
+	 * Renders stored admin notifications in the dashboard.
+	 * This method:
+	 * - Retrieves notices
+	 * - Formats messages
+	 * - Handles timing
+	 * - Ensures security
+	 * - Manages cleanup
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
@@ -165,9 +224,18 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Create or update the .htaccess file.
 	 *
-	 * @since 4.5.0
+	 * Manages the creation and updating of .htaccess rules.
+	 * This method:
+	 * - Checks permissions
+	 * - Validates content
+	 * - Writes rules
+	 * - Handles errors
+	 * - Provides feedback
+	 * - Ensures integrity
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return array{success: bool, message: string} Result of the operation.
+	 * @return array{success: bool, message: string} Operation result array.
 	 */
 	private function create_htaccess(): array {
 		$upload_dir = wp_upload_dir();
@@ -222,9 +290,18 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Remove our rules from the .htaccess file.
 	 *
-	 * @since 4.5.0
+	 * Manages the removal of caching rules from .htaccess.
+	 * This method:
+	 * - Validates file
+	 * - Reads content
+	 * - Removes rules
+	 * - Updates file
+	 * - Handles errors
+	 * - Provides feedback
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return array{success: bool, message: string} Result of the operation.
+	 * @return array{success: bool, message: string} Operation result array.
 	 */
 	private function remove_htaccess(): array {
 		$upload_dir = wp_upload_dir();
@@ -251,26 +328,12 @@ class Htaccess_Cache extends Integration {
 		$pattern = '/\s*# BEGIN Edge Images Cache Rules.*# END Edge Images Cache Rules\s*/s';
 		$new_content = preg_replace($pattern, '', $current_content);
 
-		// If content is empty after removal, delete the file
-		if (trim($new_content) === '') {
-			if (!unlink($htaccess_path)) {
-				return [
-					'success' => false,
-					'message' => __('Failed to delete empty .htaccess file.', 'edge-images'),
-				];
-			}
-			return [
-				'success' => true,
-				'message' => __('Removed .htaccess file as it was empty.', 'edge-images'),
-			];
-		}
-
-		// Write the modified content back
+		// Write the file
 		$result = file_put_contents($htaccess_path, $new_content);
 		if ($result === false) {
 			return [
 				'success' => false,
-				'message' => __('Failed to update .htaccess file.', 'edge-images'),
+				'message' => __('Failed to write .htaccess file.', 'edge-images'),
 			];
 		}
 
@@ -283,9 +346,16 @@ class Htaccess_Cache extends Integration {
 	/**
 	 * Get default settings for this integration.
 	 *
-	 * @since 4.5.0
+	 * Provides default configuration settings for htaccess caching.
+	 * This method:
+	 * - Sets feature defaults
+	 * - Configures options
+	 * - Ensures consistency
+	 * - Supports customization
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return array<string,mixed> Default settings.
+	 * @return array<string,mixed> Array of default feature settings.
 	 */
 	public static function get_default_settings(): array {
 		return [

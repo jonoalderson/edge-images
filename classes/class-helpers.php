@@ -3,10 +3,13 @@
  * Helper functions for Edge Images.
  *
  * Provides utility functions for URL transformation, provider management,
- * and general plugin functionality.
+ * and general plugin functionality. This class contains static methods that
+ * are used throughout the plugin for common operations such as URL handling,
+ * provider configuration, and image processing decisions.
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      1.0.0
  */
 
@@ -14,11 +17,6 @@ namespace Edge_Images;
 
 use Edge_Images\Edge_Provider;
 
-/**
- * Static helper class for common functionality.
- *
- * @since 4.0.0
- */
 class Helpers {
 
 	/**
@@ -539,6 +537,27 @@ class Helpers {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Check if an image has already been processed.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param \WP_HTML_Tag_Processor|string $input Either a Tag Processor or HTML string.
+	 * @return bool Whether the image has been processed.
+	 */
+	public static function is_image_processed($input): bool {
+		if ($input instanceof \WP_HTML_Tag_Processor) {
+			$class = $input->get_attribute('class') ?? '';
+			return str_contains($class, 'edge-images-processed');
+		}
+
+		if (is_string($input)) {
+			return str_contains($input, 'edge-images-processed');
+		}
+
+		return false;
 	}
 
 }

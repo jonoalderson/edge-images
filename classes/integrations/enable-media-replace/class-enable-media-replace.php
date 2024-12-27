@@ -1,23 +1,39 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Enable Media Replace integration functionality.
  *
- * @package Edge_Images
+ * Handles integration with the Enable Media Replace plugin.
+ * This integration:
+ * - Manages cache purging on media replacement
+ * - Ensures image transformations stay current
+ * - Maintains cache consistency
+ * - Handles attachment updates
+ * - Supports media library operations
+ * - Integrates with WordPress hooks
+ *
+ * @package    Edge_Images
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
+ * @since      4.5.0
  */
 
 namespace Edge_Images\Integrations\Enable_Media_Replace;
 
 use Edge_Images\{Integration, Cache};
 
-/**
- * Integration with Enable Media Replace plugin.
- */
 class Enable_Media_Replace extends Integration {
 
 	/**
 	 * Add integration-specific filters.
 	 *
-	 * @since 4.5.0
+	 * Sets up required filters for Enable Media Replace integration.
+	 * This method:
+	 * - Hooks into media replacement events
+	 * - Triggers cache purging
+	 * - Maintains data consistency
+	 * - Ensures proper cleanup
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */

@@ -6,7 +6,8 @@
  * @author    Jono Alderson <https://www.jonoalderson.com/>
  * @license   GPL-2.0-or-later
  * @link      https://www.jonoalderson.com/
- * @copyright 2024 Jono Alderson
+ * @since     1.0.0
+ * @version   4.5.4
  *
  * @wordpress-plugin
  * Plugin Name:       Edge Images
@@ -44,6 +45,9 @@ register_activation_hook(__FILE__, ['\Edge_Images\Activation', 'activate']);
 
 /**
  * Initialize admin functionality when in the WordPress admin area.
+ *
+ * @since 4.0.0
+ * @return void
  */
 if ( is_admin() ) {
     add_action( 'init', [ Admin_Page::class, 'register' ] );
@@ -51,14 +55,25 @@ if ( is_admin() ) {
 
 /**
  * Initialize the main plugin functionality.
+ *
+ * @since 4.0.0
+ * @return void
  */
 add_action( 'init', [ Handler::class, 'register' ], 5 );
 
 /**
  * Initialize integrations.
  * We use 'plugins_loaded' to ensure all plugins are available.
+ *
+ * @since 4.0.0
+ * @return void
  */
 add_action( 'plugins_loaded', [ Integration_Manager::class, 'register' ], 5 );
 
-// Add this line where other features/integrations are registered
+/**
+ * Initialize feature management.
+ *
+ * @since 4.0.0
+ * @return void
+ */
 add_action('init', [Feature_Manager::class, 'register'], 5);

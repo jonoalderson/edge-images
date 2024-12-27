@@ -2,24 +2,29 @@
 /**
  * Activation functionality.
  *
- * Handles plugin activation tasks like setting default options.
+ * This class is responsible for initializing the plugin's default settings,
+ * including core options, integration settings, and feature configurations.
+ * It handles three types of defaults:
+ * - Core plugin defaults (provider, settings, etc.)
+ * - Integration-specific defaults
+ * - Feature-specific defaults
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      4.5.0
  */
 
 namespace Edge_Images;
 
-/**
- * Handles plugin activation.
- *
- * @since 4.5.0
- */
 class Activation {
 
 	/**
 	 * Core default option values.
+	 *
+	 * Default settings for the core plugin functionality.
+	 * These values are used when the plugin is activated
+	 * for the first time or if settings are missing.
 	 *
 	 * @since 4.5.0
 	 * @var array<string,mixed>
@@ -34,8 +39,10 @@ class Activation {
 	/**
 	 * Run activation tasks.
 	 *
+	 * This method is called when the plugin is activated and
+	 * triggers the initialization of default options.
+	 *
 	 * @since 4.5.0
-	 * 
 	 * @return void
 	 */
 	public static function activate(): void {
@@ -45,8 +52,11 @@ class Activation {
 	/**
 	 * Set default options if they don't exist.
 	 *
+	 * Initializes all plugin options with default values if they haven't
+	 * been set already. This includes core options, integration options,
+	 * and feature settings.
+	 *
 	 * @since 4.5.0
-	 * 
 	 * @return void
 	 */
 	private static function set_default_options(): void {
@@ -77,8 +87,11 @@ class Activation {
 	/**
 	 * Get default settings from all integrations.
 	 *
+	 * Collects and combines default settings from all registered
+	 * integrations that provide default settings through their
+	 * get_default_settings() method.
+	 *
 	 * @since 4.5.0
-	 * 
 	 * @return array<string,mixed> Combined default settings from all integrations.
 	 */
 	private static function get_integration_defaults(): array {
@@ -95,6 +108,24 @@ class Activation {
 		}
 
 		return $defaults;
+	}
+
+	/**
+	 * Get default settings.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return array<string,mixed> Default settings.
+	 */
+	public static function get_default_settings(): array {
+		return array_merge(
+			[
+				'edge_images_provider' => '',
+				'edge_images_imgix_subdomain' => '',
+				'edge_images_feature_picture_wrap' => false,
+			],
+			Feature_Manager::get_default_settings()
+		);
 	}
 
 } 

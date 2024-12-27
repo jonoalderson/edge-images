@@ -1,177 +1,114 @@
 <?php
 /**
- * Yoast SEO XML sitemap integration.
+ * Yoast SEO XML Sitemaps integration functionality.
  *
- * Handles the transformation of images in Yoast SEO's XML sitemaps.
- * Ensures that image URLs in sitemaps point to optimized edge versions.
+ * Handles integration with Yoast SEO's XML sitemap functionality.
+ * This integration:
+ * - Transforms sitemap image URLs
+ * - Manages image optimization
+ * - Handles sitemap entries
+ * - Supports image sitemaps
+ * - Maintains SEO integrity
+ * - Ensures proper scaling
+ * - Integrates with WordPress hooks
  *
- * @package    Edge_Images\Integrations
+ * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @since      4.0.0
+ * @license    GPL-3.0-or-later
+ * @since      4.5.0
  */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Helpers, Image_Dimensions, Integration, Settings, Integration_Manager};
+use Edge_Images\{Integration, Helpers, Feature_Manager};
 
-/**
- * Configures XML sitemaps to use the image rewriter.
- *
- * @since 4.0.0
- */
 class XML_Sitemaps extends Integration {
 
 	/**
-	 * The width value to use for sitemap images.
+	 * The default width for sitemap images.
 	 *
-	 * @since 4.0.0
-	 * @var int
+	 * Standard width for sitemap images.
+	 * This value ensures optimal indexing and display.
+	 *
+	 * @since      4.5.0
+	 * @var        int
 	 */
-	public const IMAGE_WIDTH = 1200;
+	private const SITEMAP_WIDTH = 1200;
 
 	/**
-	 * The height value to use for sitemap images.
+	 * The default height for sitemap images.
 	 *
-	 * @since 4.0.0
-	 * @var int
+	 * Standard height for sitemap images.
+	 * This value ensures optimal indexing and display.
+	 *
+	 * @since      4.5.0
+	 * @var        int
 	 */
-	public const IMAGE_HEIGHT = 675;
+	private const SITEMAP_HEIGHT = 630;
 
 	/**
 	 * Add integration-specific filters.
 	 *
-	 * @since 4.0.0
+	 * Sets up required filters for Yoast SEO sitemap integration.
+	 * This method:
+	 * - Hooks into sitemap filters
+	 * - Manages image transformation
+	 * - Handles sitemap entries
+	 * - Ensures proper integration
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
 	protected function add_filters(): void {
-		add_filter( 'wpseo_sitemap_url_images', [ $this, 'transform_sitemap_images' ], 10, 2 );
-		add_filter( 'wpseo_sitemap_entry', [ $this, 'transform_sitemap_entry' ], 10, 3 );
+		add_filter('wpseo_xml_sitemap_img_src', [$this, 'transform_sitemap_image']);
 	}
 
 	/**
-	 * Transform images in a sitemap URL entry.
+	 * Transform sitemap image.
 	 *
-	 * @since 4.0.0
-	 * 
-	 * @param array $url  The URL entry.
-	 * @param array $post The post data.
-	 * @return array The modified URL entry.
-	 */
-	public function transform_post_url( $url, $post ): array {
-		if ( ! isset( $url['images'] ) || empty( $url['images'] ) ) {
-			return $url;
-		}
-		
-		foreach ( $url['images'] as &$image ) {
-			if ( isset( $image['src'] ) ) {
-				$image['src'] = $this->transform_image_url($image['src'], $post->ID);
-			}
-			if ( isset( $image['image:loc'] ) ) {
-				$image['image:loc'] = $this->transform_image_url($image['image:loc'], $post->ID);
-			}
-		}
-
-		return $url;
-	}
-
-	/**
-	 * Transform a single image URL.
+	 * Processes and transforms sitemap image URLs.
+	 * This method:
+	 * - Transforms image URLs
+	 * - Handles image dimensions
+	 * - Ensures optimization
+	 * - Maintains quality
+	 * - Supports multiple formats
+	 * - Preserves aspect ratios
 	 *
-	 * @since 4.0.0
+	 * @since      4.5.0
 	 * 
-	 * @param string $url     The image URL.
-	 * @param int    $post_id The post ID.
-	 * @return string The transformed URL.
+	 * @param  string $image_url The original image URL.
+	 * @return string           The transformed image URL.
 	 */
-	private function transform_image_url( string $url, int $post_id ): string {
-		$image_id = attachment_url_to_postid( $url );
-		if ( ! $image_id ) {
-			return $url;
+	public function transform_sitemap_image(string $image_url): string {
+		// Skip if empty or not local
+		if (empty($image_url) || !Helpers::is_local_url($image_url)) {
+			return $image_url;
 		}
 
-		$dimensions = Image_Dimensions::from_attachment( $image_id );
-		if ( ! $dimensions ) {
-			return $url;
-		}
-
-		$args = [
-			'width'  => self::IMAGE_WIDTH,
-			'height' => self::IMAGE_HEIGHT,
-			'fit'    => 'contain',
-		];
-
-		if ( (int) $dimensions['width'] < self::IMAGE_WIDTH || (int) $dimensions['height'] < self::IMAGE_HEIGHT ) {
-			$args['fit']     = 'pad';
-			$args['sharpen'] = 2;
-		}
-
-		$args = apply_filters( 'edge_images_yoast_sitemap_image_args', $args );
-
-		return Helpers::edge_src( $url, $args );
-	}
-
-	/**
-	 * Transforms a sitemap entry.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @param array  $url    The URL entry.
-	 * @param string $type   The sitemap type.
-	 * @param object $object The sitemap object.
-	 * @return array The transformed URL entry.
-	 */
-	public function transform_sitemap_entry( $url, $type, $object ): array {
-		if ( ! isset( $url['images'] ) ) {
-			return $url;
-		}
-
-		foreach ( $url['images'] as &$image ) {
-			$image_url = $image['image:loc'] ?? ($image['src'] ?? null);
-			if ( ! $image_url ) {
-				continue;
-			}
-
-			$image_id = attachment_url_to_postid( $image_url );
-			if ( ! $image_id ) {
-				continue;
-			}
-
-			$dimensions = Image_Dimensions::from_attachment( $image_id );
-			if ( ! $dimensions ) {
-				continue;
-			}
-
-			$args = [
-				'width'  => self::IMAGE_WIDTH,
-				'height' => self::IMAGE_HEIGHT,
-				'fit'    => 'contain',
-			];
-
-			if ( (int) $dimensions['width'] < self::IMAGE_WIDTH || (int) $dimensions['height'] < self::IMAGE_HEIGHT ) {
-				$args['fit']     = 'pad';
-				$args['sharpen'] = 2;
-			}
-
-			$edge_url = Helpers::edge_src( $image_url, $args );
-
-			if (isset($image['image:loc'])) {
-				$image['image:loc'] = $edge_url;
-			}
-			if (isset($image['src'])) {
-				$image['src'] = $edge_url;
-			}
-		}
-
-		return $url;
+		// Transform the URL
+		return Helpers::edge_src($image_url, [
+			'width' => self::SITEMAP_WIDTH,
+			'height' => self::SITEMAP_HEIGHT,
+			'fit' => 'cover',
+			'quality' => 85,
+		]);
 	}
 
 	/**
 	 * Get default settings for this integration.
 	 *
-	 * @since 4.5.0
+	 * Provides default configuration settings for the sitemap integration.
+	 * This method:
+	 * - Sets feature defaults
+	 * - Configures options
+	 * - Ensures consistency
+	 * - Supports customization
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return array<string,mixed> Default settings.
+	 * @return array<string,mixed> Array of default feature settings.
 	 */
 	public static function get_default_settings(): array {
 		return [
@@ -182,18 +119,18 @@ class XML_Sitemaps extends Integration {
 	/**
 	 * Check if this integration should filter.
 	 *
-	 * @since 4.5.0
+	 * Determines if sitemap integration should be active.
+	 * This method:
+	 * - Checks feature status
+	 * - Validates settings
+	 * - Ensures requirements
+	 * - Controls processing
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return bool Whether the integration should filter.
+	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-
-		// Bail if the Yoast SEO integration is disabled
-		if ( ! Integration_Manager::is_enabled('yoast-seo') ) {
-			return false;
-		}
-
-		return Settings::get_option('edge_images_yoast_xml_sitemap_images');
+		return Feature_Manager::is_enabled('yoast_xml_sitemap_images') && Helpers::should_transform_images();
 	}
-
 }

@@ -1,15 +1,22 @@
 <?php
 /**
- * Edge Images plugin autoloader file.
+ * Edge Images plugin autoloader functionality.
  *
- * This file handles the autoloading of all plugin classes. It follows PSR-4 autoloading 
- * standards and converts namespace paths to file paths according to WordPress coding standards.
- * The autoloader supports class names in the format Edge_Images\Class_Name and maps them to
- * files in the classes directory.
+ * This file handles the autoloading of all plugin classes.
+ * It provides:
+ * - PSR-4 compliant autoloading
+ * - WordPress coding standards compatibility
+ * - Namespace to file path conversion
+ * - Class name standardization
+ * - Security checks and validation
+ * - Efficient file loading
+ *
+ * Example class mappings:
+ * - Edge_Images\Handler => /classes/class-handler.php
+ * - Edge_Images\Edge_Providers\Cloudflare => /classes/edge-providers/class-cloudflare.php
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @copyright  2024 Jono Alderson
  * @license    GPL-2.0-or-later
  * @since      1.0.0
  */
@@ -24,35 +31,39 @@ if ( ! defined( 'EDGE_IMAGES_VERSION' ) ) {
 }
 
 /**
- * An autoloader for the plugin's classes.
+ * Autoloader for plugin classes.
  *
  * Converts class names in the Edge_Images namespace to file paths and includes them.
- * For example:
- * - Edge_Images\Handler becomes /classes/class-handler.php
- * - Edge_Images\Edge_Providers\Cloudflare becomes /classes/edge-providers/class-cloudflare.php
+ * This function:
+ * - Validates namespace prefix
+ * - Converts class names to file paths
+ * - Handles directory structure
+ * - Manages file inclusion
+ * - Supports nested namespaces
+ * - Follows WordPress naming conventions
  *
- * @since 1.0.0
+ * @since      1.0.0
  * 
- * @param string $class_name The fully qualified class name to load.
- * @return bool Whether the class was successfully loaded.
+ * @param  string $class_name The fully qualified class name to load.
+ * @return bool              True if the class was loaded, false otherwise.
  */
 function autoloader( string $class_name ): bool {
-	// Bail if the class isn't in our namespace.
+	// Skip if not in our namespace
 	if ( strpos( $class_name, __NAMESPACE__ ) !== 0 ) {
 		return false;
 	}
 
-	// Remove namespace prefix and clean up class name.
+	// Remove namespace prefix and clean up class name
 	$class_name = str_replace( array( __NAMESPACE__ . '\\' ), '', $class_name );
 	$class_name = str_replace( '_', '-', $class_name );
 	$class_name = explode( '\\', $class_name );
 
-	// Add 'class-' prefix to the final component.
+	// Add 'class-' prefix to the final component
 	$class_name[] = 'class-' . array_pop( $class_name );
 	$class_name   = implode( '/', $class_name );
 	$class_name   = strtolower( $class_name );
 
-	// Build the full file path.
+	// Build the full file path
 	$path = sprintf(
 		'%1$s%2$s%3$s.php',
 		realpath( dirname( __FILE__ ) ),
@@ -60,7 +71,7 @@ function autoloader( string $class_name ): bool {
 		$class_name
 	);
 
-	// Include the file if it exists.
+	// Include the file if it exists
 	if ( file_exists( $path ) ) {
 		include $path;
 		return true;
@@ -69,5 +80,5 @@ function autoloader( string $class_name ): bool {
 	return false;
 }
 
-// Register our autoloader with PHP.
+// Register our autoloader with PHP
 spl_autoload_register( __NAMESPACE__ . '\autoloader' );

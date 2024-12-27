@@ -1,17 +1,23 @@
 <?php
 /**
- * Edge Images plugin file.
+ * Cache management functionality.
  *
- * @package Edge_Images
+ * Provides a caching system for transformed image HTML and metadata.
+ * This class manages:
+ * - HTML caching for transformed images
+ * - Cache key generation and management
+ * - Cache invalidation and purging
+ * - Integration with WordPress cache system
+ * - Post and attachment cache relationships
+ *
+ * @package    Edge_Images
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
+ * @since      4.5.0
  */
 
 namespace Edge_Images;
 
-/**
- * Handles caching of transformed images.
- *
- * @since 4.5.0
- */
 class Cache {
 
 	/**

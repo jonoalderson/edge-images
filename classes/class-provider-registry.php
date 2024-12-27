@@ -3,26 +3,34 @@
  * Provider registry functionality.
  *
  * Manages the registration and validation of edge providers.
- * Acts as a central registry for all available edge provider implementations.
+ * This class handles:
+ * - Provider registration and management
+ * - Provider validation and verification
+ * - Provider class name resolution
+ * - Provider caching and optimization
+ * - Provider configuration validation
+ * - Default provider handling
+ * - Provider slug management
+ * - Provider display name localization
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      1.0.0
  */
 
 namespace Edge_Images;
 
-/**
- * Registry of valid edge providers.
- *
- * @since 4.0.0
- */
 class Provider_Registry {
 
 	/**
 	 * The default provider to use if none is configured.
 	 *
-	 * @since 4.0.0
+	 * This constant defines the fallback provider when no specific
+	 * provider is set or when the configured provider is invalid.
+	 * The 'none' provider disables image transformation functionality.
+	 *
+	 * @since      4.0.0
 	 * @var string
 	 */
 	public const DEFAULT_PROVIDER = 'none';
@@ -30,6 +38,11 @@ class Provider_Registry {
 	/**
 	 * Cache for provider class names.
 	 *
+	 * Stores resolved provider class names to avoid repeated string
+	 * operations and class name resolution. Uses provider slugs as
+	 * keys and fully qualified class names as values.
+	 *
+	 * @since      4.0.0
 	 * @var array<string,string>
 	 */
 	private static array $provider_class_cache = [];
@@ -38,9 +51,16 @@ class Provider_Registry {
 	 * Get all registered providers.
 	 *
 	 * Returns an array of all available providers and their display names.
-	 * Used primarily in the admin interface for provider selection.
+	 * This method:
+	 * - Returns all registered edge providers
+	 * - Provides localized display names
+	 * - Includes the 'none' provider option
+	 * - Is used in admin interfaces
+	 * - Supports provider selection
+	 * - Maintains consistent provider order
+	 * - Ensures all providers are properly registered
 	 *
-	 * @since 4.0.0
+	 * @since      4.0.0
 	 * 
 	 * @return array<string,string> Array of provider slugs and display names.
 	 */
@@ -58,9 +78,16 @@ class Provider_Registry {
 	 * Get provider slugs.
 	 *
 	 * Returns an array of all registered provider slugs.
-	 * Used for validation and internal provider management.
+	 * This method:
+	 * - Returns only provider identifiers
+	 * - Excludes display names
+	 * - Includes all available providers
+	 * - Is used for validation
+	 * - Supports provider management
+	 * - Maintains consistent order
+	 * - Ensures provider availability
 	 *
-	 * @since 4.0.0
+	 * @since      4.0.0
 	 * 
 	 * @return array<string> Array of provider slugs.
 	 */
@@ -72,8 +99,16 @@ class Provider_Registry {
 	 * Check if a provider is valid.
 	 *
 	 * Validates whether a given provider name is registered and available.
+	 * This method:
+	 * - Performs case-insensitive validation
+	 * - Checks against registered providers
+	 * - Handles provider name normalization
+	 * - Supports provider validation
+	 * - Ensures provider availability
+	 * - Prevents invalid provider usage
+	 * - Returns boolean validation result
 	 *
-	 * @since 4.0.0
+	 * @since      4.0.0
 	 * 
 	 * @param string $provider_name The provider name to check.
 	 * @return bool Whether the provider is valid.
@@ -88,8 +123,21 @@ class Provider_Registry {
 	/**
 	 * Get the provider class name with caching.
 	 *
-	 * @param string $provider_name The provider name.
-	 * @return string The fully qualified class name.
+	 * Resolves and caches the fully qualified class name for a provider.
+	 * This method:
+	 * - Uses cached class names when available
+	 * - Handles case-insensitive provider names
+	 * - Validates provider existence
+	 * - Constructs namespaced class names
+	 * - Supports provider class resolution
+	 * - Handles the 'none' provider specially
+	 * - Maintains consistent class naming
+	 * - Optimizes class name resolution
+	 *
+	 * @since      4.0.0
+	 * 
+	 * @param string $provider_name The provider name to resolve.
+	 * @return string The fully qualified provider class name.
 	 */
 	public static function get_provider_class( string $provider_name ): string {
 		// Convert to lowercase for cache key

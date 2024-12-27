@@ -3,10 +3,18 @@
  * Imgix provider functionality.
  *
  * Handles image transformation through Imgix.
+ * This provider:
+ * - Integrates with Imgix's image processing service
+ * - Transforms image URLs to use Imgix's endpoint
+ * - Supports dynamic image resizing and optimization
+ * - Maps standard parameters to Imgix's format
+ * - Provides extensive image manipulation options
+ * - Ensures secure and efficient image delivery
+ * - Handles subdomain configuration and validation
  *
  * @package    Edge_Images
- * @subpackage Edge_Providers
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      4.0.0
  */
 
@@ -14,27 +22,32 @@ namespace Edge_Images\Edge_Providers;
 
 use Edge_Images\{Edge_Provider, Settings};
 
-/**
- * Imgix provider class.
- *
- * @since 4.0.0
- */
 class Imgix extends Edge_Provider {
 
 	/**
 	 * The option name for the Imgix subdomain.
 	 *
-	 * @since 4.5.0
-	 * @var string
+	 * WordPress option key for storing the Imgix subdomain.
+	 * Used for configuration and settings management.
+	 *
+	 * @since      4.5.0
+	 * @var        string
 	 */
 	public const SUBDOMAIN_OPTION = 'edge_images_imgix_subdomain';
 
 	/**
 	 * Get the Imgix subdomain.
 	 *
-	 * @since 4.5.0
+	 * Retrieves the configured Imgix subdomain from settings.
+	 * This method:
+	 * - Fetches the subdomain setting
+	 * - Returns empty string if not configured
+	 * - Supports URL generation
+	 * - Enables dynamic endpoint configuration
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return string The Imgix subdomain.
+	 * @return string The configured Imgix subdomain or empty string.
 	 */
 	public static function get_subdomain(): string {
 		return (string) Settings::get_option(self::SUBDOMAIN_OPTION, '');
@@ -43,7 +56,14 @@ class Imgix extends Edge_Provider {
 	/**
 	 * Register provider settings.
 	 *
-	 * @since 4.5.0
+	 * Registers the Imgix-specific settings in WordPress.
+	 * This method:
+	 * - Registers the subdomain setting
+	 * - Sets up sanitization
+	 * - Provides default values
+	 * - Adds setting description
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
@@ -64,10 +84,11 @@ class Imgix extends Edge_Provider {
 	 * The Imgix domain pattern.
 	 *
 	 * This identifies Imgix's transformation endpoint.
+	 * Used as a suffix for the configured subdomain.
 	 * Format: your-subdomain.imgix.net
 	 *
-	 * @since 4.1.0
-	 * @var string
+	 * @since      4.1.0
+	 * @var        string
 	 */
 	public const EDGE_ROOT = '.imgix.net';
 
@@ -75,12 +96,18 @@ class Imgix extends Edge_Provider {
 	 * Get the edge URL for an image.
 	 *
 	 * Transforms the image URL into an Imgix-compatible format with
-	 * transformation parameters. Format:
-	 * https://your-subdomain.imgix.net/path-to-image.jpg?w=200&h=200&fit=crop
+	 * transformation parameters. This method:
+	 * - Validates subdomain configuration
+	 * - Maps standard parameters to Imgix format
+	 * - Constructs the CDN URL
+	 * - Handles parameter formatting
+	 * - Ensures proper URL structure
 	 *
-	 * @since 4.1.0
+	 * Format: https://your-subdomain.imgix.net/path-to-image.jpg?w=200&h=200&fit=crop
+	 *
+	 * @since      4.1.0
 	 * 
-	 * @return string The transformed edge URL.
+	 * @return string The transformed edge URL with Imgix parameters.
 	 */
 	public function get_edge_url(): string {
 		// Get the Imgix subdomain from settings
@@ -109,10 +136,15 @@ class Imgix extends Edge_Provider {
 	 * Get the URL pattern used to identify transformed images.
 	 *
 	 * Used to detect if an image has already been transformed by Imgix.
+	 * This method:
+	 * - Returns the Imgix-specific domain pattern
+	 * - Enables detection of transformed images
+	 * - Prevents duplicate transformations
+	 * - Supports URL validation
 	 *
-	 * @since 4.1.0
+	 * @since      4.1.0
 	 * 
-	 * @return string The URL pattern.
+	 * @return string The Imgix URL pattern for transformed images.
 	 */
 	public static function get_url_pattern(): string {
 		return self::EDGE_ROOT;
@@ -122,6 +154,12 @@ class Imgix extends Edge_Provider {
 	 * Convert standard transform args to Imgix format.
 	 *
 	 * Maps our standardized parameters to Imgix's specific format.
+	 * This method:
+	 * - Converts width and height parameters
+	 * - Maps resize modes and fit options
+	 * - Handles quality settings
+	 * - Manages format conversion
+	 * - Processes gravity/focus points
 	 * Reference: https://docs.imgix.com/apis/rendering
 	 *
 	 * @since 4.1.0

@@ -3,23 +3,28 @@
  * Admin interface functionality.
  *
  * Handles the creation and management of the plugin's admin settings page.
- * Provides UI for selecting edge providers and configuring image options.
+ * This class manages all aspects of the WordPress admin interface including:
+ * - Settings page creation and rendering
+ * - Option registration and sanitization
+ * - Admin notices and warnings
+ * - Asset enqueueing
+ * - Integration settings
+ * - Feature management
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      1.0.0
  */
 
 namespace Edge_Images;
 
-/**
- * Handles the admin settings page UI and functionality.
- *
- * @since 4.0.0
- */
 class Admin_Page {
 	/**
 	 * The option group name for settings.
+	 *
+	 * Used to group related settings together in the WordPress options system.
+	 * This is used as the first parameter in register_setting().
 	 *
 	 * @since 4.0.0
 	 * @var string
@@ -29,6 +34,9 @@ class Admin_Page {
 	/**
 	 * The provider option name.
 	 *
+	 * Stores the selected edge provider (e.g., Cloudflare, Bunny, etc.).
+	 * This setting determines which provider is used for image transformation.
+	 *
 	 * @since 4.0.0
 	 * @var string
 	 */
@@ -37,6 +45,9 @@ class Admin_Page {
 	/**
 	 * The Imgix subdomain option name.
 	 *
+	 * Stores the Imgix subdomain when Imgix is selected as the provider.
+	 * This is required for Imgix integration to function properly.
+	 *
 	 * @since 4.1.0
 	 * @var string
 	 */
@@ -44,6 +55,9 @@ class Admin_Page {
 
 	/**
 	 * The Yoast SEO schema integration option name.
+	 *
+	 * Controls whether image URLs in Yoast SEO schema should be transformed.
+	 * This setting is only relevant when Yoast SEO is active.
 	 *
 	 * @since 4.1.0
 	 * @var string
@@ -99,12 +113,16 @@ class Admin_Page {
 	private const BUNNY_SUBDOMAIN_OPTION = 'edge_images_bunny_subdomain';
 
 	/**
-	 * Registers the admin page and its hooks.
+	 * Register the admin functionality.
 	 *
-	 * Sets up the admin menu, registers settings, and enqueues assets.
+	 * Initializes all admin-related hooks and filters. This includes:
+	 * - Adding the settings page to the admin menu
+	 * - Registering settings
+	 * - Adding settings link to plugins page
+	 * - Setting up admin notices
+	 * - Handling settings updates
 	 *
 	 * @since 4.0.0
-	 * 
 	 * @return void
 	 */
 	public static function register(): void {
@@ -125,10 +143,14 @@ class Admin_Page {
 	}
 
 	/**
-	 * Shows an admin notice when no provider is selected.
+	 * Display admin notice when no provider is configured.
 	 *
-	 * @since 4.5.4
-	 * 
+	 * Shows a warning notice in the WordPress admin when:
+	 * - No edge provider is selected
+	 * - The selected provider is not properly configured
+	 * This helps administrators identify and fix configuration issues.
+	 *
+	 * @since 4.0.0
 	 * @return void
 	 */
 	public static function show_no_provider_notice(): void {
@@ -173,10 +195,13 @@ class Admin_Page {
 	}
 
 	/**
-	 * Adds a settings link to the plugins page.
+	 * Add settings link to plugin listing.
 	 *
-	 * @since 4.5.4
-	 * 
+	 * Adds a "Settings" link to the plugin's entry in the WordPress
+	 * plugins list. This provides quick access to the plugin settings
+	 * directly from the plugins page.
+	 *
+	 * @since 4.0.0
 	 * @param array $links Array of plugin action links.
 	 * @return array Modified array of plugin action links.
 	 */
@@ -192,10 +217,13 @@ class Admin_Page {
 	}
 
 	/**
-	 * Handles settings form submission.
+	 * Handle settings form submission and updates.
 	 *
-	 * @since 4.5.4
-	 * 
+	 * Processes the settings form submission, validates the data,
+	 * and updates the options in the database. Also handles any
+	 * necessary cleanup or cache invalidation after settings changes.
+	 *
+	 * @since 4.0.0
 	 * @return void
 	 */
 	public static function handle_settings_update(): void {
@@ -209,7 +237,7 @@ class Admin_Page {
 			wp_die( esc_html__( 'Invalid nonce verification.', 'edge-images' ) );
 		}
 
-		// Process settings update.
+		// Process provider setting
 		if ( isset( $_POST[ self::PROVIDER_OPTION ] ) ) {
 			$provider = sanitize_text_field( wp_unslash( $_POST[ self::PROVIDER_OPTION ] ) );
 			if ( Provider_Registry::is_valid_provider( $provider ) ) {
@@ -217,48 +245,70 @@ class Admin_Page {
 			}
 		}
 
+		// Process Imgix subdomain setting
 		if ( isset( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) ) {
 			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) );
-			update_option( self::IMGIX_SUBDOMAIN_OPTION, $subdomain );
+			// Validate subdomain format: alphanumeric with hyphens, max 63 chars
+			if ( preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $subdomain ) ) {
+				update_option( self::IMGIX_SUBDOMAIN_OPTION, $subdomain );
+			}
 		}
 
-		if ( isset( $_POST[ self::YOAST_SCHEMA_OPTION ] ) ) {
-			update_option( self::YOAST_SCHEMA_OPTION, (bool) $_POST[ self::YOAST_SCHEMA_OPTION ] );
+		// Process Bunny CDN subdomain setting
+		if ( isset( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) ) {
+			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) );
+			// Validate subdomain format: alphanumeric with hyphens, max 63 chars
+			if ( preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $subdomain ) ) {
+				update_option( self::BUNNY_SUBDOMAIN_OPTION, $subdomain );
+			}
 		}
 
-		if ( isset( $_POST[ self::YOAST_SOCIAL_OPTION ] ) ) {
-			update_option( self::YOAST_SOCIAL_OPTION, (bool) $_POST[ self::YOAST_SOCIAL_OPTION ] );
-		}
-
-		if ( isset( $_POST[ self::YOAST_SITEMAP_OPTION ] ) ) {
-			update_option( self::YOAST_SITEMAP_OPTION, (bool) $_POST[ self::YOAST_SITEMAP_OPTION ] );
-		}
-
+		// Process max width setting
 		if ( isset( $_POST[ self::MAX_WIDTH_OPTION ] ) ) {
 			$max_width = absint( $_POST[ self::MAX_WIDTH_OPTION ] );
-			if ( $max_width > 0 ) {
+			// Enforce reasonable limits (100px to 5000px)
+			if ( $max_width >= 100 && $max_width <= 5000 ) {
 				update_option( self::MAX_WIDTH_OPTION, $max_width );
 			}
 		}
 
-		// Redirect back to the settings page with a success message.
-		wp_safe_redirect( add_query_arg( 
-			[
-				'page' => 'edge-images',
-				'settings-updated' => 'true',
-			],
-			admin_url( 'options-general.php' )
-		) );
+		// Process boolean integration settings with validation
+		$boolean_settings = [
+			self::YOAST_SCHEMA_OPTION,
+			self::YOAST_SOCIAL_OPTION,
+			self::YOAST_SITEMAP_OPTION,
+		];
+
+		foreach ( $boolean_settings as $option ) {
+			$value = isset( $_POST[ $option ] ) ? 
+					  filter_var( wp_unslash( $_POST[ $option ] ), FILTER_VALIDATE_BOOLEAN ) : 
+					  false;
+			update_option( $option, $value );
+		}
+
+		// Clear caches after settings update
+		Settings::reset_cache();
+		Cache::clear();
+
+		// Redirect back to settings page with success message
+		wp_safe_redirect( 
+			add_query_arg( 
+				'settings-updated', 
+				'true', 
+				admin_url( 'options-general.php?page=edge-images' ) 
+			) 
+		);
 		exit;
 	}
 
 	/**
-	 * Adds the admin menu item.
+	 * Add the plugin settings page to the admin menu.
 	 *
-	 * Creates a new settings page under the Settings menu.
+	 * Creates a new menu item under the Settings menu for the plugin's
+	 * configuration page. Sets up the page title, menu title, and
+	 * necessary capabilities.
 	 *
 	 * @since 4.0.0
-	 * 
 	 * @return void
 	 */
 	public static function add_admin_menu(): void {
@@ -272,12 +322,16 @@ class Admin_Page {
 	}
 
 	/**
-	 * Registers the plugin settings.
+	 * Register all plugin settings.
 	 *
-	 * Sets up settings fields and sections for the admin interface.
+	 * Sets up all settings fields, sections, and options used by the plugin.
+	 * This includes:
+	 * - Provider selection
+	 * - Provider-specific settings (e.g., subdomains)
+	 * - Integration options
+	 * - Feature toggles
 	 *
 	 * @since 4.0.0
-	 * 
 	 * @return void
 	 */
 	public static function register_settings(): void {
@@ -448,52 +502,58 @@ class Admin_Page {
 	}
 
 	/**
-	 * Sanitizes the provider option.
+	 * Sanitize the provider option value.
 	 *
-	 * Ensures the selected provider is valid.
+	 * Ensures that the selected provider is valid and registered
+	 * with the plugin. Returns the default provider if an invalid
+	 * value is provided.
 	 *
 	 * @since 4.0.0
-	 * 
-	 * @param string $value The value to sanitize.
-	 * @return string The sanitized value.
+	 * @param string $value The provider value to sanitize.
+	 * @return string Sanitized provider value.
 	 */
 	public static function sanitize_provider( string $value ): string {
 		return Provider_Registry::is_valid_provider( $value ) ? $value : 'none';
 	}
 
 	/**
-	 * Sanitizes a boolean option.
+	 * Sanitize boolean option values.
+	 *
+	 * Ensures that boolean settings are properly sanitized and
+	 * converted to the correct type. Handles various input formats
+	 * and converts them to true/false.
 	 *
 	 * @since 4.0.0
-	 * 
 	 * @param mixed $value The value to sanitize.
-	 * @return bool The sanitized boolean value.
+	 * @return bool Sanitized boolean value.
 	 */
 	public static function sanitize_boolean( $value ): bool {
 		return (bool) $value;
 	}
 
 	/**
-	 * Sanitizes the subdomain value.
+	 * Sanitize subdomain input.
 	 *
-	 * Ensures the subdomain contains only valid characters.
+	 * Cleans and validates subdomain input for providers that require it.
+	 * Removes any invalid characters and ensures the subdomain is properly
+	 * formatted.
 	 *
 	 * @since 4.1.0
-	 * 
-	 * @param string $value The value to sanitize.
-	 * @return string The sanitized subdomain.
+	 * @param string $value The subdomain value to sanitize.
+	 * @return string Sanitized subdomain value.
 	 */
 	public static function sanitize_subdomain( string $value ): string {
 		return sanitize_key( $value );
 	}
 
 	/**
-	 * Enqueues admin assets.
+	 * Enqueue admin-specific assets.
 	 *
-	 * Loads CSS and JavaScript files for the admin interface.
+	 * Loads the necessary CSS and JavaScript files for the admin interface.
+	 * Only loads assets on the plugin's admin pages to avoid unnecessary
+	 * resource loading.
 	 *
 	 * @since 4.0.0
-	 * 
 	 * @param string $hook The current admin page hook.
 	 * @return void
 	 */
@@ -512,12 +572,16 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the admin page.
+	 * Render the main admin settings page.
 	 *
-	 * Outputs the HTML for the settings page interface.
+	 * Outputs the HTML for the plugin's settings page, including:
+	 * - Settings form
+	 * - Provider selection
+	 * - Provider-specific options
+	 * - Integration settings
+	 * - Feature toggles
 	 *
 	 * @since 4.0.0
-	 * 
 	 * @return void
 	 */
 	public static function render_admin_page(): void {
@@ -557,12 +621,12 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the provider selection field.
+	 * Render the provider selection field.
 	 *
-	 * Creates the radio button interface for selecting an edge provider.
+	 * Outputs the dropdown field for selecting the edge provider.
+	 * Shows all available providers and handles the current selection.
 	 *
 	 * @since 4.0.0
-	 * 
 	 * @return void
 	 */
 	public static function render_provider_field(): void {
@@ -591,14 +655,13 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the Bunny CDN subdomain field.
+	 * Render the Bunny CDN subdomain field.
 	 *
-	 * Creates the text input for configuring the Bunny CDN subdomain.
-	 * Only displays when Bunny CDN is selected as the provider.
+	 * Outputs the input field for the Bunny CDN subdomain setting.
+	 * Only displayed when Bunny CDN is selected as the provider.
 	 *
-	 * @since 4.5.4
-	 * 
-	 * @param array $args The field arguments.
+	 * @since 4.1.0
+	 * @param array $args Field arguments.
 	 * @return void
 	 */
 	public static function render_bunny_subdomain_field( array $args ): void {
@@ -652,14 +715,13 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the Imgix subdomain field.
+	 * Render the Imgix subdomain field.
 	 *
-	 * Creates the text input for configuring the Imgix subdomain.
-	 * Only displays when Imgix is selected as the provider.
+	 * Outputs the input field for the Imgix subdomain setting.
+	 * Only displayed when Imgix is selected as the provider.
 	 *
 	 * @since 4.1.0
-	 * 
-	 * @param array $args The field arguments.
+	 * @param array $args Field arguments.
 	 * @return void
 	 */
 	public static function render_imgix_subdomain_field( array $args ): void {
@@ -713,12 +775,12 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the max width field.
+	 * Render the maximum width field.
 	 *
-	 * Creates the input for setting the maximum image width.
+	 * Outputs the input field for setting the maximum image width.
+	 * This setting affects how images are scaled and transformed.
 	 *
-	 * @since 4.2.0
-	 * 
+	 * @since 4.0.0
 	 * @return void
 	 */
 	public static function render_max_width_field(): void {
@@ -741,12 +803,12 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the integrations section.
+	 * Render the integrations settings section.
 	 *
-	 * Shows which plugin integrations are active and available.
+	 * Outputs the settings section for third-party plugin integrations.
+	 * Shows available integrations and their configuration options.
 	 *
-	 * @since 4.2.0
-	 * 
+	 * @since 4.0.0
 	 * @return void
 	 */
 	public static function render_integrations_section(): void {
@@ -788,12 +850,12 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the Yoast SEO integration fields.
+	 * Render Yoast SEO integration fields.
 	 *
-	 * Creates checkboxes for controlling Yoast SEO integration features.
+	 * Outputs the settings fields specific to the Yoast SEO integration.
+	 * Only displayed when Yoast SEO is active.
 	 *
 	 * @since 4.1.0
-	 * 
 	 * @return void
 	 */
 	public static function render_yoast_integration_fields(): void {
@@ -847,10 +909,12 @@ class Admin_Page {
 	}
 
 	/**
-	 * Render the features section.
+	 * Render the features settings section.
 	 *
-	 * @since 4.5.0
-	 * 
+	 * Outputs the settings section for plugin features.
+	 * Shows available features and their toggle switches.
+	 *
+	 * @since 4.0.0
 	 * @return void
 	 */
 	public static function render_features_section(): void {

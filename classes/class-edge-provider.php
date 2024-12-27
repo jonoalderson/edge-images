@@ -1,17 +1,23 @@
 <?php
 /**
- * Base edge provider class.
+ * Edge provider base functionality.
  *
- * @package Edge_Images
+ * Provides the foundation for all edge provider implementations.
+ * This abstract class defines:
+ * - Core transformation parameters and their aliases
+ * - URL generation and manipulation
+ * - Argument validation and normalization
+ * - Provider configuration management
+ * - Common utility methods for all providers
+ *
+ * @package    Edge_Images
+ * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
+ * @since      4.0.0
  */
 
 namespace Edge_Images;
 
-/**
- * Abstract base class for edge providers.
- *
- * @since 4.0.0
- */
 abstract class Edge_Provider {
 
 	/**
@@ -158,6 +164,10 @@ abstract class Edge_Provider {
 	/**
 	 * Check if a value is valid for a given argument.
 	 *
+	 * Validates transformation argument values based on their type
+	 * and expected format. This ensures that only safe and valid
+	 * values are used in image transformations.
+	 *
 	 * @since 4.0.0
 	 * 
 	 * @param string $arg   The argument name.
@@ -168,15 +178,75 @@ abstract class Edge_Provider {
 		switch ($arg) {
 			case 'w':
 			case 'h':
-				return is_numeric($value) && $value > 0;
+				// Width and height must be positive integers between 1 and 5000
+				return is_numeric($value) && $value > 0 && $value <= 5000;
+			
 			case 'dpr':
+				// Device pixel ratio must be between 1 and 3
 				return is_numeric($value) && $value >= 1 && $value <= 3;
+			
 			case 'q':
+				// Quality must be between 1 and 100
 				return is_numeric($value) && $value >= 1 && $value <= 100;
+			
 			case 'fit':
+				// Fit must be one of the predefined values
 				return in_array($value, ['scale-down', 'contain', 'cover', 'crop', 'pad'], true);
+			
 			case 'g':
+				// Gravity must be one of the predefined positions
 				return in_array($value, ['auto', 'north', 'south', 'east', 'west', 'center', 'left', 'right'], true);
+			
+			case 'bg':
+				// Background must be a valid hex color, rgb(a) value, or named color
+				return is_string($value) && (
+					preg_match('/^#[0-9a-f]{3,8}$/i', $value) ||                     // Hex color
+					preg_match('/^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/', $value) || // RGB
+					preg_match('/^rgba\(\d{1,3},\s*\d{1,3},\s*\d{1,3},\s*[0-1](\.\d+)?\)$/', $value) || // RGBA
+					in_array($value, ['transparent', 'black', 'white'], true)         // Named colors
+				);
+			
+			case 'blur':
+				// Blur must be between 1 and 250
+				return is_numeric($value) && $value >= 1 && $value <= 10;
+			
+			case 'brightness':
+			case 'contrast':
+				// Brightness and contrast must be between -100 and 100
+				return is_numeric($value) && $value >= -100 && $value <= 100;
+			
+			case 'gamma':
+				// Gamma must be between 1 and 100
+				return is_numeric($value) && $value >= 1 && $value <= 100;
+			
+			case 'sharpen':
+				// Sharpen must be between 1 and 10
+				return is_numeric($value) && $value >= 1 && $value <= 10;
+			
+			case 'trim':
+				// Trim must be between 1 and 100
+				return is_numeric($value) && $value >= 1 && $value <= 100;
+			
+			case 'rot':
+				// Rotation must be a multiple of 90
+				return is_numeric($value) && $value % 90 === 0 && abs($value) <= 360;
+			
+			case 'flip':
+				// Flip must be h, v, or hv
+				return in_array($value, ['h', 'v', 'hv'], true);
+			
+			case 'f':
+				// Format must be one of the supported types
+				return in_array($value, ['auto', 'webp', 'json', 'jpeg', 'png', 'gif', 'avif'], true);
+			
+			case 'metadata':
+				// Metadata must be one of the predefined options
+				return in_array($value, ['keep', 'copyright', 'none'], true);
+			
+			case 'onerror':
+				// Error handling must be redirect or 404
+				return in_array($value, ['redirect', '404'], true);
+			
 			default:
 				return true;
 		}

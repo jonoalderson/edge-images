@@ -1,24 +1,21 @@
 <?php
 /**
- * Yoast SEO schema integration.
+ * Yoast SEO Schema Images integration functionality.
+ * 
+ * This class handles the integration of Edge Images with Yoast SEO's schema image functionality.	
+ * It provides methods to transform schema image URLs, manage image optimization, and handle schema markup.
  *
- * Handles the transformation of images in Yoast SEO's schema output.
- * Ensures that schema images are optimized and properly sized.
- *
- * @package    Edge_Images\Integrations
+ * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @since      4.0.0
+ * @license    GPL-3.0-or-later
+ * @since      4.5.0
  */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Helpers, Integration, Cache, Settings, Integration_Manager};
+use Edge_Images\{Integration, Helpers, Feature_Manager, Cache};
 
-/**
- * Configures Yoast SEO schema output to use the image rewriter.
- *
- * @since 4.0.0
- */
+
 class Schema_Images extends Integration {
 
 	/**
@@ -48,112 +45,43 @@ class Schema_Images extends Integration {
 	/**
 	 * Add integration-specific filters.
 	 *
-	 * @since 4.0.0
+	 * Sets up required filters for Yoast SEO schema integration.
+	 * This method:
+	 * - Hooks into schema filters
+	 * - Manages image transformation
+	 * - Handles schema types
+	 * - Ensures proper integration
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
 	protected function add_filters(): void {
-		// Schema filters
-		add_filter('wpseo_schema_imageobject', [$this, 'edge_image']);
+		add_filter('wpseo_schema_imageobject', [$this, 'transform_schema_image'], 10, 3);
 		add_filter('wpseo_schema_organization', [$this, 'edge_organization_logo']);
 		add_filter('wpseo_schema_webpage', [$this, 'edge_thumbnail']);
 		add_filter('wpseo_schema_article', [$this, 'edge_thumbnail']);
-
-		// Cache busting hooks
-		add_action('save_post', [$this, 'bust_schema_cache']);
-		add_action('deleted_post', [$this, 'bust_schema_cache']);
-		add_action('attachment_updated', [$this, 'bust_attachment_schema_cache'], 10, 3);
-		add_action('delete_attachment', [$this, 'bust_attachment_schema_cache']);
-		add_action('wpseo_save_indexable', [$this, 'bust_indexable_schema_cache']);
 	}
 
 	/**
-	 * Bust schema cache for a post.
+	 * Edit the thumbnailUrl property of the WebPage to use the edge.
 	 *
-	 * @since 4.5.0
+	 * @since 4.1.0
 	 * 
-	 * @param int $post_id The post ID.
-	 * @return void
+	 * @param array $data The image schema properties.
+	 * @return array The modified properties.
 	 */
-	public function bust_schema_cache(int $post_id): void {
-		if (!$post_id || wp_is_post_revision($post_id)) {
-			return;
+	public function edge_thumbnail( array $data ): array {
+		if ( ! isset( $data['thumbnailUrl'] ) ) {
+			return $data;
 		}
 
-		$cache_key = 'schema_' . $post_id;
-		wp_cache_delete($cache_key, self::SCHEMA_CACHE_GROUP);
-
-		// Also bust cache for any images associated with this post
-		$images = $this->get_post_schema_images($post_id);
-		foreach ($images as $image_id) {
-			$this->bust_attachment_schema_cache($image_id);
-		}
-	}
-
-	/**
-	 * Bust schema cache for an attachment.
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param int   $attachment_id The attachment ID.
-	 * @param array $data         Optional. New attachment data.
-	 * @param array $old_data     Optional. Old attachment data.
-	 * @return void
-	 */
-	public function bust_attachment_schema_cache(int $attachment_id, array $data = [], array $old_data = []): void {
-		if (!$attachment_id) {
-			return;
+		$processed = $this->process_schema_image( $data['thumbnailUrl'] );
+		if ( $processed ) {
+			$data['thumbnailUrl'] = $processed['url'];
 		}
 
-		$cache_key = 'schema_attachment_' . $attachment_id;
-		wp_cache_delete($cache_key, self::SCHEMA_CACHE_GROUP);
-
-		// Also bust cache for the parent post if this is an attachment
-		$parent_id = wp_get_post_parent_id($attachment_id);
-		if ($parent_id) {
-			$this->bust_schema_cache($parent_id);
-		}
-	}
-
-	/**
-	 * Bust schema cache when a Yoast indexable is updated.
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param \Yoast\WP\SEO\Models\Indexable $indexable The indexable that was saved.
-	 * @return void
-	 */
-	public function bust_indexable_schema_cache($indexable): void {
-		if (!$indexable || !isset($indexable->object_id)) {
-			return;
-		}
-
-		$this->bust_schema_cache($indexable->object_id);
-	}
-
-	/**
-	 * Get all images that might be used in schema for a post.
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param int $post_id The post ID.
-	 * @return array Array of image IDs.
-	 */
-	private function get_post_schema_images(int $post_id): array {
-		$images = [];
-
-		// Featured image
-		if (has_post_thumbnail($post_id)) {
-			$images[] = get_post_thumbnail_id($post_id);
-		}
-
-		// Organization logo
-		$company_logo_id = YoastSEO()->meta->for_current_page()->company_logo_id;
-		if ($company_logo_id) {
-			$images[] = $company_logo_id;
-		}
-
-		return array_unique(array_filter($images));
+		return $data;
 	}
 
 	/**
@@ -166,6 +94,7 @@ class Schema_Images extends Integration {
 	 * @return array|false Array of edge URL and dimensions, or false on failure.
 	 */
 	private function process_schema_image( string $image_url, array $custom_args = [] ) {
+
 		// Check cache first
 		$cache_key = 'schema_' . md5($image_url . serialize($custom_args));
 		$cached_result = wp_cache_get($cache_key, Cache::CACHE_GROUP);
@@ -221,52 +150,6 @@ class Schema_Images extends Integration {
 	}
 
 	/**
-	 * Edit the thumbnailUrl property of the WebPage to use the edge.
-	 *
-	 * @since 4.1.0
-	 * 
-	 * @param array $data The image schema properties.
-	 * @return array The modified properties.
-	 */
-	public function edge_thumbnail( array $data ): array {
-		if ( ! isset( $data['thumbnailUrl'] ) ) {
-			return $data;
-		}
-
-		$processed = $this->process_schema_image( $data['thumbnailUrl'] );
-		if ( $processed ) {
-			$data['thumbnailUrl'] = $processed['url'];
-		}
-
-		return $data;
-	}
-
-	/**
-	 * Transform the primary image to use the edge.
-	 *
-	 * @since 4.1.0
-	 * 
-	 * @param array $data The image schema properties.
-	 * @return array The modified properties.
-	 */
-	public function edge_image( array $data ): array {
-		if (!isset($data['url'])) {
-			return $data;
-		}
-
-		$processed = $this->process_schema_image($data['url']);
-
-		if ($processed) {
-			$data['url'] = $processed['url'];
-			$data['contentUrl'] = $processed['url'];
-			$data['width'] = $processed['width'];
-			$data['height'] = $processed['height'];
-		}
-
-		return $data;
-	}
-
-	/**
 	 * Alter the Organization's logo property to use the edge.
 	 *
 	 * @since 4.0.0
@@ -275,6 +158,7 @@ class Schema_Images extends Integration {
 	 * @return array The modified properties.
 	 */
 	public function edge_organization_logo( array $data ): array {
+
 		// Get the image ID from Yoast SEO.
 		$image_id = YoastSEO()->meta->for_current_page()->company_logo_id;
 		if ( ! $image_id ) {
@@ -315,11 +199,69 @@ class Schema_Images extends Integration {
 	}
 
 	/**
+	 * Transform schema image.
+	 *
+	 * Processes and transforms schema image data.
+	 * This method:
+	 * - Transforms image URLs
+	 * - Handles image data
+	 * - Manages dimensions
+	 * - Ensures optimization
+	 * - Maintains schema format
+	 * - Supports multiple sizes
+	 *
+	 * @since      4.5.0
+	 * 
+	 * @param  array  $image_data The schema image data.
+	 * @param  object $context    The context object.
+	 * @param  object $graph_piece The graph piece object.
+	 * @return array             Modified schema image data.
+	 */
+	public function transform_schema_image(array $image_data, $context, $graph_piece): array {
+
+		// Skip if no URL
+		if (!isset($image_data['url'])) {
+			return $image_data;
+		}
+
+		// Skip if not a local URL
+		if (!Helpers::is_local_url($image_data['url'])) {
+			return $image_data;
+		}
+
+		// Get dimensions
+		$width = $image_data['width'] ?? null;
+		$height = $image_data['height'] ?? null;
+
+		// Skip if we don't have dimensions
+		if (!$width || !$height) {
+			return $image_data;
+		}
+
+		// Transform the URL
+		$image_data['url'] = Helpers::edge_src($image_data['url'], [
+			'width' => $width,
+			'height' => $height,
+			'fit' => 'cover',
+			'quality' => 85,
+		]);
+
+		return $image_data;
+	}
+
+	/**
 	 * Get default settings for this integration.
 	 *
-	 * @since 4.5.0
+	 * Provides default configuration settings for the schema integration.
+	 * This method:
+	 * - Sets feature defaults
+	 * - Configures options
+	 * - Ensures consistency
+	 * - Supports customization
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return array<string,mixed> Default settings.
+	 * @return array<string,mixed> Array of default feature settings.
 	 */
 	public static function get_default_settings(): array {
 		return [
@@ -330,20 +272,20 @@ class Schema_Images extends Integration {
 	/**
 	 * Check if this integration should filter.
 	 *
-	 * @since 4.5.0
+	 * Determines if schema integration should be active.
+	 * This method:
+	 * - Checks feature status
+	 * - Validates settings
+	 * - Ensures requirements
+	 * - Controls processing
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return bool Whether the integration should filter.
+	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-
-		// Bail if the Yoast SEO integration is disabled
-		if ( ! Integration_Manager::is_enabled('yoast-seo') ) {
-			return false;
-		}
-
-		return Settings::get_option('edge_images_yoast_schema_images');
+		return Feature_Manager::is_enabled('edge_images_yoast_schema_images') && Helpers::should_transform_images();
 	}
-
 }
 
 

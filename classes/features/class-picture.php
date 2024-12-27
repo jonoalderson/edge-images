@@ -2,11 +2,19 @@
 /**
  * Picture element creation functionality.
  *
- * Handles the creation and configuration of picture elements
- * for responsive images.
+ * Handles the creation and configuration of picture elements for responsive images.
+ * This feature:
+ * - Creates responsive picture elements
+ * - Handles image transformations
+ * - Manages srcset and sizes attributes
+ * - Preserves image aspect ratios
+ * - Supports link wrapping
+ * - Provides CSS customization options
+ * - Ensures proper image scaling
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      4.5.0
  */
 
@@ -15,17 +23,18 @@ namespace Edge_Images\Features;
 use Edge_Images\{Integration, Feature_Manager, Helpers};
 use Edge_Images\Settings;
 
-/**
- * Handles picture element creation.
- *
- * @since 4.5.0
- */
 class Picture extends Integration {
 
 	/**
 	 * Add integration-specific filters.
 	 *
-	 * @since 4.5.0
+	 * Initializes the picture element functionality.
+	 * This method:
+	 * - Sets up required filters
+	 * - Configures feature behavior
+	 * - Manages integration points
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
@@ -36,10 +45,18 @@ class Picture extends Integration {
 	/**
 	 * Process srcset attribute.
 	 *
-	 * @since 4.5.0
+	 * Processes and validates srcset attribute values.
+	 * This method:
+	 * - Parses srcset strings
+	 * - Cleans image URLs
+	 * - Preserves descriptors
+	 * - Handles empty values
+	 * - Maintains URL formatting
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @param string $srcset The srcset attribute value.
-	 * @return string The processed srcset.
+	 * @param  string $srcset The srcset attribute value to process.
+	 * @return string         The processed srcset attribute value.
 	 */
 	private static function process_srcset(string $srcset): string {
 		// If the srcset is empty, return it as is.
@@ -72,12 +89,22 @@ class Picture extends Integration {
 	/**
 	 * Create a picture element.
 	 *
-	 * @since 4.5.0
+	 * Generates a complete picture element with responsive image support.
+	 * This method:
+	 * - Handles link wrapping
+	 * - Processes image tags
+	 * - Manages dimensions
+	 * - Applies transformations
+	 * - Sets CSS classes
+	 * - Adds inline styles
+	 * - Ensures proper markup
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @param string $img_html  The image HTML.
-	 * @param array  $dimensions Image dimensions.
-	 * @param string $class     Optional. CSS class for the picture element.
-	 * @return string The picture element HTML.
+	 * @param  string $img_html  The original image HTML to transform.
+	 * @param  array  $dimensions The image dimensions array with width and height.
+	 * @param  string $class     Optional CSS class for the picture element.
+	 * @return string           The complete picture element HTML.
 	 */
 	public static function create(string $img_html, array $dimensions, string $class = ''): string {
 		// Extract any wrapping anchor tag.
@@ -142,12 +169,22 @@ class Picture extends Integration {
 	/**
 	 * Transform image URLs in HTML.
 	 *
-	 * @since 4.5.0
+	 * Processes and transforms image URLs within HTML markup.
+	 * This method:
+	 * - Processes image tags
+	 * - Calculates dimensions
+	 * - Transforms source URLs
+	 * - Generates srcset values
+	 * - Updates attributes
+	 * - Maintains aspect ratios
+	 * - Ensures proper scaling
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @param string $img_html   The image HTML.
-	 * @param array  $dimensions Image dimensions.
-	 * @param string $sizes     Optional sizes attribute value.
-	 * @return string Modified HTML.
+	 * @param  string $img_html   The image HTML to transform.
+	 * @param  array  $dimensions The target dimensions array with width and height.
+	 * @param  string $sizes     Optional sizes attribute value.
+	 * @return string           The transformed image HTML.
 	 */
 	private static function transform_image_urls(string $img_html, array $dimensions, ?string $sizes = null): string {
 		$processor = new \WP_HTML_Tag_Processor($img_html);
@@ -210,10 +247,18 @@ class Picture extends Integration {
 	/**
 	 * Build a CSS style string from an array of properties.
 	 *
-	 * @since 4.5.0
+	 * Creates a formatted CSS style string from property-value pairs.
+	 * This method:
+	 * - Processes style arrays
+	 * - Formats properties
+	 * - Combines values
+	 * - Ensures proper syntax
+	 * - Maintains consistency
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @param array $styles Array of CSS properties and values.
-	 * @return string The compiled style string.
+	 * @param  array  $styles Array of CSS properties and their values.
+	 * @return string        The compiled CSS style string.
 	 */
 	private static function build_style_string(array $styles): string {
 		$style_parts = [];
@@ -226,13 +271,20 @@ class Picture extends Integration {
 	/**
 	 * Get default settings for this integration.
 	 *
-	 * @since 4.5.0
+	 * Provides default configuration settings for the picture feature.
+	 * This method:
+	 * - Sets feature defaults
+	 * - Configures options
+	 * - Ensures consistency
+	 * - Supports customization
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return array<string,mixed> Default settings.
+	 * @return array<string,mixed> Array of default feature settings.
 	 */
 	public static function get_default_settings(): array {
 		return [
-			'edge_images_disable_picture_wrap' => false,
+			'edge_images_feature_picture_wrap' => false,
 		];
 	}
 } 

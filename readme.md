@@ -164,7 +164,7 @@ All parameters are optional and will use sensible defaults if not specified.
 - `edge_images_disable` (`bool`): Disable all image transformation. Defaults to `false`.
 - `edge_images_provider` (`string`): Override the selected provider. Accepts 'cloudflare', 'accelerated_domains', 'bunny', or 'imgix'.
 - `edge_images_domain` (`string`): Override the domain used for image URLs. Defaults to site URL.
-- `edge_images_disable_picture_wrap` (`bool`): Disable wrapping images in `<picture>` elements. Defaults to `false`.
+- `edge_images_feature_picture_wrap` (`bool`): Enable wrapping images in `<picture>` elements. Defaults to `false`.
 
 ### Image Processing
 - `edge_images_max_width` (`int`): Maximum width for generated images. Defaults to 2400.

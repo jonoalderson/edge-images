@@ -3,26 +3,45 @@
  * Integration manager functionality.
  *
  * Handles the registration and management of all plugin integrations.
- * Provides a central point for managing third-party plugin integrations.
+ * This class manages:
+ * - Integration registration and configuration
+ * - Integration status tracking
+ * - Integration requirements checking
+ * - Integration class loading and initialization
+ * - Integration settings and defaults
+ * - Integration name formatting
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      4.1.0
  */
 
 namespace Edge_Images;
 
-/**
- * Manages plugin integrations.
- *
- * @since 4.1.0
- */
 class Integration_Manager {
 
 	/**
-	 * Available integrations.
+	 * Available integrations configuration.
 	 *
-	 * @since 4.1.0
+	 * Defines all available plugin integrations and their settings.
+	 * Each integration is configured with:
+	 * - check: The identifier to verify integration availability
+	 * - type: The type of check (constant, class, function, callback)
+	 * - name: Display name of the integration
+	 * - classes: Array of integration class names to load
+	 *
+	 * Example structure:
+	 * [
+	 *     'integration-id' => [
+	 *         'check' => 'CONSTANT_NAME',
+	 *         'type' => 'constant',
+	 *         'name' => 'Integration Name',
+	 *         'classes' => ['Class_Name'],
+	 *     ]
+	 * ]
+	 *
+	 * @since      4.1.0
 	 * @var array<string,array>
 	 */
 	private static array $integrations = [
@@ -58,9 +77,17 @@ class Integration_Manager {
 	/**
 	 * Get all available integrations.
 	 *
-	 * @since 4.1.0
+	 * Returns the complete list of registered integrations and their configurations.
+	 * This method:
+	 * - Returns all integrations regardless of their status
+	 * - Includes full configuration for each integration
+	 * - Does not check integration requirements
+	 * - Returns raw configuration array
+	 * - Is used internally by other methods
+	 *
+	 * @since      4.1.0
 	 * 
-	 * @return array<string,array>
+	 * @return array<string,array> Array of integration configurations.
 	 */
 	public static function get_integrations() : array {
 		return self::$integrations;
@@ -74,10 +101,16 @@ class Integration_Manager {
 	/**
 	 * Register all available integrations.
 	 *
-	 * Checks for active plugins and registers their integrations
-	 * if the required plugin is present.
+	 * Initializes and loads all configured integrations that meet their requirements.
+	 * This method:
+	 * - Checks if image transformation is enabled
+	 * - Loads each integration only once
+	 * - Verifies integration requirements
+	 * - Initializes integration classes
+	 * - Tracks loaded integrations
+	 * - Skips already loaded integrations
 	 *
-	 * @since 4.1.0
+	 * @since      4.1.0
 	 * 
 	 * @return void
 	 */
@@ -100,10 +133,19 @@ class Integration_Manager {
 	/**
 	 * Register a specific integration if requirements are met.
 	 *
-	 * @since 4.1.0
+	 * Attempts to register an individual integration after verifying requirements.
+	 * This method:
+	 * - Checks integration requirements
+	 * - Validates integration class existence
+	 * - Handles namespaced class names
+	 * - Initializes integration classes
+	 * - Skips invalid or unavailable integrations
+	 * - Processes all classes defined for the integration
+	 *
+	 * @since      4.1.0
 	 * 
-	 * @param string $integration The integration identifier.
-	 * @param array  $config      The integration configuration.
+	 * @param string $integration The integration identifier to register.
+	 * @param array  $config      The integration configuration array.
 	 * @return void
 	 */
 	private static function maybe_register_integration( string $integration, array $config ): void {
@@ -124,10 +166,23 @@ class Integration_Manager {
 	/**
 	 * Check if integration requirements are met.
 	 *
-	 * @since 4.1.0
+	 * Verifies that an integration's requirements are satisfied.
+	 * This method checks different types of requirements:
+	 * - constant: Checks if a PHP constant is defined
+	 * - class: Checks if a PHP class exists
+	 * - function: Checks if a PHP function exists
+	 * - callback: Executes a callback function for custom checks
+	 *
+	 * The type of check is determined by the 'type' key in the config:
+	 * - 'constant': Checks defined('CHECK_NAME')
+	 * - 'class': Checks class_exists('Class_Name')
+	 * - 'function': Checks function_exists('function_name')
+	 * - 'callback': Executes the callback and checks return value
+	 *
+	 * @since      4.1.0
 	 * 
-	 * @param array $config The integration configuration.
-	 * @return bool Whether requirements are met.
+	 * @param array $config The integration configuration to check.
+	 * @return bool Whether all requirements are met.
 	 */
 	private static function check_integration_requirements( array $config ): bool {
 		$type = $config['type'] ?? 'constant';

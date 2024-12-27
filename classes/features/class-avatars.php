@@ -3,9 +3,18 @@
  * Avatar transformation functionality.
  *
  * Handles the transformation of avatar images across the site.
+ * This feature:
+ * - Transforms avatar URLs to use edge providers
+ * - Manages avatar image dimensions
+ * - Provides responsive image support
+ * - Handles srcset generation
+ * - Supports picture element wrapping
+ * - Ensures proper image scaling
+ * - Maintains avatar quality
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      4.5.0
  */
 
@@ -13,17 +22,19 @@ namespace Edge_Images\Features;
 
 use Edge_Images\{Helpers, Integration, Feature_Manager};
 
-/**
- * Handles avatar transformations.
- *
- * @since 4.5.0
- */
 class Avatars extends Integration {
 
 	/**
 	 * Add integration-specific filters.
 	 *
-	 * @since 4.5.0
+	 * Sets up filters for avatar transformation.
+	 * This method:
+	 * - Adds URL transformation filter
+	 * - Adds HTML transformation filter
+	 * - Configures processing order
+	 * - Manages integration points
+	 *
+	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
@@ -35,12 +46,20 @@ class Avatars extends Integration {
 	/**
 	 * Transform avatar URLs.
 	 *
-	 * @since 4.2.0
+	 * Processes and transforms avatar image URLs.
+	 * This method:
+	 * - Validates input URLs
+	 * - Checks for local URLs
+	 * - Applies size constraints
+	 * - Transforms using edge provider
+	 * - Maintains image quality
+	 *
+	 * @since      4.2.0
 	 * 
-	 * @param string $url         The URL of the avatar.
-	 * @param mixed  $id_or_email The Gravatar to retrieve.
-	 * @param array  $args        Arguments passed to get_avatar_data().
-	 * @return string The transformed URL.
+	 * @param  string $url         The URL of the avatar to transform.
+	 * @param  mixed  $id_or_email The Gravatar identifier (user ID, email, or object).
+	 * @param  array  $args        Arguments passed to get_avatar_data().
+	 * @return string             The transformed avatar URL.
 	 */
 	public function transform_avatar_url( string $url, $id_or_email, array $args ): string {
 		// Skip if URL is empty or remote.
@@ -63,15 +82,25 @@ class Avatars extends Integration {
 	/**
 	 * Transform avatar HTML.
 	 *
-	 * @since 4.2.0
+	 * Processes and transforms complete avatar HTML markup.
+	 * This method:
+	 * - Processes HTML tags
+	 * - Transforms image URLs
+	 * - Generates srcset values
+	 * - Sets image dimensions
+	 * - Adds CSS classes
+	 * - Supports picture wrapping
+	 * - Maintains accessibility
+	 *
+	 * @since      4.2.0
 	 * 
-	 * @param string $avatar      HTML for the user's avatar.
-	 * @param mixed  $id_or_email The Gravatar to retrieve.
-	 * @param int    $size        Square avatar width and height in pixels.
-	 * @param string $default     URL for the default image.
-	 * @param string $alt         Alternative text.
-	 * @param array  $args        Arguments passed to get_avatar_data().
-	 * @return string The transformed avatar HTML.
+	 * @param  string $avatar      HTML for the user's avatar.
+	 * @param  mixed  $id_or_email The Gravatar identifier (user ID, email, or object).
+	 * @param  int    $size        Square avatar width and height in pixels.
+	 * @param  string $default     URL for the default image or 'mystery' (see get_avatar_url).
+	 * @param  string $alt         Alternative text for the avatar image.
+	 * @param  array  $args        Arguments passed to get_avatar_data().
+	 * @return string             The transformed avatar HTML.
 	 */
 	public function transform_avatar_html( string $avatar, $id_or_email, int $size, string $default, string $alt, array $args ): string {
 		// Skip if avatar is empty.
@@ -137,9 +166,16 @@ class Avatars extends Integration {
 	/**
 	 * Get default settings for this integration.
 	 *
-	 * @since 4.5.0
+	 * Provides default configuration settings for the avatars feature.
+	 * This method:
+	 * - Sets feature defaults
+	 * - Configures options
+	 * - Ensures consistency
+	 * - Supports customization
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return array<string,mixed> Default settings.
+	 * @return array<string,mixed> Array of default feature settings.
 	 */
 	public static function get_default_settings(): array {
 		return [
@@ -150,9 +186,16 @@ class Avatars extends Integration {
 	/**
 	 * Check if this integration should filter.
 	 *
-	 * @since 4.5.0
+	 * Determines if avatar transformation should be active.
+	 * This method:
+	 * - Checks feature status
+	 * - Validates settings
+	 * - Ensures requirements
+	 * - Controls processing
+	 *
+	 * @since      4.5.0
 	 * 
-	 * @return bool Whether the integration should filter.
+	 * @return bool True if avatar transformation should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
 		return Feature_Manager::is_enabled( 'avatars' ) && Helpers::should_transform_images();

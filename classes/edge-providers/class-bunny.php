@@ -3,10 +3,19 @@
  * Bunny CDN edge provider implementation.
  *
  * Handles image transformation through Bunny CDN's image optimization service.
- * Documentation: https://docs.bunny.net/docs/stream-image-processing
+ * This provider:
+ * - Integrates with Bunny CDN's image processing service
+ * - Transforms image URLs to use Bunny CDN's endpoint
+ * - Supports dynamic image resizing and optimization
+ * - Maps standard parameters to Bunny CDN's format
+ * - Provides extensive image manipulation options
+ * - Ensures secure and efficient image delivery
  *
- * @package    Edge_Images\Edge_Providers
+ * Documentation: https://docs.bunny.net/docs/stream-image-processing
+ * 
+ * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
+ * @license    GPL-3.0-or-later
  * @since      4.1.0
  */
 
@@ -14,27 +23,31 @@ namespace Edge_Images\Edge_Providers;
 
 use Edge_Images\{Edge_Provider, Helpers};
 
-/**
- * Bunny CDN edge provider class.
- *
- * @since 4.1.0
- */
 class Bunny extends Edge_Provider {
 
     /**
      * The root of the Bunny CDN edge URL.
      *
      * This path identifies Bunny CDN's image transformation endpoint.
+     * Used as a suffix for the configured subdomain.
+     * Format: .b-cdn.net
      *
-     * @since 4.1.0
-     * @var string
+     * @since      4.1.0
+     * @var        string
      */
     public const EDGE_ROOT = '.b-cdn.net';
 
     /**
      * Get the subdomain from settings.
      *
-     * @since 4.5.4
+     * Retrieves the configured Bunny CDN subdomain from WordPress options.
+     * This method:
+     * - Fetches the subdomain setting
+     * - Returns empty string if not configured
+     * - Supports URL generation
+     * - Enables dynamic endpoint configuration
+     *
+     * @since      4.5.4
      * 
      * @return string The configured subdomain or empty string.
      */
@@ -46,12 +59,18 @@ class Bunny extends Edge_Provider {
      * Get the edge URL for an image.
      *
      * Transforms the image URL into a Bunny CDN-compatible format with
-     * transformation parameters. Format:
-     * https://your-site.b-cdn.net/width=200,height=200/path-to-image.jpg
+     * transformation parameters. This method:
+     * - Validates subdomain configuration
+     * - Maps standard parameters to Bunny format
+     * - Constructs the CDN URL
+     * - Handles parameter formatting
+     * - Ensures proper URL structure
      *
-     * @since 4.1.0
+     * Format: https://your-site.b-cdn.net/width=200,height=200/path-to-image.jpg
+     *
+     * @since      4.1.0
      * 
-     * @return string The transformed edge URL.
+     * @return string The transformed edge URL with Bunny CDN parameters.
      */
     public function get_edge_url(): string {
         // Get the Bunny CDN subdomain from settings
@@ -79,10 +98,15 @@ class Bunny extends Edge_Provider {
      * Get the URL pattern used to identify transformed images.
      *
      * Used to detect if an image has already been transformed by Bunny CDN.
+     * This method:
+     * - Checks subdomain configuration
+     * - Generates the pattern dynamically
+     * - Returns empty if not configured
+     * - Supports URL validation
      *
-     * @since 4.1.0
+     * @since      4.1.0
      * 
-     * @return string The URL pattern.
+     * @return string The Bunny CDN URL pattern for transformed images.
      */
     public static function get_url_pattern(): string {
         $subdomain = self::get_subdomain();
@@ -96,10 +120,15 @@ class Bunny extends Edge_Provider {
      * Get the transformation pattern for the provider.
      *
      * Used to detect transformation parameters in the URL.
+     * This method:
+     * - Provides regex for parameter detection
+     * - Matches all supported parameters
+     * - Validates parameter formats
+     * - Supports URL parsing
      *
-     * @since 4.5.4
+     * @since      4.5.4
      * 
-     * @return string The transformation pattern.
+     * @return string The regex pattern to match Bunny CDN parameters.
      */
     public static function get_transform_pattern(): string {
         return '/(?:width|height|aspect_ratio|quality|format|gravity|blur|sharpen|brightness|contrast)=[-\d]+/';
@@ -109,11 +138,19 @@ class Bunny extends Edge_Provider {
      * Convert standard transform args to Bunny CDN format.
      *
      * Maps our standardized parameters to Bunny CDN's specific format.
+     * This method:
+     * - Converts width and height parameters
+     * - Maps resize modes and fit options
+     * - Handles quality settings
+     * - Manages format conversion
+     * - Processes gravity/focus points
+     * - Applies image adjustments
+     *
      * Reference: https://support.bunny.net/hc/en-us/articles/360027448392
      *
-     * @since 4.1.0
+     * @since      4.1.0
      * 
-     * @return array<string> Array of Bunny CDN parameters.
+     * @return array<string> Array of formatted Bunny CDN parameters.
      */
     private function get_bunny_transform_args(): array {
         $args = $this->get_transform_args();
@@ -183,12 +220,18 @@ class Bunny extends Edge_Provider {
      * Map standard fit modes to Bunny CDN modes.
      *
      * Converts our standardized fit modes to Bunny CDN's specific options.
+     * This method:
+     * - Maps common resize modes
+     * - Provides fallback options
+     * - Ensures consistent behavior
+     * - Maintains compatibility
+     *
      * Reference: https://support.bunny.net/hc/en-us/articles/360027448392
      *
-     * @since 4.1.0
+     * @since      4.1.0
      * 
-     * @param string $fit The standard fit mode.
-     * @return string The Bunny CDN mode.
+     * @param  string $fit The standard fit mode to convert.
+     * @return string      The corresponding Bunny CDN mode.
      */
     private function map_fit_mode(string $fit): string {
         $mode_map = [
@@ -206,12 +249,18 @@ class Bunny extends Edge_Provider {
      * Map standard gravity options to Bunny CDN options.
      *
      * Converts our standardized gravity options to Bunny CDN's specific options.
+     * This method:
+     * - Maps directional values
+     * - Provides fallback options
+     * - Ensures consistent behavior
+     * - Maintains compatibility
+     *
      * Reference: https://support.bunny.net/hc/en-us/articles/360027448392
      *
-     * @since 4.1.0
+     * @since      4.1.0
      * 
-     * @param string $gravity The standard gravity option.
-     * @return string The Bunny CDN gravity option.
+     * @param  string $gravity The standard gravity option to convert.
+     * @return string         The corresponding Bunny CDN gravity option.
      */
     private function map_gravity(string $gravity): string {
         $gravity_map = [
