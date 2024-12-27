@@ -183,7 +183,7 @@ class Settings {
 			[
 				'type' => 'string',
 				'description' => __('The edge provider to use for image optimization', 'edge-images'),
-				'sanitize_callback' => [Provider_Registry::class, 'is_valid_provider'],
+				'sanitize_callback' => [Providers::class, 'is_valid_provider'],
 				'default' => 'none',
 			]
 		);

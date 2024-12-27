@@ -126,47 +126,32 @@ abstract class Integration {
 	}
 
 	/**
-	 * Get integration configuration from Integration_Manager.
+	 * Get integration configuration.
 	 *
-	 * Retrieves the configuration for the current integration.
+	 * Gets the integration configuration for this class.
 	 * This method:
-	 * - Extracts the integration key from the class name
-	 * - Handles namespaced class names
-	 * - Provides special handling for Yoast SEO classes
-	 * - Returns null for unknown integrations
-	 * - Converts class names to integration keys
-	 * - Retrieves configuration from Integration_Manager
+	 * - Gets the class name
+	 * - Retrieves configuration from Integrations
+	 * - Returns configuration array
+	 * - Handles missing configurations
+	 * - Supports inheritance
+	 * - Maintains consistency
 	 *
 	 * @since      4.5.0
 	 * 
-	 * @return array|null The integration configuration array or null if not found.
+	 * @return array<string,mixed>|null The integration configuration or null if not found.
 	 */
-	private function get_integration_config(): ?array {
+	protected function get_integration_config(): ?array {
+		$class_name = basename(str_replace('\\', '/', get_class($this)));
+		$integrations = Integrations::get_integrations();
 
-		// Get the class name.
-		$class_name = get_class($this);
-		$namespace = 'Edge_Images\\Integrations\\';
-		
-		// Remove namespace prefix
-		if (str_starts_with($class_name, $namespace)) {
-			$class_name = substr($class_name, strlen($namespace));
+		foreach ($integrations as $integration => $config) {
+			if (in_array($class_name, $config['classes'], true)) {
+				return $config;
+			}
 		}
 
-		// Convert class name to integration key
-		$parts = explode('\\', $class_name);
-		// Use the first two parts for Yoast_SEO namespace
-		$integration_key = strtolower(str_replace('_', '-', $parts[0]));
-		
-		// Special handling for Yoast SEO classes
-		if ($parts[0] === 'Yoast_SEO') {
-			$integration_key = 'yoast-seo';
-		}
-
-		// Get the integrations.
-		$integrations = Integration_Manager::get_integrations();
-
-		// Return the integration config.
-		return $integrations[$integration_key] ?? null;
+		return null;
 	}
 
 	/**

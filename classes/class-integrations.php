@@ -1,25 +1,25 @@
 <?php
 /**
- * Integration manager functionality.
+ * Integration functionality.
  *
- * Handles the registration and management of all plugin integrations.
- * This class manages:
- * - Integration registration and configuration
+ * Manages plugin integrations with third-party plugins and themes.
+ * This class handles:
+ * - Integration registration and management
+ * - Integration activation and deactivation
+ * - Integration configuration
  * - Integration status tracking
- * - Integration requirements checking
- * - Integration class loading and initialization
- * - Integration settings and defaults
- * - Integration name formatting
+ * - Integration name localization
+ * - Integration class loading
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
  * @license    GPL-3.0-or-later
- * @since      4.1.0
+ * @since      4.5.0
  */
 
 namespace Edge_Images;
 
-class Integration_Manager {
+class Integrations {
 
 	/**
 	 * Available integrations configuration.

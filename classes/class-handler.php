@@ -422,6 +422,7 @@ class Handler {
 	 * @return string Modified HTML with picture element wrapper if appropriate.
 	 */
 	public function wrap_attachment_image(string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null): string {
+		
 		// Handle flexible parameter order
 		$attr = is_array($attr_or_icon) ? $attr_or_icon : [];
 		if (is_bool($attr_or_icon)) {
@@ -526,8 +527,8 @@ class Handler {
 		$processor = $this->transform_image_tag($processor, $attachment_id, $image_html, $context);
 		$transformed = $processor->get_updated_html();
 
-		// Check if picture wrapping is disabled.
-		if (Feature_Manager::is_disabled('picture_wrap')) {
+		// Check if picture wrapping is disabled or if we're in a block context (where wrapping happens later)
+		if (Feature_Manager::is_disabled('picture_wrap') || $context === 'block') {
 			return $transformed;
 		}
 
@@ -668,16 +669,27 @@ class Handler {
 	}
 
 	/**
-	 * Transform image URLs
+	 * Transform image URLs in an image tag.
 	 *
-	 * @param \WP_HTML_Tag_Processor $processor     The HTML processor.
-	 * @param array|null             $dimensions    Optional dimensions.
-	 * @param string                 $original_html The original HTML.
-	 * @param string                 $context       The context (content, header, etc).
+	 * Processes and transforms image URLs within an image tag.
+	 * This method:
+	 * - Validates dimensions
+	 * - Transforms source URLs
+	 * - Generates srcset values
+	 * - Updates attributes
+	 * - Maintains aspect ratios
+	 * - Ensures proper scaling
+	 *
+	 * @since      4.5.0
 	 * 
+	 * @param \WP_HTML_Tag_Processor $processor      The tag processor instance.
+	 * @param array|null             $dimensions     The target dimensions array with width and height.
+	 * @param string                 $original_html  The original HTML string.
+	 * @param string                 $context        The context of the transformation.
+	 * @param array                  $transform_args Additional transformation arguments.
 	 * @return void
 	 */
-	private function transform_image_urls( 
+	public function transform_image_urls( 
 		\WP_HTML_Tag_Processor $processor, 
 		?array $dimensions, 
 		string $original_html = '',
@@ -686,7 +698,7 @@ class Handler {
 	): void {
 		// Get src
 		$src = $processor->get_attribute('src');
-		if (!$src || !$dimensions) {
+		if (!$src || !$dimensions || empty($dimensions['width']) || empty($dimensions['height'])) {
 			return;
 		}
 
@@ -699,23 +711,28 @@ class Handler {
 		// Get full size URL
 		$full_src = $this->get_full_size_url($src, $attachment_id);
 
-		// Initialize original dimensions with current dimensions
-		$original_dimensions = $dimensions;
+		// Calculate aspect ratio and validate dimensions
+		$width = (int) $dimensions['width'];
+		$height = (int) $dimensions['height'];
+		
+		if ($width <= 0 || $height <= 0) {
+			return;
+		}
+
+		$ratio = $height / $width;
 
 		// Determine if we should constrain the image
 		$should_constrain = $this->should_constrain_image($processor, $original_html, $context);
 
 		// Get content width if we're constraining
 		if ($should_constrain) {
-			$max_width = min((int)$dimensions['width'], Settings::get_max_width());
+			$max_width = min($width, Settings::get_max_width());
+			$max_height = round($max_width * $ratio);
 			
-			$dimensions = $this->constrain_dimensions($dimensions, [
-				'width' => $max_width,
-				'height' => null
-			]);
-
-			// Update original dimensions to match constrained dimensions
-			$original_dimensions = $dimensions;
+			$dimensions = [
+				'width' => (string) $max_width,
+				'height' => (string) $max_height
+			];
 		}
 
 		// Get a provider instance to access default args
@@ -726,38 +743,39 @@ class Handler {
 			return;
 		}
 		
-		// Transform src with constrained dimensions when appropriate
+		// Transform src with dimensions
 		$edge_args = array_merge(
 			$provider->get_default_args(),
 			$transform_args,
-			array_filter([
+			[
 				'width' => $dimensions['width'],
 				'height' => $dimensions['height'],
-				'fit' => $fit ?? 'cover',
-			])
+				'fit' => 'cover',
+			]
 		);
 		
 		$transformed_src = Helpers::edge_src($full_src, $edge_args);
+		$processor->set_attribute('src', $transformed_src);
 		
 		// Update width and height attributes
-		$processor->set_attribute('width', (string)$dimensions['width']);
-		$processor->set_attribute('height', (string)$dimensions['height']);
-		
-		// Store original dimensions for picture element
-		$processor->set_attribute('data-original-width', (string)$original_dimensions['width']);
-		$processor->set_attribute('data-original-height', (string)$original_dimensions['height']);
+		$processor->set_attribute('width', $dimensions['width']);
+		$processor->set_attribute('height', $dimensions['height']);
 		
 		// Get sizes attribute
-		$sizes = "(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
+		$sizes = $processor->get_attribute('sizes') ?? 
+			"(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
 		
 		// Generate srcset
 		$srcset = Srcset_Transformer::transform(
 			$full_src, 
 			$dimensions,
-			$sizes
+			$sizes,
+			$edge_args
 		);
+
 		if ($srcset) {
 			$processor->set_attribute('srcset', $srcset);
+			$processor->set_attribute('sizes', $sizes);
 		}
 	}
 
@@ -792,7 +810,6 @@ class Handler {
 	 * @return string Modified block content
 	 */
 	private function transform_figures_in_block(string $block_content): string {
-
 		// Bail if no figures found
 		if (!preg_match_all('/<figure[^>]*>.*?<\/figure>/s', $block_content, $matches, PREG_OFFSET_CAPTURE)) {
 			return $block_content;
@@ -804,74 +821,43 @@ class Handler {
 			$figure_html = $match[0];
 			$position = $match[1];
 
-			// If the figure already contains a picture element, extract and use it
-			if (preg_match('/<picture[^>]*>.*?<\/picture>/s', $figure_html, $picture_matches)) {
-				$picture_html = $picture_matches[0];
-				
-				// Extract figure classes
-				$figure_classes = $this->extract_figure_classes($figure_html);
-				
-				// Extract picture classes
-				if (preg_match('/class=["\']([^"\']*)["\']/', $picture_html, $picture_class_matches)) {
-					$picture_classes = array_filter(explode(' ', $picture_class_matches[1]));
-					
-					// Merge classes
-					$all_classes = array_unique(array_merge($figure_classes, $picture_classes));
-					
-					// Replace picture classes with merged classes
-					$picture_html = preg_replace(
-						'/class=["\'][^"\']*["\']/',
-						'class="' . implode(' ', $all_classes) . '"',
-						$picture_html
-					);
-				} else {
-					// If picture has no class, add figure classes
-					$picture_html = str_replace('<picture', '<picture class="' . implode(' ', $figure_classes) . '"', $picture_html);
-				}
-				
-				// Extract any link wrapping and move it inside the picture element
-				if (preg_match('/<a[^>]*>.*?<\/a>/s', $figure_html, $link_matches)) {
-					$link_open = substr($link_matches[0], 0, strpos($link_matches[0], '>') + 1);
-					
-					// Insert the link opening tag after the picture opening tag
-					$picture_html = preg_replace(
-						'/(<picture[^>]*>)/',
-						'$1' . $link_open,
-						$picture_html
-					);
-					
-					// Insert the link closing tag before the picture closing tag
-					$picture_html = str_replace('</picture>', '</a></picture>', $picture_html);
-				}
-				
-				// Extract any caption
-				if (preg_match('/<figcaption.*?>(.*?)<\/figcaption>/s', $figure_html, $caption_matches)) {
-					$picture_html .= $caption_matches[0];
-				}
-
-				// Replace the entire figure with our picture element
-				$block_content = substr_replace(
-					$block_content,
-					$picture_html,
-					$position + $offset_adjustment,
-					strlen($figure_html)
-				);
-				
-				$offset_adjustment += strlen($picture_html) - strlen($figure_html);
-				continue;
-			}
-
-			// Extract figure classes
-			$figure_classes = $this->extract_figure_classes($figure_html);
-
 			// Extract the image and any wrapping link
 			$img_html = $this->extract_img_tag($figure_html);
 			if (!$img_html) {
 				continue;
 			}
 
+			// Check for a link wrapping the image
+			$link_html = '';
+			if (preg_match('/<a[^>]*>.*?' . preg_quote($img_html, '/') . '.*?<\/a>/s', $figure_html, $link_matches)) {
+				$link_html = $link_matches[0];
+				$img_html = $this->extract_img_tag($link_html);
+			}
+
+			// Transform the image first
+			$transformed_img = $this->transform_image(true, $img_html, 'block', 0);
+
+			// If Picture wrap is disabled, just replace the original image with the transformed one
+			if (!Feature_Manager::is_feature_enabled('picture_wrap')) {
+				$new_html = $transformed_img;
+				if ($link_html) {
+					$new_html = str_replace($img_html, $transformed_img, $link_html);
+				}
+				$new_figure_html = str_replace($link_html ?: $img_html, $new_html, $figure_html);
+				
+				$block_content = substr_replace(
+					$block_content,
+					$new_figure_html,
+					$position + $offset_adjustment,
+					strlen($figure_html)
+				);
+				
+				$offset_adjustment += strlen($new_figure_html) - strlen($figure_html);
+				continue;
+			}
+
 			// Get dimensions from the image
-			$processor = new \WP_HTML_Tag_Processor($img_html);
+			$processor = new \WP_HTML_Tag_Processor($transformed_img);
 			if (!$processor->next_tag('img')) {
 				continue;
 			}
@@ -891,8 +877,16 @@ class Handler {
 				'height' => $height
 			];
 
-			// Transform the image first
-			$transformed_img = $this->transform_image(true, $img_html, 'block', 0);
+			// Extract figure classes
+			$figure_classes = $this->extract_figure_classes($figure_html);
+
+			// If we have a link, wrap the transformed image in it
+			if ($link_html) {
+				// Extract the link opening tag
+				if (preg_match('/<a[^>]*>/', $link_html, $link_open_matches)) {
+					$transformed_img = $link_open_matches[0] . $transformed_img . '</a>';
+				}
+			}
 
 			// Create picture element with figure classes
 			$picture_html = Picture::create(
@@ -900,21 +894,6 @@ class Handler {
 				$dimensions,
 				implode(' ', array_merge($figure_classes, ['edge-images-container']))
 			);
-
-			// If there's a link wrapping the image, move it inside the picture element
-			if (preg_match('/<a[^>]*>.*?<\/a>/s', $figure_html, $link_matches)) {
-				$link_open = substr($link_matches[0], 0, strpos($link_matches[0], '>') + 1);
-				
-				// Insert the link opening tag after the picture opening tag
-				$picture_html = preg_replace(
-					'/(<picture[^>]*>)/',
-					'$1' . $link_open,
-					$picture_html
-				);
-				
-				// Insert the link closing tag before the picture closing tag
-				$picture_html = str_replace('</picture>', '</a></picture>', $picture_html);
-			}
 
 			// Extract any caption from the figure
 			if (preg_match('/<figcaption.*?>(.*?)<\/figcaption>/s', $figure_html, $caption_matches)) {

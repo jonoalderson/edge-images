@@ -30,7 +30,7 @@ class Activation {
 	 * @var array<string,mixed>
 	 */
 	private static array $core_defaults = [
-		'edge_images_provider'             => Provider_Registry::DEFAULT_PROVIDER,
+		'edge_images_provider'             => Providers::DEFAULT_PROVIDER,
 		'edge_images_disable_picture_wrap' => false,
 		'edge_images_max_width'           => 800,
 		'edge_images_imgix_subdomain'     => '',
@@ -96,7 +96,7 @@ class Activation {
 	 */
 	private static function get_integration_defaults(): array {
 		$defaults = [];
-		$integrations = Integration_Manager::get_integrations();
+		$integrations = Integrations::get_integrations();
 
 		foreach ($integrations as $integration => $config) {
 			foreach ($config['classes'] as $class) {

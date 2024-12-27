@@ -103,9 +103,9 @@ class Helpers {
 		// Allow filtering.
 		$provider = apply_filters('edge_images_provider', $provider);
 		
-		// Validate provider name.
-		if (!Provider_Registry::is_valid_provider($provider)) {
-			return Provider_Registry::DEFAULT_PROVIDER;
+		// Validate provider
+		if (!Providers::is_valid_provider($provider)) {
+			return Providers::DEFAULT_PROVIDER;
 		}
 		
 		return $provider;
@@ -143,7 +143,7 @@ class Helpers {
 		}
 
 		// Get the provider class
-		$provider_class = Provider_Registry::get_provider_class($provider);
+		$provider_class = Providers::get_provider_class($provider);
 
 		// Bail if we can't find one
 		if (!class_exists($provider_class)) {
@@ -233,7 +233,7 @@ class Helpers {
 			return false;
 		}
 		
-		$provider_class = Provider_Registry::get_provider_class($provider);
+		$provider_class = Providers::get_provider_class($provider);
 		
 		if (!class_exists($provider_class)) {
 			return false;
@@ -250,7 +250,7 @@ class Helpers {
 	 */
 	private static function get_provider_url_pattern(string $provider_name): string {
 		if (!isset(self::$url_pattern_cache[$provider_name])) {
-			$provider_class = Provider_Registry::get_provider_class($provider_name);
+			$provider_class = Providers::get_provider_class($provider_name);
 			self::$url_pattern_cache[$provider_name] = $provider_class::get_url_pattern();
 		}
 		return self::$url_pattern_cache[$provider_name];
@@ -338,7 +338,7 @@ class Helpers {
 		}
 
 		// Get the provider class
-		$provider_class = Provider_Registry::get_provider_class($provider_name);
+		$provider_class = Providers::get_provider_class($provider_name);
 
 		// Create a test instance with a dummy path
 		$provider = new $provider_class('');
@@ -501,6 +501,7 @@ class Helpers {
 	 * @return string The cleaned path.
 	 */
 	public static function clean_url(string $url): string {
+		
 		// Get the home URL without trailing slash
 		$home_url = untrailingslashit(home_url());
 		
@@ -521,7 +522,11 @@ class Helpers {
 	 * @return int|null Attachment ID or null if not found.
 	 */
 	public static function get_attachment_id_from_classes(\WP_HTML_Tag_Processor $processor): ?int {
+
+		// Get the classes
 		$classes = $processor->get_attribute('class');
+
+		// Bail if no classes
 		if (!$classes) {
 			return null;
 		}
@@ -534,6 +539,12 @@ class Helpers {
 		// Look for attachment-{ID} class
 		if (preg_match('/attachment-(\d+)/', $classes, $matches)) {
 			return (int) $matches[1];
+		}
+
+		// Also check for a data-id attribute
+		$data_id = $processor->get_attribute('data-id');
+		if ($data_id) {
+			return (int) $data_id;
 		}
 
 		return null;
