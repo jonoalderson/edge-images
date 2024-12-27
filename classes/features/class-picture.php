@@ -107,6 +107,7 @@ class Picture extends Integration {
 	 * @return string           The complete picture element HTML.
 	 */
 	public static function create(string $img_html, array $dimensions, string $class = ''): string {
+		
 		// Extract any wrapping anchor tag.
 		$link_open = '';
 		$link_close = '';
@@ -192,54 +193,24 @@ class Picture extends Integration {
 			return $img_html;
 		}
 
-		// Get the max width for transformations.
-		$max_width = min($dimensions['width'], Settings::get_max_width());
-
-		// Calculate proportional height.
-		$ratio = $dimensions['height'] / $dimensions['width'];
-		$max_height = round($max_width * $ratio);
-
-		// Get constrained dimensions for src and srcset.
-		$constrained_dimensions = [
-			'width' => (string) $max_width,
-			'height' => (string) $max_height
-		];
-
-		// Set width and height attributes using constrained dimensions.
-		$processor->set_attribute('width', $constrained_dimensions['width']);
-		$processor->set_attribute('height', $constrained_dimensions['height']);
-
-		// Transform src with constrained dimensions.
-		$src = $processor->get_attribute('src');
-		
-		if ($src) {
-			$transformed_src = Helpers::edge_src($src, [
-				'width' => $constrained_dimensions['width'],
-				'height' => $constrained_dimensions['height'],
-				'fit' => 'cover',
-				'quality' => 85,
-			]);
-			$processor->set_attribute('src', $transformed_src);
+		// Validate dimensions
+		if (empty($dimensions['width']) || empty($dimensions['height'])) {
+			return $img_html;
 		}
 
-		// Generate srcset using the constrained dimensions.
-		$srcset = \Edge_Images\Srcset_Transformer::transform(
-			$src,
-			$constrained_dimensions,  // Use constrained dimensions for srcset.
-			$sizes ?? "(max-width: {$constrained_dimensions['width']}px) 100vw, {$constrained_dimensions['width']}px",
+		// Create a Handler instance to use its transform_image_urls method
+		$handler = new \Edge_Images\Handler();
+		
+		// Call the handler's transform_image_urls method
+		$handler->transform_image_urls(
+			$processor,
+			$dimensions,
+			$img_html,
+			'picture',
 			[
-				'height' => $constrained_dimensions['height'],  // Force height to match constrained.
 				'fit' => 'cover',
-				'quality' => 85,
 			]
 		);
-
-		if ($srcset) {
-			$processor->set_attribute('srcset', $srcset);
-			// Update sizes attribute to use constrained width.
-			$new_sizes = "(max-width: {$constrained_dimensions['width']}px) 100vw, {$constrained_dimensions['width']}px";
-			$processor->set_attribute('sizes', $new_sizes);
-		}
 
 		return $processor->get_updated_html();
 	}
