@@ -2,14 +2,12 @@
 /**
  * Block transformation management.
  *
- * Manages the transformation of blocks in Edge Images.
+ * Manages block-specific transformation logic in Edge Images.
  * This class:
- * - Coordinates block transformations
+ * - Provides block-specific handlers
  * - Manages block registration
- * - Routes block content
- * - Handles block types
- * - Ensures proper processing
- * - Maintains block integrity
+ * - Routes content to appropriate handlers
+ * - Maintains transformation rules
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
@@ -36,48 +34,44 @@ class Blocks {
 	 * @return void
 	 */
 	public static function register(): void {
-		
 		// Register block handlers
 		self::$handlers = [
-			'core/gallery' => new Blocks\Gallery(),
-			'core/image' => new Blocks\Image(),
+			'gallery' => new Blocks\Gallery(),
+			'image' => new Blocks\Image(),
 		];
-
-		// Add filter for block content
-		add_filter('render_block', [self::class, 'transform_block'], 5, 2);
 	}
 
 	/**
-	 * Transform block content.
+	 * Get a block handler by type.
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param string $block_content The block content.
-	 * @param array  $block         The block data.
-	 * @return string The transformed block content.
+	 * @param string $type The block type (e.g., 'gallery', 'image').
+	 * @return Block|null The block handler or null if not found.
 	 */
-	public static function transform_block(string $block_content, array $block): string {
-		// Skip if no images
-		if (!str_contains($block_content, '<img')) {
-			return $block_content;
-		}
+	public static function get_handler(string $type): ?Block {
+		return self::$handlers[$type] ?? null;
+	}
 
-		// Get block name
-		$block_name = $block['blockName'] ?? '';
+	/**
+	 * Check if we have a handler for a block type.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $type The block type to check.
+	 * @return bool Whether we have a handler for this block type.
+	 */
+	public static function has_handler(string $type): bool {
+		return isset(self::$handlers[$type]);
+	}
 
-		// If we have a specific handler for this block type, use it
-		if ($block_name && isset(self::$handlers[$block_name])) {
-			return self::$handlers[$block_name]->transform($block_content, $block);
-		}
-
-		// For unknown blocks with images, try each handler in order
-		foreach (self::$handlers as $handler) {
-			$transformed = $handler->transform($block_content, $block);
-			if ($transformed !== $block_content) {
-				return $transformed;
-			}
-		}
-
-		return $block_content;
+	/**
+	 * Get all registered handlers.
+	 *
+	 * @since 4.5.0
+	 * @return array<string,Block> Array of block handlers.
+	 */
+	public static function get_handlers(): array {
+		return self::$handlers;
 	}
 }

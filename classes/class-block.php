@@ -149,15 +149,55 @@ abstract class Block {
 	}
 
 	/**
-	 * Transform an image using the Handler.
+	 * Transform an image tag.
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param string $img_html The image HTML.
+	 * @param string $img_html The image HTML to transform.
+	 * @param string $context The transformation context.
 	 * @return string The transformed image HTML.
 	 */
-	protected function transform_image(string $img_html): string {
-		$handler = new Handler();
-		return $handler->transform_image(true, $img_html, 'block', 0);
+	protected function transform_image(string $img_html, string $context): string {
+		// Skip if already processed
+		if (Helpers::is_image_processed($img_html)) {
+			return $img_html;
+		}
+
+		// Create processor for transformation
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if (!$processor->next_tag('img')) {
+			return $img_html;
+		}
+
+		error_log('Original HTML: ' . $img_html);
+		error_log('Width attribute: ' . $processor->get_attribute('width'));
+		error_log('Height attribute: ' . $processor->get_attribute('height'));
+
+		// Get the attachment ID if available
+		$attachment_id = Helpers::get_attachment_id_from_classes($processor);
+		error_log('Attachment ID: ' . var_export($attachment_id, true));
+
+		// Get and constrain dimensions
+		$dimensions = Image_Dimensions::from_html($processor);
+		error_log('Dimensions from HTML: ' . var_export($dimensions, true));
+
+		if (!$dimensions && $attachment_id) {
+			$dimensions = Image_Dimensions::from_attachment($attachment_id);
+			error_log('Dimensions from attachment: ' . var_export($dimensions, true));
+		}
+
+		if ($dimensions) {
+			$dimensions = Image_Dimensions::constrain_to_content_width($dimensions);
+			error_log('Constrained dimensions: ' . var_export($dimensions, true));
+			$processor->set_attribute('width', $dimensions['width']);
+			$processor->set_attribute('height', $dimensions['height']);
+		}
+
+		// Transform the image
+		$processor = Images::transform_image_tag($processor, $attachment_id, $img_html, $context);
+		$result = $processor->get_updated_html();
+		error_log('Final HTML: ' . $result);
+		return $result;
 	}
+
 }

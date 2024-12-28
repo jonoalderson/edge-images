@@ -26,11 +26,12 @@ class Image_Dimensions {
      *
      * Extracts width and height values from an image tag's attributes
      * using the WordPress HTML Tag Processor. This method:
-     * - Processes img tags only
+     * - Uses the processor's current position
      * - Returns both width and height if both are present
      * - Returns null if either dimension is missing
      * - Ensures dimensions are returned as strings
      * - Maintains original attribute values
+     * - Does not modify the processor's state
      *
      * @since      4.0.0
      * 
@@ -38,12 +39,11 @@ class Image_Dimensions {
      * @return array<string,string>|null Array with width and height, or null if not found.
      */
     public static function from_html( \WP_HTML_Tag_Processor $processor ): ?array {
-        if ( ! $processor->next_tag( 'img' ) ) {
-            return null;
-        }
-
         $width = $processor->get_attribute( 'width' );
         $height = $processor->get_attribute( 'height' );
+
+        error_log('Width: ' . var_export($width, true));
+        error_log('Height: ' . var_export($height, true));
 
         if ( ! $width || ! $height ) {
             return null;
@@ -180,10 +180,10 @@ class Image_Dimensions {
      * Adjusts image dimensions to fit within the theme's content width
      * while maintaining aspect ratio. This method:
      * - Uses WordPress global $content_width
+     * - Falls back to plugin's max width setting if content width not set
      * - Maintains original dimensions if smaller than content width
      * - Calculates proportional height when width is constrained
      * - Returns dimensions as strings for consistency
-     * - Handles cases where content width is not set
      *
      * @since      4.0.0
      * 
@@ -193,14 +193,17 @@ class Image_Dimensions {
     public static function constrain_to_content_width( array $dimensions ): array {
         global $content_width;
         
-        if ( ! $content_width || (int) $dimensions['width'] <= $content_width ) {
+        // Get max width from content width or plugin setting
+        $max_width = $content_width ?: Settings::get_max_width();
+        
+        if ( ! $max_width || (int) $dimensions['width'] <= $max_width ) {
             return $dimensions;
         }
         
         $ratio = (int) $dimensions['height'] / (int) $dimensions['width'];
         return [
-            'width' => (string) $content_width,
-            'height' => (string) round( $content_width * $ratio ),
+            'width' => (string) $max_width,
+            'height' => (string) round( $max_width * $ratio ),
         ];
     }
 

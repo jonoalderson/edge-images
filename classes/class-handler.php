@@ -88,7 +88,7 @@ class Handler {
 
 		// Transform images in content
 		add_filter('wp_img_tag_add_width_and_height_attr', [$this, 'transform_image'], 5, 4);
-		add_filter('the_content', [$this, 'transform_content_images'], 5);
+		add_filter('the_content', [$this, 'transform_content_images'], 20);
 
 		// Ensure WordPress's default dimension handling still runs
 		add_filter('wp_img_tag_add_width_and_height_attr', '__return_true', 999);
@@ -518,47 +518,8 @@ class Handler {
 	 * @return string Modified content.
 	 */
 	public function transform_content_images(string $content): string {
-
-		// Bail if we don't have any images
-		if (!str_contains($content, '<img')) {
-			return $content;
-		}
-
-		// Extract all img tags first
-		if (!preg_match_all('/<img[^>]+>/', $content, $matches)) {
-			return $content;
-		}
-
-	// Process each image once
-	foreach ($matches[0] as $img_html) {
-		// Skip if already processed
-		if (Helpers::is_image_processed($img_html)) {
-			continue;
-		}
-
-		// Create a processor for this image
-		$processor = new \WP_HTML_Tag_Processor($img_html);
-		if (!$processor->next_tag('img')) {
-			continue;
-		}
-
-		// Transform the image
-		$processor = Images::transform_image_tag($processor, null, $img_html, 'content');
-		$transformed = $processor->get_updated_html();
-
-		// If picture wrapping is enabled and we have dimensions, wrap in picture element
-		if (Features::is_feature_enabled('picture_wrap')) {
-			$dimensions = Image_Dimensions::from_html(new \WP_HTML_Tag_Processor($transformed));
-			if ($dimensions) {
-				$transformed = Picture::create($transformed, $dimensions);
-			}
-		}
-
-		// Replace the original image with the transformed one
-		$content = str_replace($img_html, $transformed, $content);
-	}
-
-	return $content;
+		$transformer = new Content_Transformer();
+		return $transformer->transform($content);
 	}
 
 	/**
