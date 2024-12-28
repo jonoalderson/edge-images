@@ -34,31 +34,56 @@ class Image extends Block {
 	 * @return string The transformed block content.
 	 */
 	public function transform(string $block_content, array $block): string {
-		
-		// Bail if this isn't an image block
-		if ($block['blockName'] !== 'core/image') {
-			return $block_content;
-		}
-		
-		// Skip if no image or already processed
-		if (!str_contains($block_content, '<img') || str_contains($block_content, '<picture')) {
+		// Extract the image tag
+		$img_html = $this->extract_image($block_content);
+		if (!$img_html) {
 			return $block_content;
 		}
 
-		// Extract the image
-		if (!preg_match('/<img[^>]+>/', $block_content, $matches)) {
+		// Skip if already processed
+		if (!$this->should_transform_image($img_html)) {
 			return $block_content;
 		}
 
-		// Bail if no image found
-		if (!isset($matches[0])) {
-			return $block_content;
-		}
+		// Extract link if present
+		$link_data = $this->extract_link($block_content, $img_html);
+		$has_link = !empty($link_data['link']);
+		$img_html = $link_data['img'];
 
 		// Transform the image
-		$transformed = $this->transform_image($matches[0], 'image');
+		$transformed = $this->transform_image($img_html, 'block');
 
-		// Replace the original image with the transformed one
-		return str_replace($matches[0], $transformed, $block_content);
+		// If picture wrapping is enabled and we have dimensions
+		if (Features::is_feature_enabled('picture_wrap')) {
+			$dimensions = $this->extract_dimensions($transformed);
+			if ($dimensions) {
+				$classes = $this->extract_classes($block_content, $block);
+				$picture = $this->create_picture($transformed, $dimensions, $classes);
+
+				// If we have a link, move it inside the picture element
+				if ($has_link) {
+					// Extract the anchor opening tag
+					preg_match('/<a[^>]*>/', $link_data['link'], $link_open);
+					$link_open = $link_open[0];
+
+					$picture = str_replace(
+						'<img',
+						$link_open . '<img',
+						$picture
+					);
+					$picture = str_replace('</picture>', '</a></picture>', $picture);
+				}
+
+				// Return just the picture element
+				return $picture;
+			}
+		}
+
+		// If we have a link, wrap the transformed image
+		if ($has_link) {
+			$transformed = str_replace($img_html, $transformed, $link_data['link']);
+		}
+
+		return $transformed;
 	}
 } 

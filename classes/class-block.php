@@ -45,12 +45,30 @@ abstract class Block {
 	protected function extract_classes(string $block_content, array $block = []): array {
 		$classes = [];
 
+		// Get classes from block attributes if available
+		if (!empty($block['attrs']['className'])) {
+			$classes = array_merge($classes, array_filter(explode(' ', $block['attrs']['className'])));
+		}
+
 		// Create a processor for the element
 		$processor = new \WP_HTML_Tag_Processor($block_content);
-		if ($processor->next_tag()) {
-			$element_classes = $processor->get_attribute('class');
-			if ($element_classes) {
-				$classes = array_filter(explode(' ', $element_classes));
+
+		// First try to get classes from figure tag
+		if ($processor->next_tag('figure')) {
+			$figure_classes = $processor->get_attribute('class');
+			if ($figure_classes) {
+				$classes = array_merge($classes, array_filter(explode(' ', $figure_classes)));
+			}
+		}
+
+		// Reset processor and try img tag if no figure classes found
+		if (empty($classes)) {
+			$processor = new \WP_HTML_Tag_Processor($block_content);
+			if ($processor->next_tag('img')) {
+				$img_classes = $processor->get_attribute('class');
+				if ($img_classes) {
+					$classes = array_merge($classes, array_filter(explode(' ', $img_classes)));
+				}
 			}
 		}
 
@@ -129,7 +147,7 @@ abstract class Block {
 		return Picture::create(
 			$img_html,
 			$dimensions,
-			implode(' ', array_merge($classes, ['edge-images-container']))
+			implode(' ', $classes)
 		);
 	}
 
@@ -146,6 +164,21 @@ abstract class Block {
 			return $caption_matches[0];
 		}
 		return '';
+	}
+
+	/**
+	 * Extract image HTML from content.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $content The content to extract from.
+	 * @return string|null The image HTML or null if not found.
+	 */
+	protected function extract_image(string $content): ?string {
+		if (preg_match('/<img[^>]+>/', $content, $matches)) {
+			return $matches[0];
+		}
+		return null;
 	}
 
 	/**
@@ -169,35 +202,25 @@ abstract class Block {
 			return $img_html;
 		}
 
-		error_log('Original HTML: ' . $img_html);
-		error_log('Width attribute: ' . $processor->get_attribute('width'));
-		error_log('Height attribute: ' . $processor->get_attribute('height'));
-
 		// Get the attachment ID if available
 		$attachment_id = Helpers::get_attachment_id_from_classes($processor);
-		error_log('Attachment ID: ' . var_export($attachment_id, true));
 
 		// Get and constrain dimensions
 		$dimensions = Image_Dimensions::from_html($processor);
-		error_log('Dimensions from HTML: ' . var_export($dimensions, true));
 
 		if (!$dimensions && $attachment_id) {
 			$dimensions = Image_Dimensions::from_attachment($attachment_id);
-			error_log('Dimensions from attachment: ' . var_export($dimensions, true));
 		}
 
 		if ($dimensions) {
 			$dimensions = Image_Dimensions::constrain_to_content_width($dimensions);
-			error_log('Constrained dimensions: ' . var_export($dimensions, true));
 			$processor->set_attribute('width', $dimensions['width']);
 			$processor->set_attribute('height', $dimensions['height']);
 		}
 
 		// Transform the image
 		$processor = Images::transform_image_tag($processor, $attachment_id, $img_html, $context);
-		$result = $processor->get_updated_html();
-		error_log('Final HTML: ' . $result);
-		return $result;
+		return $processor->get_updated_html();
 	}
 
 }

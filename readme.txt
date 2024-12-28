@@ -17,6 +17,7 @@ Edge Images automatically uses an edge transformation service (e.g., [Cloudflare
 = Features =
 * Automatic image optimization through edge providers
 * Smart `srcset` generation for responsive images
+* Optional `<picture>` element wrapping (excluding featured images and gallery blocks)
 * Support for multiple CDN/edge providers
 * Automatic WebP/AVIF conversion (provider dependent)
 * No local image processing required
@@ -143,7 +144,7 @@ When using `wp_get_attachment_image()` or similar functions, you can pass the fo
 * `edge_images_disable` (`bool`): Disable all image transformation. Defaults to `false`.
 * `edge_images_provider` (`string`): Override the selected provider. Accepts 'cloudflare', 'accelerated_domains', 'bunny', or 'imgix'.
 * `edge_images_domain` (`string`): Override the domain used for image URLs. Defaults to site URL.
-* `edge_images_feature_picture_wrap` (`bool`): Enable wrapping images in `<picture>` elements. Defaults to `false`.
+* `edge_images_feature_picture_wrap` (`bool`): Enable wrapping images in `<picture>` elements. Note that this excludes featured images and gallery blocks to prevent layout issues. Defaults to `false`.
 
 **Image Processing**
 * `edge_images_max_width` (`int`): Maximum width for generated images. Defaults to 2400.

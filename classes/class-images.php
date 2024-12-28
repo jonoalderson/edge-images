@@ -46,13 +46,15 @@ class Images {
 		string $context = '',
 		array $args = []
 	): \WP_HTML_Tag_Processor {
+		
 		// Check cache first
 		$cache_key = 'img_' . md5($html . serialize($args));
-		// $cached_html = Cache::get_image_html($image_id ?: 0, $cache_key, []);
+		$cached_html = Cache::get_image_html($image_id ?: 0, $cache_key, []);
 		
-		// if ($cached_html !== false) {
-		// 	return new \WP_HTML_Tag_Processor($cached_html);
-		// }
+		// If we have a cached HTML, return it
+		if ($cached_html !== false) {
+			return new \WP_HTML_Tag_Processor($cached_html);
+		}
 
 		// Get src
 		$src = $processor->get_attribute('src');

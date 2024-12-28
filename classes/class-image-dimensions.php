@@ -42,17 +42,21 @@ class Image_Dimensions {
         $width = $processor->get_attribute( 'width' );
         $height = $processor->get_attribute( 'height' );
 
-        error_log('Width: ' . var_export($width, true));
-        error_log('Height: ' . var_export($height, true));
+        // Handle both string and numeric values
+        if ( $width !== null && $height !== null ) {
+            // Convert to numeric values to validate
+            $numeric_width = is_numeric($width) ? (int)$width : null;
+            $numeric_height = is_numeric($height) ? (int)$height : null;
 
-        if ( ! $width || ! $height ) {
-            return null;
+            if ($numeric_width && $numeric_height && $numeric_width > 0 && $numeric_height > 0) {
+                return [
+                    'width' => (string)$numeric_width,
+                    'height' => (string)$numeric_height,
+                ];
+            }
         }
 
-        return [
-            'width' => (string) $width,
-            'height' => (string) $height,
-        ];
+        return null;
     }
 
     /**
