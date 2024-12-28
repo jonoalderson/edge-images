@@ -41,7 +41,6 @@ class Blocks {
 		self::$handlers = [
 			'core/gallery' => new Blocks\Gallery(),
 			'core/image' => new Blocks\Image(),
-			'core/figure' => new Blocks\Figure(),
 		];
 
 		// Add filter for block content

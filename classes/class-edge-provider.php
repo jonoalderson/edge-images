@@ -361,7 +361,10 @@ abstract class Edge_Provider {
 	 */
 	public static function clean_transformed_url(string $url): string {
 		$pattern = static::get_transform_pattern();
-		return preg_replace($pattern, '', $url);
+		// Escape forward slashes and ensure proper delimiters
+		$pattern = '#' . str_replace('#', '\\#', $pattern) . '#';
+		$cleaned_url = preg_replace($pattern, '', $url);
+		return $cleaned_url === null ? $url : $cleaned_url;
 	}
 
 	/**

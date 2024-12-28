@@ -48,11 +48,11 @@ class Images {
 	): \WP_HTML_Tag_Processor {
 		// Check cache first
 		$cache_key = 'img_' . md5($html . serialize($args));
-		$cached_html = Cache::get_image_html($image_id ?: 0, $cache_key, []);
+		// $cached_html = Cache::get_image_html($image_id ?: 0, $cache_key, []);
 		
-		if ($cached_html !== false) {
-			return new \WP_HTML_Tag_Processor($cached_html);
-		}
+		// if ($cached_html !== false) {
+		// 	return new \WP_HTML_Tag_Processor($cached_html);
+		// }
 
 		// Get src
 		$src = $processor->get_attribute('src');
@@ -84,18 +84,24 @@ class Images {
 
 		// Transform the URL if we have dimensions
 		if ($dimensions) {
+			// Create a new processor to preserve the original state
+			$new_processor = new \WP_HTML_Tag_Processor($processor->get_updated_html());
+			$new_processor->next_tag('img');
+
 			// Use transform_image_urls for consistent behavior
-			self::transform_image_urls($processor, $dimensions, $html, $context, $args);
+			self::transform_image_urls($new_processor, $dimensions, $html, $context, $args);
+
+			// Always add the processed class
+			$new_processor->set_attribute('class', trim($new_processor->get_attribute('class') . ' edge-images-processed'));
+
+			// Cache the result
+			Cache::set_image_html($image_id ?: 0, $cache_key, [], $new_processor->get_updated_html());
+
+			// Clean transformation attributes before returning
+			return self::clean_transform_attributes($new_processor);
 		}
 
-		// Always add the processed class
-		$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
-
-		// Cache the result
-		Cache::set_image_html($image_id ?: 0, $cache_key, [], $processor->get_updated_html());
-
-		// Clean transformation attributes before returning
-		return self::clean_transform_attributes($processor);
+		return $processor;
 	}
 
 	/**
@@ -296,9 +302,10 @@ class Images {
 		}
 
 		// Remove any existing transformations
-		$src = $provider::clean_transformed_url($src);
+		$cleaned_url = $provider::clean_transformed_url($src);
 		
-		return $src;
+		// Return cleaned URL if valid, otherwise return original
+		return $cleaned_url ?: $src;
 	}
 
 	/**
