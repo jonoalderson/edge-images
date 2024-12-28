@@ -41,22 +41,6 @@ class Content_Transformer {
     }
 
     /**
-     * Check if a block should be excluded from transformation.
-     *
-     * @since 4.5.0
-     * 
-     * @param string $block_html The block HTML.
-     * @param string $content    The full content.
-     * @param string $class      The block's class attribute.
-     * @return bool Whether the block should be excluded.
-     */
-    private function should_exclude_block(string $block_html, string $content, string $class): bool {
-        // Exclude images within gallery blocks
-        
-     
-    }
-
-    /**
      * Transform images within blocks.
      *
      * @since 4.5.0
@@ -68,104 +52,48 @@ class Content_Transformer {
         // Get all registered block handlers
         $handlers = Blocks::get_handlers();
         
-        // First identify gallery blocks to exclude them
-        $gallery_pattern = '/<figure class="wp-block-gallery[^"]*">\s*(<figure class="wp-block-image[^"]*">.*?<\/figure>\s*)+<\/figure>/s';
-        $gallery_positions = [];
-        if (preg_match_all($gallery_pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
-            foreach ($matches[0] as $match) {
-                $gallery_positions[] = [
-                    'start' => $match[1],
-                    'end' => $match[1] + strlen($match[0])
-                ];
-            }
-        }
-       
-        
-        // First pass: identify blocks to transform using regex to get positions
-        $blocks_to_transform = [];
         foreach ($handlers as $block_type => $handler) {
-            $pattern = sprintf(
-                '/<figure[^>]*class="[^"]*\bwp-block-%s\b[^"]*"[^>]*>.*?<\/figure>/s',
-                preg_quote($block_type, '/')
-            );
 
+            // Get the block pattern from the Blocks class
+            $pattern = Blocks::get_block_pattern($block_type);
+            if (!$pattern) {
+                continue;
+            }
+
+            // If we have a pattern, use it to find blocks
             if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
+                // Process matches in reverse order to maintain offsets
+                $matches[0] = array_reverse($matches[0]);
+
                 foreach ($matches[0] as $match) {
                     $block_html = $match[0];
                     $start = $match[1];
                     
-                    // Skip if this block is within a gallery
-                    $is_in_gallery = false;
-                    foreach ($gallery_positions as $gallery) {
-                        if ($start >= $gallery['start'] && $start < $gallery['end']) {
-                            $is_in_gallery = true;
-                            break;
-                        }
-                    }
-                    if ($is_in_gallery) {
+                    // Skip if this block has already been processed
+                    if (strpos($block_html, 'edge-images-processed') !== false || 
+                        strpos($block_html, 'edge-images-no-picture') !== false) {
                         continue;
                     }
-                    
+
                     // Create a processor to extract classes
                     $processor = new \WP_HTML_Tag_Processor($block_html);
                     if ($processor->next_tag('figure')) {
                         $class = $processor->get_attribute('class');
                         
-                        $blocks_to_transform[] = [
-                            'html' => $block_html,
-                            'class' => $class,
-                            'block_type' => $block_type,
-                            'handler' => $handler,
-                            'start' => $start,
-                            'length' => strlen($block_html),
+                        // Transform the block
+                        $block = [
+                            'blockName' => 'core/' . $block_type,
+                            'innerHTML' => $block_html,
+                            'attrs' => ['className' => $class],
                         ];
+
+                        $transformed = $handler->transform($block_html, $block);
+                        
+                        // Replace the block content
+                        $content = substr_replace($content, $transformed, $start, strlen($block_html));
                     }
                 }
             }
-        }
-
-        // Process blocks in reverse order to maintain offsets
-        $blocks_to_transform = array_reverse($blocks_to_transform);
-
-        // Second pass: transform identified blocks
-        foreach ($blocks_to_transform as $block_data) {
-            $block = [
-                'blockName' => 'core/' . $block_data['block_type'],
-                'innerHTML' => $block_data['html'],
-                'attrs' => ['className' => $block_data['class']],
-            ];
-
-            // Extract the image tag and check for links
-            $has_link = false;
-            $link_html = '';
-            if (preg_match('/<a[^>]*>.*?<img[^>]+>.*?<\/a>/s', $block_data['html'], $link_matches)) {
-                $has_link = true;
-                $link_html = $link_matches[0];
-                if (!preg_match('/<img[^>]+>/', $link_html, $img_matches)) {
-                    continue;
-                }
-            } elseif (!preg_match('/<img[^>]+>/', $block_data['html'], $img_matches)) {
-                continue;
-            }
-
-            // Transform the image using the block handler
-            $transformed = $block_data['handler']->transform($img_matches[0], $block);
-
-            // If we have a link and picture wrapping is enabled, wrap the picture in the link
-            if ($has_link && Features::is_feature_enabled('picture_wrap')) {
-                if (preg_match('/<a[^>]*>/', $link_html, $link_open)) {
-                    $transformed = str_replace('<img', $link_open[0] . '<img', $transformed);
-                    $transformed = str_replace('</picture>', '</a></picture>', $transformed);
-                }
-            }
-
-            // If picture wrapping is disabled, preserve the figure structure
-            if (!Features::is_feature_enabled('picture_wrap')) {
-                $transformed = str_replace($img_matches[0], $transformed, $block_data['html']);
-            }
-            
-            // Replace the block content
-            $content = substr_replace($content, $transformed, $block_data['start'], $block_data['length']);
         }
 
         return $content;
@@ -180,7 +108,6 @@ class Content_Transformer {
      * @return string Modified content.
      */
     private function transform_standalone_images(string $content): string {
-
         if (!preg_match_all('/<img[^>]+>/', $content, $matches)) {
             return $content;
         }

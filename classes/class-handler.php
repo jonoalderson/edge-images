@@ -88,7 +88,7 @@ class Handler {
 		
 		// Enforce dimensions and cleanup
 		add_filter('wp_get_attachment_image_attributes', [$this, 'enforce_dimensions'], 12, 3);
-		add_filter('wp_get_attachment_image', [$this, 'cleanup_image_html'], 13, 5);
+		add_filter('wp_get_attachment_image', [$this, 'cleanup_image_html'], 999, 5);
 
 		// Ensure WordPress's default dimension handling still runs
 		add_filter('wp_img_tag_add_width_and_height_attr', '__return_true', 999);
@@ -361,10 +361,24 @@ class Handler {
 			return $html;
 		}
 
+		// Skip if the figure has the no-picture class
+		if (strpos($html, 'edge-images-no-picture') !== false) {
+			return $html;
+		}
+
 		// Extract dimensions from the image
 		$processor = new \WP_HTML_Tag_Processor($html);
 		if (!$processor->next_tag('img')) {
 			return $html;
+		}
+
+		// If this is a block image, check if we should wrap it
+		if (strpos($html, 'wp-block-') !== false) {
+			foreach (self::$no_picture_wrap_blocks as $block_type) {
+				if (strpos($html, "wp-block-{$block_type}") !== false) {
+					return $html;
+				}
+			}
 		}
 
 		$width = $processor->get_attribute('width');
@@ -400,6 +414,8 @@ class Handler {
 	 * @return string The transformed image HTML
 	 */
 	public function transform_image($value, string $image_html, string $context, $attachment_id): string {
+
+		
 		// Skip if already processed
 		if (Helpers::is_image_processed($image_html)) {
 			return $image_html;
@@ -434,11 +450,20 @@ class Handler {
 			return $transformed;
 		}
 
-		// If we have a figure, replace it with picture
+		// If we have a figure, check for no-picture class before replacing with picture
 		if (strpos($image_html, '<figure') !== false) {
 			$figure_classes = $this->extract_figure_classes($image_html, []);
-			$img_html = $this->extract_img_tag($transformed);
 			
+			// Skip picture wrapping if the figure has the no-picture class
+			if (strpos($figure_classes, 'edge-images-no-picture') !== false) {
+				$img_html = $this->extract_img_tag($transformed);
+				if ($img_html) {
+					return str_replace($this->extract_img_tag($image_html), $img_html, $image_html);
+				}
+				return $transformed;
+			}
+			
+			$img_html = $this->extract_img_tag($transformed);
 			return Picture::create($img_html, $dimensions, $figure_classes);
 		}
 
@@ -526,7 +551,17 @@ class Handler {
 		// Create a processor from the HTML
 		$processor = new \WP_HTML_Tag_Processor($html);
 
-		// Bail if no img tag
+		// First check for a figure tag
+		if ($processor->next_tag('figure')) {
+			$classes = $processor->get_attribute('class');
+			if ($classes) {
+				$classes = implode(' ', array_diff(explode(' ', $classes), ['edge-images-no-picture']));
+				$processor->set_attribute('class', $classes);
+			}
+		}
+
+		// Now process the img tag
+		$processor = new \WP_HTML_Tag_Processor($processor->get_updated_html());
 		if (!$processor->next_tag('img')) {
 			return $html;
 		}
@@ -537,6 +572,7 @@ class Handler {
 		return $processor->get_updated_html();
 	}
 }
+
 
 
 

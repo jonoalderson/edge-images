@@ -28,6 +28,14 @@ class Blocks {
 	private static array $handlers = [];
 
 	/**
+	 * Block patterns for identifying specific block types.
+	 *
+	 * @since 4.5.0
+	 * @var array<string,string>
+	 */
+	private static array $block_patterns = [];
+
+	/**
 	 * Register block handlers.
 	 *
 	 * @since 4.5.0
@@ -39,6 +47,16 @@ class Blocks {
 			'gallery' => new Blocks\Gallery(),
 			'image' => new Blocks\Image(),
 		];
+
+		// Register block patterns
+		self::$block_patterns = [
+			// Gallery pattern - must have both wp-block-gallery AND has-nested-images classes
+			'gallery' => '/<figure[^>]*class="[^"]*\bwp-block-gallery\b[^"]*\bhas-nested-images\b[^"]*"[^>]*>(?:(?!<figure[^>]*>|<\/figure>).|\r|\n|<figure[^>]*>(?:(?!<figure[^>]*>|<\/figure>).|\r|\n)*<\/figure>)*<\/figure>/s',
+			// Image pattern - must have wp-block-image class but NOT be inside a gallery
+			'image' => '/<figure[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>(?:(?!<figure[^>]*class="[^"]*\bwp-block-gallery\b[^"]*"[^>]*>).)*?<\/figure>/s',
+		];
+
+
 	}
 
 	/**
@@ -73,5 +91,27 @@ class Blocks {
 	 */
 	public static function get_handlers(): array {
 		return self::$handlers;
+	}
+
+	/**
+	 * Get the pattern for a specific block type.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $type The block type.
+	 * @return string|null The pattern or null if not found.
+	 */
+	public static function get_block_pattern(string $type): ?string {
+		return self::$block_patterns[$type] ?? null;
+	}
+
+	/**
+	 * Get all block patterns.
+	 *
+	 * @since 4.5.0
+	 * @return array<string,string> Array of block patterns.
+	 */
+	public static function get_block_patterns(): array {
+		return self::$block_patterns;
 	}
 }

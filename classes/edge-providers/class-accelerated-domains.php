@@ -58,7 +58,6 @@ class Accelerated_Domains extends Edge_Provider {
 	public function get_edge_url(): string {
 		// Bail early if no path
 		if (empty($this->path)) {
-			error_log('Edge Images - No path provided to transform');
 			return '';
 		}
 
@@ -67,23 +66,17 @@ class Accelerated_Domains extends Edge_Provider {
 			if (preg_match('#' . self::EDGE_ROOT . '(/[^?]+)#', $this->path, $matches)) {
 				$this->path = $matches[1];
 			} else {
-				error_log('Edge Images - Could not extract original path from transformed URL');
 				return '';
 			}
 		}
 
-		// Debug the incoming path
-		error_log('Edge Images - Original path: ' . $this->path);
-		
 		// Clean the URL to get just the path
 		$image_path = Helpers::clean_url($this->path);
 		
 		// Debug the cleaned path
-		error_log('Edge Images - Cleaned path: ' . $image_path);
 		
 		// If no valid path found, return empty
 		if (empty($image_path)) {
-			error_log('Edge Images - No valid image path found to transform');
 			return '';
 		}
 
@@ -92,7 +85,6 @@ class Accelerated_Domains extends Edge_Provider {
 		
 		// If no transform args, return empty
 		if (empty($transform_args)) {
-			error_log('Edge Images - No transform arguments found');
 			return '';
 		}
 
@@ -104,7 +96,6 @@ class Accelerated_Domains extends Edge_Provider {
 			http_build_query($transform_args)
 		);
 		
-		error_log('Edge Images - Generated URL: ' . $edge_url);
 		return esc_attr($edge_url);
 	}
 
