@@ -52,19 +52,8 @@ class Content_Transformer {
      */
     private function should_exclude_block(string $block_html, string $content, string $class): bool {
         // Exclude images within gallery blocks
-        if (str_contains($content, 'wp-block-gallery') && 
-            preg_match('/<figure[^>]*class="[^"]*\bwp-block-gallery\b[^"]*"[^>]*>.*' . preg_quote($block_html, '/') . '/s', $content)) {
-            return true;
-        }
-
-        // Add more exclusion rules here
-        // For example:
-        // - Exclude specific block types
-        // - Exclude based on classes
-        // - Exclude based on attributes
-        // - Exclude based on parent block types
-
-        return false;
+        
+     
     }
 
     /**
@@ -79,14 +68,22 @@ class Content_Transformer {
         // Get all registered block handlers
         $handlers = Blocks::get_handlers();
         
+        // First identify gallery blocks to exclude them
+        $gallery_pattern = '/<figure class="wp-block-gallery[^"]*">\s*(<figure class="wp-block-image[^"]*">.*?<\/figure>\s*)+<\/figure>/s';
+        $gallery_positions = [];
+        if (preg_match_all($gallery_pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
+            foreach ($matches[0] as $match) {
+                $gallery_positions[] = [
+                    'start' => $match[1],
+                    'end' => $match[1] + strlen($match[0])
+                ];
+            }
+        }
+       
+        
         // First pass: identify blocks to transform using regex to get positions
         $blocks_to_transform = [];
         foreach ($handlers as $block_type => $handler) {
-            // Skip gallery blocks - we don't transform images within galleries
-            if ($block_type === 'gallery') {
-                continue;
-            }
-
             $pattern = sprintf(
                 '/<figure[^>]*class="[^"]*\bwp-block-%s\b[^"]*"[^>]*>.*?<\/figure>/s',
                 preg_quote($block_type, '/')
@@ -97,15 +94,22 @@ class Content_Transformer {
                     $block_html = $match[0];
                     $start = $match[1];
                     
+                    // Skip if this block is within a gallery
+                    $is_in_gallery = false;
+                    foreach ($gallery_positions as $gallery) {
+                        if ($start >= $gallery['start'] && $start < $gallery['end']) {
+                            $is_in_gallery = true;
+                            break;
+                        }
+                    }
+                    if ($is_in_gallery) {
+                        continue;
+                    }
+                    
                     // Create a processor to extract classes
                     $processor = new \WP_HTML_Tag_Processor($block_html);
                     if ($processor->next_tag('figure')) {
                         $class = $processor->get_attribute('class');
-                        
-                        // Skip if block should be excluded
-                        if ($this->should_exclude_block($block_html, $content, $class)) {
-                            continue;
-                        }
                         
                         $blocks_to_transform[] = [
                             'html' => $block_html,
