@@ -44,6 +44,7 @@ class Handler {
 	 * @return void
 	 */
 	public static function register(): void {
+		
 		// Prevent multiple registrations
 		if (self::$registered) {
 			return;
@@ -378,15 +379,6 @@ class Handler {
 			return $html;
 		}
 
-		// If this is a block image, check if we should wrap it
-		if (strpos($html, 'wp-block-') !== false) {
-			foreach (self::$no_picture_wrap_blocks as $block_type) {
-				if (strpos($html, "wp-block-{$block_type}") !== false) {
-					return $html;
-				}
-			}
-		}
-
 		$width = $processor->get_attribute('width');
 		$height = $processor->get_attribute('height');
 
@@ -402,11 +394,11 @@ class Handler {
 		// If we have a figure, extract its classes
 		$figure_classes = '';
 		if (strpos($html, '<figure') !== false) {
-			$figure_classes = $this->extract_figure_classes($html, []);
+			$figure_classes = Helpers::extract_figure_classes($html);
 		}
 
 		// Create picture element
-		return Picture::create($this->extract_img_tag($html) ?: $html, $dimensions, $figure_classes);
+		return Picture::create(Helpers::extract_img_tag($html) ?: $html, $dimensions, $figure_classes);
 	}
 
 	/**
@@ -420,8 +412,6 @@ class Handler {
 	 * @return string The transformed image HTML
 	 */
 	public function transform_image($value, string $image_html, string $context, $attachment_id): string {
-
-		
 		// Skip if already processed
 		if (Helpers::is_image_processed($image_html)) {
 			return $image_html;
@@ -440,10 +430,10 @@ class Handler {
 		if (Features::is_disabled('picture_wrap') || $context === 'block') {
 			// If we had a figure tag originally, we should preserve it
 			if (strpos($image_html, '<figure') !== false) {
-				$figure_classes = $this->extract_figure_classes($image_html, []);
-				$img_html = $this->extract_img_tag($transformed);
+				$figure_classes = Helpers::extract_figure_classes($image_html);
+				$img_html = Helpers::extract_img_tag($transformed);
 				if ($img_html) {
-					return str_replace($this->extract_img_tag($image_html), $img_html, $image_html);
+					return str_replace(Helpers::extract_img_tag($image_html), $img_html, $image_html);
 				}
 			}
 			
@@ -458,52 +448,23 @@ class Handler {
 
 		// If we have a figure, check for no-picture class before replacing with picture
 		if (strpos($image_html, '<figure') !== false) {
-			$figure_classes = $this->extract_figure_classes($image_html, []);
+			$figure_classes = Helpers::extract_figure_classes($image_html);
 			
 			// Skip picture wrapping if the figure has the no-picture class
 			if (strpos($figure_classes, 'edge-images-no-picture') !== false) {
-				$img_html = $this->extract_img_tag($transformed);
+				$img_html = Helpers::extract_img_tag($transformed);
 				if ($img_html) {
-					return str_replace($this->extract_img_tag($image_html), $img_html, $image_html);
+					return str_replace(Helpers::extract_img_tag($image_html), $img_html, $image_html);
 				}
 				return $transformed;
 			}
 			
-			$img_html = $this->extract_img_tag($transformed);
+			$img_html = Helpers::extract_img_tag($transformed);
 			return Picture::create($img_html, $dimensions, $figure_classes);
 		}
 
 		// Otherwise create picture element with just the image
 		return Picture::create($transformed, $dimensions);
-	}
-
-	/**
-	 * Extract img tag from HTML
-	 *
-	 * @param string $html The HTML containing the img tag.
-	 * 
-	 * @return string|null The img tag HTML or null if not found
-	 */
-	private function extract_img_tag( string $html ): ?string {
-		if ( preg_match( '/<img[^>]*>/', $html, $matches ) ) {
-			return $matches[0];
-		}
-		return null;
-	}
-
-	/**
-	 * Extract figure classes from HTML
-	 *
-	 * @param string $html    The HTML containing the figure tag.
-	 * @param array  $default Default classes to use if none found.
-	 * 
-	 * @return string Space-separated list of classes
-	 */
-	private function extract_figure_classes( string $html, array $default ): string {
-		if ( preg_match( '/<figure[^>]*class=["\']([^"\']*)["\']/', $html, $matches ) ) {
-			return $matches[1];
-		}
-		return implode( ' ', $default );
 	}
 
 	/**

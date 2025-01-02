@@ -703,4 +703,18 @@ class Helpers {
 		return $original_src;
 	}
 
+	/**
+	 * Extract figure classes from HTML.
+	 *
+	 * @since 4.5.0
+	 * @param string $html The HTML containing the figure tag.
+	 * @return string Space-separated list of classes or empty string if none found.
+	 */
+	public static function extract_figure_classes(string $html): string {
+		if (preg_match('/<figure[^>]*class=["\']([^"\']*)["\']/', $html, $matches)) {
+			return $matches[1];
+		}
+		return '';
+	}
+
 }
