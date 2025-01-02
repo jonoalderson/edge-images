@@ -168,26 +168,44 @@ class Helpers {
 	 * @return bool Whether images should be transformed.
 	 */
 	public static function should_transform_images(): bool {
-
-		// Bail if we're not on a page
-		if ( ! self::request_is_for_page() ) {
+		// Never transform if plugin is disabled
+		if (apply_filters('edge_images_disable', false)) {
 			return false;
 		}
+
+		// Never transform in admin unless it's an AJAX request
+		if (is_admin() && !wp_doing_ajax()) {
+			return false;
+		}
+
+		// Get the provider name
+		$provider = self::get_provider_name();
 		
-		// Never transform in admin
-		if ( is_admin() && !wp_doing_ajax() ) {  // Allow AJAX requests
+		// Bail if no provider or provider is 'none'
+		if (!$provider || $provider === 'none') {
+			return false;
+		}
+
+		// Get the provider class
+		$provider_class = Providers::get_provider_class($provider);
+		if (!class_exists($provider_class)) {
+			return false;
+		}
+
+		// Bail if provider isn't properly configured
+		if (!$provider_class::is_configured()) {
 			return false;
 		}
 
 		// Allow AJAX requests for Relevanssi
-		if ( wp_doing_ajax() && isset($_REQUEST['action']) && $_REQUEST['action'] === 'relevanssi_live_search' ) {
+		if (wp_doing_ajax() && isset($_REQUEST['action']) && $_REQUEST['action'] === 'relevanssi_live_search') {
 			return true;
 		}
 
-		// Bail if the selected provider is not properly configured.
-		if (!self::is_provider_configured()) {
+		// Check if this is a valid page request
+		if (!self::request_is_for_page()) {
 			return false;
-		}	
+		}
 
 		return true;
 	}
@@ -350,6 +368,18 @@ class Helpers {
 		return $provider;
 	}
 
+	
+	/**
+	 * A shortcut to get the provider instance.
+	 *
+	 * @since 4.0.0
+	 * 
+	 * @return Edge_Provider|null The provider instance or null if none configured.
+	 */
+	public static function get_provider(): ?Edge_Provider {
+        return self::get_edge_provider();
+    }
+
 	/**
 	 * Check if a URL has already been transformed by an edge provider.
 	 *
@@ -383,6 +413,7 @@ class Helpers {
 	 * @return int|null The attachment ID or null if not found.
 	 */
 	public static function get_attachment_id_from_url( string $url ): ?int {
+		
 		// Remove query string for attachment lookup
 		$clean_url = preg_replace('/\?.*/', '', $url);
 
@@ -493,24 +524,37 @@ class Helpers {
 	}
 
 	/**
-	 * Clean a URL by removing the site domain and protocol.
+	 * Clean a URL to get just the path component.
 	 *
-	 * @since 4.5.0
+	 * @since 4.0.0
 	 * 
 	 * @param string $url The URL to clean.
 	 * @return string The cleaned path.
 	 */
 	public static function clean_url(string $url): string {
-		
-		// Get the home URL without trailing slash
-		$home_url = untrailingslashit(home_url());
-		
-		// If the URL starts with the home URL, remove it
-		if (str_starts_with($url, $home_url)) {
-			return substr($url, strlen($home_url));
+		// If empty URL, return empty string
+		if (empty($url)) {
+			return '';
 		}
-		
-		return $url;
+
+		// Parse the URL
+		$parsed = parse_url($url);
+
+		// If no path component, return empty string
+		if (!isset($parsed['path'])) {
+			return '';
+		}
+
+		// Extract just the path component
+		$path = $parsed['path'];
+
+		// Remove any double slashes
+		$path = preg_replace('#/+#', '/', $path);
+
+		// Ensure path starts with a single slash
+		$path = '/' . ltrim($path, '/');
+
+		return $path;
 	}
 
 	/**
@@ -625,6 +669,38 @@ class Helpers {
 			$pairs[] = sprintf('%s="%s"', $name, esc_attr($value));
 		}
 		return implode(' ', $pairs);
+	}
+
+	/**
+	 * Get the original URL from a potentially resized image URL.
+	 *
+	 * Takes a URL that might be a resized version (e.g., image-150x150.jpg)
+	 * and returns the URL to the original image (e.g., image.jpg).
+	 * Also handles getting the full URL from relative paths.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $src The source URL to process.
+	 * @return string The original image URL, or empty string if invalid.
+	 */
+	public static function get_original_url(string $src): string {
+		if (empty($src)) {
+			return '';
+		}
+
+		// Remove any existing size suffixes (e.g., -150x150)
+		$original_src = preg_replace('/-\d+x\d+(?=\.[a-z]{3,4}$)/i', '', $src);
+
+		// Get the upload directory info
+		$upload_dir = wp_get_upload_dir();
+		$upload_path = str_replace(site_url('/'), '', $upload_dir['baseurl']);
+
+		// If this is a relative path from the uploads directory, make it absolute
+		if (preg_match('#' . preg_quote($upload_path) . '/.*$#', $original_src, $matches)) {
+			$original_src = site_url($matches[0]);
+		}
+
+		return $original_src;
 	}
 
 }

@@ -56,6 +56,14 @@ class Features {
 	];
 
 	/**
+	 * Array of temporarily disabled features.
+	 *
+	 * @since 4.5.0
+	 * @var array
+	 */
+	private static array $disabled_features = [];
+
+	/**
 	 * Check if a feature is disabled.
 	 *
 	 * Convenience method that inverts is_feature_enabled().
@@ -106,6 +114,11 @@ class Features {
 	 * @return bool Whether the feature is enabled.
 	 */
 	public static function is_feature_enabled(string $feature_id): bool {
+		// Check if feature is temporarily disabled
+		if (in_array($feature_id, self::$disabled_features, true)) {
+			return false;
+		}
+
 		if (!isset(self::$features[$feature_id])) {
 			return false;
 		}
@@ -151,6 +164,36 @@ class Features {
 					$class::register();
 				}
 			}
+		}
+	}
+
+	/**
+	 * Temporarily disable a feature.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $feature The feature to disable.
+	 * @return void
+	 */
+	public static function disable(string $feature): void {
+		if (!in_array($feature, self::$disabled_features, true)) {
+			self::$disabled_features[] = $feature;
+		}
+	}
+
+	/**
+	 * Re-enable a temporarily disabled feature.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $feature The feature to enable.
+	 * @return void
+	 */
+	public static function enable(string $feature): void {
+		$key = array_search($feature, self::$disabled_features, true);
+		if ($key !== false) {
+			unset(self::$disabled_features[$key]);
+			self::$disabled_features = array_values(self::$disabled_features);
 		}
 	}
 } 

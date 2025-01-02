@@ -40,6 +40,12 @@ class Live_Ajax_Search extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+		
+		// Bail if we shouldn't be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+
 		add_filter('relevanssi_live_search_post_content', [$this, 'transform_search_content'], 10, 2);
 	}
 

@@ -19,7 +19,7 @@
 
 namespace Edge_Images\Blocks;
 
-use Edge_Images\{Block, Features, Helpers};
+use Edge_Images\{Block, Features, Helpers, Images, Image_Dimensions};
 use Edge_Images\Features\Picture;
 
 class Image extends Block {
@@ -34,37 +34,56 @@ class Image extends Block {
 	 * @return string The transformed block content.
 	 */
 	public function transform(string $block_content, array $block): string {
-		// Skip if no image or already processed
-		if (!str_contains($block_content, '<img') || str_contains($block_content, '<picture')) {
+		// Extract the image tag
+		$img_html = $this->extract_image($block_content);
+		if (!$img_html) {
 			return $block_content;
 		}
 
-		// Extract the image
-		$img_html = Helpers::extract_img_tag($block_content);
-		if (!$img_html || !$this->should_transform_image($img_html)) {
+		// Skip if already processed
+		if (!$this->should_transform_image($img_html)) {
 			return $block_content;
 		}
+
+		// Extract link if present
+		$link_data = $this->extract_link($block_content, $img_html);
+		$has_link = !empty($link_data['link']);
+		$img_html = $link_data['img'];
 
 		// Transform the image
-		$transformed_img = $this->transform_image($img_html);
+		$transformed = $this->transform_image($img_html, 'block');
 
-		// If Picture wrap is disabled, just replace the original image
-		if (!Features::is_feature_enabled('picture_wrap')) {
-			return str_replace($img_html, $transformed_img, $block_content);
+		// If picture wrapping is enabled and we have dimensions
+		if (Features::is_feature_enabled('picture_wrap')) {
+			$dimensions = $this->extract_dimensions($transformed);
+			if ($dimensions) {
+				$classes = $this->extract_classes($block_content, $block);
+				$picture = $this->create_picture($transformed, $dimensions, $classes);
+
+				// If we have a link, move it inside the picture element
+				if ($has_link) {
+					// Extract the anchor opening tag
+					preg_match('/<a[^>]*>/', $link_data['link'], $link_open);
+					$link_open = $link_open[0];
+
+					$picture = str_replace(
+						'<img',
+						$link_open . '<img',
+						$picture
+					);
+					$picture = str_replace('</picture>', '</a></picture>', $picture);
+				}
+
+				// Return just the picture element
+				return $picture;
+			}
 		}
 
-		// Get dimensions from the image
-		$dimensions = $this->extract_dimensions($transformed_img);
-		if (!$dimensions) {
-			return $block_content;
+		// If we have a link, wrap the transformed image
+		if ($has_link) {
+			$transformed = str_replace($img_html, $transformed, $link_data['link']);
 		}
 
-		// Extract image classes
-		$image_classes = $this->extract_classes($block_content, $block);
-
-		// Create picture element
-		$picture_html = $this->create_picture($transformed_img, $dimensions, $image_classes);
-
-		return $picture_html;
+		return $transformed;
 	}
 } 

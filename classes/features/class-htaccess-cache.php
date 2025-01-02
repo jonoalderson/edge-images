@@ -49,25 +49,6 @@ class Htaccess_Cache extends Integration {
 # END Edge Images Cache Rules';
 
 	/**
-	 * Register the integration.
-	 *
-	 * Initializes the htaccess caching functionality.
-	 * This method:
-	 * - Creates class instance
-	 * - Sets up filters
-	 * - Initializes functionality
-	 * - Ensures proper registration
-	 *
-	 * @since      4.5.0
-	 * 
-	 * @return void
-	 */
-	public static function register(): void {
-		$instance = new static();
-		$instance->add_filters();
-	}
-
-	/**
 	 * Add integration-specific filters.
 	 *
 	 * Sets up required filters and actions for htaccess caching.
@@ -83,6 +64,12 @@ class Htaccess_Cache extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+
+		// Bail if we shouldn't be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+
 		// Get the correct option name
 		$option_name = 'edge_images_feature_htaccess_caching';
 		
@@ -103,6 +90,24 @@ class Htaccess_Cache extends Integration {
 				$this->store_admin_notice($result);
 			}
 		}
+	}
+
+	/**
+	 * Check if this integration should filter.
+	 *
+	 * Determines if htaccess caching should be active.
+	 * This method:
+	 * - Checks feature status
+	 * - Validates settings
+	 * - Ensures requirements
+	 * - Controls processing
+	 *
+	 * @since      4.5.0
+	 * 
+	 * @return bool True if integration should be active, false otherwise.
+	 */
+	protected function should_filter() : bool {
+		return Features::is_enabled('htaccess_caching');
 	}
 
 	/**

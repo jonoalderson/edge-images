@@ -50,7 +50,13 @@ class Handler {
 		}
 
 		// Bail if we shouldn't be transforming images
-		if ( ! Helpers::should_transform_images() ) {
+		if (!Helpers::should_transform_images()) {
+			return;
+		}
+
+		// Bail if no valid provider is configured
+		$provider = Helpers::get_edge_provider();
+		if (!$provider || !$provider::is_configured()) {
 			return;
 		}
 
@@ -79,16 +85,16 @@ class Handler {
 		// First transform the attributes
 		add_filter('wp_get_attachment_image_attributes', [$this, 'transform_attachment_image'], 10, 3);
 		
-		// Then wrap in picture element
+		// Transform theme images
 		add_filter('wp_get_attachment_image', [$this, 'wrap_attachment_image'], 11, 5);
-		
-		// Finally enforce dimensions and cleanup
-		add_filter('wp_get_attachment_image_attributes', [$this, 'enforce_dimensions'], 12, 3);
-		add_filter('wp_get_attachment_image', [$this, 'cleanup_image_html'], 13, 5);
 
 		// Transform images in content
 		add_filter('wp_img_tag_add_width_and_height_attr', [$this, 'transform_image'], 5, 4);
-		add_filter('the_content', [$this, 'transform_content_images'], 5);
+		add_filter('the_content', [$this, 'transform_content_images'], 20);
+		
+		// Enforce dimensions and cleanup
+		add_filter('wp_get_attachment_image_attributes', [$this, 'enforce_dimensions'], 12, 3);
+		add_filter('wp_get_attachment_image', [$this, 'cleanup_image_html'], 999, 5);
 
 		// Ensure WordPress's default dimension handling still runs
 		add_filter('wp_img_tag_add_width_and_height_attr', '__return_true', 999);
@@ -335,101 +341,72 @@ class Handler {
 	/**
 	 * Wrap an attachment image in a picture element.
 	 *
-	 * Creates a responsive picture element wrapper around an image,
-	 * which provides better control over responsive images and art
-	 * direction. Handles various edge cases including:
-	 * - Existing anchor tags
-	 * - Icon images
-	 * - Custom attributes
-	 * - Dimension preservation
-	 *
 	 * @since 4.0.0
-	 * @param string       $html          The HTML img element markup.
-	 * @param int         $attachment_id Image attachment post ID.
-	 * @param string|array $size          Requested image size name or dimensions array.
-	 * @param bool|array   $attr_or_icon  Array of attributes or boolean for icon status.
-	 * @param bool|null    $icon          Whether the image should be treated as an icon.
-	 * @return string Modified HTML with picture element wrapper if appropriate.
+	 * 
+	 * @param string       $html         The HTML img element markup.
+	 * @param int         $attachment_id The attachment ID.
+	 * @param string|array $size         The registered image size or array of width and height values.
+	 * @param array|string $attr_or_icon Array of attributes or 'icon' if it's the fourth argument.
+	 * @param bool|null    $icon         Whether the image should be treated as an icon.
+	 * @return string The wrapped HTML.
 	 */
 	public function wrap_attachment_image(string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null): string {
-		
-		// Handle flexible parameter order
-		$attr = is_array($attr_or_icon) ? $attr_or_icon : [];
-		if (is_bool($attr_or_icon)) {
-			$icon = $attr_or_icon;
-			$attr = [];
-		}
 
-		// Skip if already wrapped or if picture wrapping is disabled.
-		if (strpos($html, '<picture') !== false || !Features::is_feature_enabled('picture_wrap')) {
+		// Skip if picture wrapping is disabled
+		if (!Features::is_feature_enabled('picture_wrap')) {
 			return $html;
 		}
 
-		// Extract any wrapping anchor tag
-		$has_link = false;
-		$link_open = '';
-		$link_close = '';
-		$working_html = $html;
-		
-		if (preg_match('/<a[^>]*>(.*?)<\/a>/s', $html, $matches)) {
-			$has_link = true;
-			$working_html = $matches[1]; // Get just the img tag
-			preg_match('/<a[^>]*>/', $matches[0], $link_matches);
-			$link_open = $link_matches[0];
-			$link_close = '</a>';
+		// Skip if already wrapped
+		if (strpos($html, '<picture') !== false) {
+			return $html;
 		}
 
-		// Extract dimensions directly from the img tag
-		$processor = new \WP_HTML_Tag_Processor($working_html);
-		if ($processor->next_tag('img')) {
-			$width = $processor->get_attribute('width');
-			$height = $processor->get_attribute('height');
-			if ($width && $height) {
-				$dimensions = [
-					'width' => (int) $width,
-					'height' => (int) $height
-				];
-				
-				// Create picture element with the dimensions from the img tag
-				$picture_html = Picture::create($working_html, $dimensions, '');
+		// Don't wrap the featured image, as that might cause display issues
+		if (strpos($html, 'attachment-post-thumbnail') !== false) {
+			return $html;
+		}
 
-				// If we have a link, wrap the picture element in it
-				if ($has_link) {
-					$picture_html = $link_open . $picture_html . $link_close;
+		// Skip if the figure has the no-picture class
+		if (strpos($html, 'edge-images-no-picture') !== false) {
+			return $html;
+		}
+
+		// Extract dimensions from the image
+		$processor = new \WP_HTML_Tag_Processor($html);
+		if (!$processor->next_tag('img')) {
+			return $html;
+		}
+
+		// If this is a block image, check if we should wrap it
+		if (strpos($html, 'wp-block-') !== false) {
+			foreach (self::$no_picture_wrap_blocks as $block_type) {
+				if (strpos($html, "wp-block-{$block_type}") !== false) {
+					return $html;
 				}
-
-				// If the original HTML had a figure, replace just the img/anchor tag within it
-				if (strpos($html, '<figure') !== false) {
-					$replace = $has_link ? '/<a[^>]*>.*?<\/a>/' : '/<img[^>]*>/';
-					return preg_replace($replace, $picture_html, $html);
-				}
-
-				return $picture_html;
 			}
 		}
 
-		// If we couldn't get dimensions from the img tag, try getting them from the size
-		$dimensions = $this->get_size_dimensions($size, $attachment_id);
-		if ($dimensions) {
-			// Create picture element with the dimensions from size
-			$picture_html = Picture::create($working_html, $dimensions, '');
+		$width = $processor->get_attribute('width');
+		$height = $processor->get_attribute('height');
 
-			// If we have a link, wrap the picture element in it
-			if ($has_link) {
-				$picture_html = $link_open . $picture_html . $link_close;
-			}
-
-			// If the original HTML had a figure, replace just the img/anchor tag within it
-			if (strpos($html, '<figure') !== false) {
-				$replace = $has_link ? '/<a[^>]*>.*?<\/a>/' : '/<img[^>]*>/';
-				return preg_replace($replace, $picture_html, $html);
-			}
-
-			return $picture_html;
+		if (!$width || !$height) {
+			return $html;
 		}
 
-		// If we still can't get dimensions, return the original HTML
-		return $html;
+		$dimensions = [
+			'width' => $width,
+			'height' => $height
+		];
+
+		// If we have a figure, extract its classes
+		$figure_classes = '';
+		if (strpos($html, '<figure') !== false) {
+			$figure_classes = $this->extract_figure_classes($html, []);
+		}
+
+		// Create picture element
+		return Picture::create($this->extract_img_tag($html) ?: $html, $dimensions, $figure_classes);
 	}
 
 	/**
@@ -443,6 +420,8 @@ class Handler {
 	 * @return string The transformed image HTML
 	 */
 	public function transform_image($value, string $image_html, string $context, $attachment_id): string {
+
+		
 		// Skip if already processed
 		if (Helpers::is_image_processed($image_html)) {
 			return $image_html;
@@ -459,6 +438,15 @@ class Handler {
 
 		// Check if picture wrapping is disabled or if we're in a block context (where wrapping happens later)
 		if (Features::is_disabled('picture_wrap') || $context === 'block') {
+			// If we had a figure tag originally, we should preserve it
+			if (strpos($image_html, '<figure') !== false) {
+				$figure_classes = $this->extract_figure_classes($image_html, []);
+				$img_html = $this->extract_img_tag($transformed);
+				if ($img_html) {
+					return str_replace($this->extract_img_tag($image_html), $img_html, $image_html);
+				}
+			}
+			
 			return $transformed;
 		}
 
@@ -468,11 +456,20 @@ class Handler {
 			return $transformed;
 		}
 
-		// If we have a figure, replace it with picture
+		// If we have a figure, check for no-picture class before replacing with picture
 		if (strpos($image_html, '<figure') !== false) {
 			$figure_classes = $this->extract_figure_classes($image_html, []);
-			$img_html = $this->extract_img_tag($transformed);
 			
+			// Skip picture wrapping if the figure has the no-picture class
+			if (strpos($figure_classes, 'edge-images-no-picture') !== false) {
+				$img_html = $this->extract_img_tag($transformed);
+				if ($img_html) {
+					return str_replace($this->extract_img_tag($image_html), $img_html, $image_html);
+				}
+				return $transformed;
+			}
+			
+			$img_html = $this->extract_img_tag($transformed);
 			return Picture::create($img_html, $dimensions, $figure_classes);
 		}
 
@@ -518,21 +515,8 @@ class Handler {
 	 * @return string Modified content.
 	 */
 	public function transform_content_images(string $content): string {
-		// Bail if we don't have any images
-		if (!str_contains($content, '<img')) {
-			return $content;
-		}
-
-		// Create a mock block to pass to the Blocks class
-		$block = [
-			'blockName' => 'core/paragraph',
-			'attrs' => [],
-			'innerHTML' => $content,
-			'innerContent' => [$content],
-		];
-
-		// Transform the content using the Blocks class
-		return Blocks::transform_block($content, $block);
+		$transformer = new Content_Transformer();
+		return $transformer->transform($content);
 	}
 
 	/**
@@ -573,7 +557,17 @@ class Handler {
 		// Create a processor from the HTML
 		$processor = new \WP_HTML_Tag_Processor($html);
 
-		// Bail if no img tag
+		// First check for a figure tag
+		if ($processor->next_tag('figure')) {
+			$classes = $processor->get_attribute('class');
+			if ($classes) {
+				$classes = implode(' ', array_diff(explode(' ', $classes), ['edge-images-no-picture']));
+				$processor->set_attribute('class', $classes);
+			}
+		}
+
+		// Now process the img tag
+		$processor = new \WP_HTML_Tag_Processor($processor->get_updated_html());
 		if (!$processor->next_tag('img')) {
 			return $html;
 		}
@@ -584,6 +578,7 @@ class Handler {
 		return $processor->get_updated_html();
 	}
 }
+
 
 
 

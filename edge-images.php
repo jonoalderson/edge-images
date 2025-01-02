@@ -7,13 +7,13 @@
  * @license   GPL-2.0-or-later
  * @link      https://www.jonoalderson.com/
  * @since     1.0.0
- * @version   4.5.4
+ * @version   4.5.5
  *
  * @wordpress-plugin
  * Plugin Name:       Edge Images
  * Plugin URI:        https://www.jonoalderson.com/
  * Description:       Routes images through edge providers (like Cloudflare or Accelerated Domains) for automatic optimization and transformation. Improves page speed and image loading performance.
- * Version:           4.5.4
+ * Version:           4.5.5
  * Requires PHP:      7.4
  * Requires at least: 5.6
  * Tested up to:      6.4
@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'EDGE_IMAGES_VERSION', '4.5.4' );
+define( 'EDGE_IMAGES_VERSION', '4.5.5' );
 define( 'EDGE_IMAGES_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EDGE_IMAGES_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

@@ -175,11 +175,36 @@ abstract class Edge_Provider {
 	protected function validate_args(array $args): array {
 		$validated = [];
 		foreach ($args as $key => $value) {
-			$canonical = self::get_canonical_arg($key);
-			if ($canonical && $this->is_valid_value($canonical, $value)) {
-				$validated[$canonical] = $value;
+			$original_key = $key;
+			$key = strtolower($key);
+			
+			// Handle direct matches in valid_args
+			if (isset(self::$valid_args[$key])) {
+				if ($this->is_valid_value($key, $value)) {
+					$validated[$key] = $value;
+				}
+				continue;
+			}
+			
+			// Handle aliases
+			foreach (self::$valid_args as $canonical => $aliases) {
+				if ($aliases && in_array($key, $aliases, true)) {
+					if ($this->is_valid_value($canonical, $value)) {
+						$validated[$canonical] = $value;
+					}
+					break;
+				}
 			}
 		}
+
+		// Ensure fit and dpr are preserved if valid
+		if (isset($args['fit']) && $this->is_valid_value('fit', $args['fit'])) {
+			$validated['fit'] = $args['fit'];
+		}
+		if (isset($args['dpr']) && $this->is_valid_value('dpr', $args['dpr'])) {
+			$validated['dpr'] = (int) $args['dpr'];
+		}
+
 		return $validated;
 	}
 
@@ -282,13 +307,13 @@ abstract class Edge_Provider {
 	 * @return void
 	 */
 	private function normalize_args(): void {
-		// Merge with default args
+		// Merge defaults with provided args, ensuring provided args take precedence
 		$this->args = array_merge($this->default_edge_args, $this->args);
 
-		// Convert numeric values to integers where appropriate
-		foreach (['w', 'h', 'dpr', 'q', 'blur', 'brightness', 'contrast', 'gamma', 'sharpen', 'trim', 'rot'] as $numeric_arg) {
-			if (isset($this->args[$numeric_arg])) {
-				$this->args[$numeric_arg] = (int) $this->args[$numeric_arg];
+		// Convert numeric values
+		foreach ($this->args as $key => $value) {
+			if (is_numeric($value)) {
+				$this->args[$key] = (int) $value;
 			}
 		}
 	}
@@ -301,7 +326,10 @@ abstract class Edge_Provider {
 	 * @return array The transformation arguments.
 	 */
 	protected function get_transform_args(): array {
-		return $this->args;
+		// Sort args alphabetically by key
+		$args = $this->args;
+		ksort($args);
+		return $args;
 	}
 
 	/**
@@ -313,6 +341,8 @@ abstract class Edge_Provider {
 	 * @return string|null The canonical form, or null if not found.
 	 */
 	public static function get_canonical_arg(string $arg): ?string {
+		$arg = strtolower($arg);
+
 		// If it's already a canonical arg, return it
 		if (isset(self::$valid_args[$arg])) {
 			return $arg;
@@ -320,7 +350,7 @@ abstract class Edge_Provider {
 
 		// Search through aliases
 		foreach (self::$valid_args as $canonical => $aliases) {
-			if ($aliases && in_array($arg, $aliases, true)) {
+			if ($aliases && in_array($arg, array_map('strtolower', $aliases), true)) {
 				return $canonical;
 			}
 		}
@@ -361,7 +391,10 @@ abstract class Edge_Provider {
 	 */
 	public static function clean_transformed_url(string $url): string {
 		$pattern = static::get_transform_pattern();
-		return preg_replace($pattern, '', $url);
+		// Escape forward slashes and ensure proper delimiters
+		$pattern = '#' . str_replace('#', '\\#', $pattern) . '#';
+		$cleaned_url = preg_replace($pattern, '', $url);
+		return $cleaned_url === null ? $url : $cleaned_url;
 	}
 
 	/**

@@ -45,12 +45,30 @@ abstract class Block {
 	protected function extract_classes(string $block_content, array $block = []): array {
 		$classes = [];
 
+		// Get classes from block attributes if available
+		if (!empty($block['attrs']['className'])) {
+			$classes = array_merge($classes, array_filter(explode(' ', $block['attrs']['className'])));
+		}
+
 		// Create a processor for the element
 		$processor = new \WP_HTML_Tag_Processor($block_content);
-		if ($processor->next_tag()) {
-			$element_classes = $processor->get_attribute('class');
-			if ($element_classes) {
-				$classes = array_filter(explode(' ', $element_classes));
+
+		// First try to get classes from figure tag
+		if ($processor->next_tag('figure')) {
+			$figure_classes = $processor->get_attribute('class');
+			if ($figure_classes) {
+				$classes = array_merge($classes, array_filter(explode(' ', $figure_classes)));
+			}
+		}
+
+		// Reset processor and try img tag if no figure classes found
+		if (empty($classes)) {
+			$processor = new \WP_HTML_Tag_Processor($block_content);
+			if ($processor->next_tag('img')) {
+				$img_classes = $processor->get_attribute('class');
+				if ($img_classes) {
+					$classes = array_merge($classes, array_filter(explode(' ', $img_classes)));
+				}
 			}
 		}
 
@@ -129,7 +147,7 @@ abstract class Block {
 		return Picture::create(
 			$img_html,
 			$dimensions,
-			implode(' ', array_merge($classes, ['edge-images-container']))
+			implode(' ', $classes)
 		);
 	}
 
@@ -149,15 +167,60 @@ abstract class Block {
 	}
 
 	/**
-	 * Transform an image using the Handler.
+	 * Extract image HTML from content.
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param string $img_html The image HTML.
+	 * @param string $content The content to extract from.
+	 * @return string|null The image HTML or null if not found.
+	 */
+	protected function extract_image(string $content): ?string {
+		if (preg_match('/<img[^>]+>/', $content, $matches)) {
+			return $matches[0];
+		}
+		return null;
+	}
+
+	/**
+	 * Transform an image tag.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $img_html The image HTML to transform.
+	 * @param string $context The transformation context.
 	 * @return string The transformed image HTML.
 	 */
-	protected function transform_image(string $img_html): string {
-		$handler = new Handler();
-		return $handler->transform_image(true, $img_html, 'block', 0);
+	protected function transform_image(string $img_html, string $context): string {
+		// Skip if already processed
+		if (Helpers::is_image_processed($img_html)) {
+			return $img_html;
+		}
+
+		// Create processor for transformation
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if (!$processor->next_tag('img')) {
+			return $img_html;
+		}
+
+		// Get the attachment ID if available
+		$attachment_id = Helpers::get_attachment_id_from_classes($processor);
+
+		// Get and constrain dimensions
+		$dimensions = Image_Dimensions::from_html($processor);
+
+		if (!$dimensions && $attachment_id) {
+			$dimensions = Image_Dimensions::from_attachment($attachment_id);
+		}
+
+		if ($dimensions) {
+			$dimensions = Image_Dimensions::constrain_to_content_width($dimensions);
+			$processor->set_attribute('width', $dimensions['width']);
+			$processor->set_attribute('height', $dimensions['height']);
+		}
+
+		// Transform the image
+		$processor = Images::transform_image_tag($processor, $attachment_id, $img_html, $context);
+		return $processor->get_updated_html();
 	}
+
 }
