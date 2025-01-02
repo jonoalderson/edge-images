@@ -20,7 +20,7 @@
 
 namespace Edge_Images\Features;
 
-use Edge_Images\{Integration, Features, Images};
+use Edge_Images\{Integration, Features, Images, Image_Dimensions, Helpers};
 
 class Picture extends Integration {
 
@@ -52,7 +52,6 @@ class Picture extends Integration {
 	 * @return string The wrapped HTML.
 	 */
 	public static function create(string $img_html, array $dimensions, string $class = ''): string {
-
 		// Skip if already wrapped
 		if (strpos($img_html, '<picture') !== false) {
 			return $img_html;
@@ -62,12 +61,13 @@ class Picture extends Integration {
 		$img_html = self::transform_image_urls($img_html, $dimensions);
 
 		// Build classes array
-		$classes = ['edge-images-container'];
+		$classes = [];
 		if ($class) {
 			// Split the class string and merge with existing classes
 			$additional_classes = array_filter(explode(' ', $class));
 			$classes = array_merge($classes, $additional_classes);
 		}
+		$classes[] = 'edge-images-container';
 
 		// Build inline styles
 		$style_array = [
@@ -93,6 +93,112 @@ class Picture extends Integration {
 	}
 
 	/**
+	 * Transform a figure element into a picture element.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $html The HTML containing a figure element.
+	 * @param string $img_html The image HTML within the figure.
+	 * @param array  $dimensions The image dimensions.
+	 * @return string|null The transformed HTML, or null if transformation not possible/needed.
+	 */
+	public static function transform_figure(string $html, string $img_html, array $dimensions): ?string {
+		// Skip if picture wrapping is disabled
+		if (!Features::is_feature_enabled('picture_wrap')) {
+			return null;
+		}
+
+		// Skip if already wrapped
+		if (strpos($html, '<picture') !== false) {
+			return null;
+		}
+
+		// Extract just the img tag from the transformed HTML
+		$img_tag = Helpers::extract_img_tag($img_html);
+		if (!$img_tag) {
+			return null;
+		}
+
+		// Extract the figure classes
+		$figure_classes = Helpers::extract_figure_classes($html);
+		
+		// Skip picture wrapping if the figure has the no-picture class
+		if (strpos($figure_classes, 'edge-images-no-picture') !== false) {
+			return null;
+		}
+
+		// Create picture element with figure classes
+		$picture = self::create($img_tag, $dimensions, $figure_classes);
+
+		// Replace the entire figure with the picture
+		return str_replace($html, $picture, $html);
+	}
+
+	/**
+	 * Check if an image should be wrapped in a picture element.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $html The HTML to check.
+	 * @param string $context Optional context (e.g., 'block', 'content', 'attachment').
+	 * @return bool Whether the image should be wrapped.
+	 */
+	public static function should_wrap(string $html, string $context = ''): bool {
+		// Debug for specific image
+		if (strpos($html, '51WkQa3KNRL') !== false) {
+			error_log('DEBUG 51WkQa3KNRL - In should_wrap');
+			error_log('Context: ' . $context);
+			error_log('HTML: ' . $html);
+		}
+
+		// Skip if picture wrapping is disabled
+		if (!Features::is_feature_enabled('picture_wrap')) {
+			if (strpos($html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Picture wrapping disabled');
+			}
+			return false;
+		}
+
+		// Skip if already wrapped
+		if (strpos($html, '<picture') !== false) {
+			if (strpos($html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Already wrapped in picture');
+			}
+			return false;
+		}
+
+		// Skip if has no-picture class
+		if (strpos($html, 'edge-images-no-picture') !== false) {
+			if (strpos($html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Has no-picture class');
+			}
+			return false;
+		}
+
+		// Skip featured images
+		if (strpos($html, 'attachment-post-thumbnail') !== false) {
+			if (strpos($html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Is featured image');
+			}
+			return false;
+		}
+
+		// Skip if in gallery context
+		if (in_array($context, ['gallery'], true)) {
+			if (strpos($html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Is in gallery context');
+			}
+			return false;
+		}
+
+		if (strpos($html, '51WkQa3KNRL') !== false) {
+			error_log('DEBUG 51WkQa3KNRL - Should wrap: true');
+		}
+
+		return true;
+	}
+
+	/**
 	 * Transform image URLs in HTML.
 	 *
 	 * @since 4.5.0
@@ -103,7 +209,6 @@ class Picture extends Integration {
 	 * @return string The transformed HTML.
 	 */
 	private static function transform_image_urls(string $img_html, array $dimensions, ?string $sizes = null): string {
-
 		// Create a processor for the image
 		$processor = new \WP_HTML_Tag_Processor($img_html);
 
@@ -121,23 +226,15 @@ class Picture extends Integration {
 	/**
 	 * Build a CSS style string from an array of properties.
 	 *
-	 * Creates a formatted CSS style string from property-value pairs.
-	 * This method:
-	 * - Processes style arrays
-	 * - Formats properties
-	 * - Combines values
-	 * - Ensures proper syntax
-	 * - Maintains consistency
-	 *
-	 * @since      4.5.0
+	 * @since 4.5.0
 	 * 
-	 * @param  array  $styles Array of CSS properties and their values.
-	 * @return string        The compiled CSS style string.
+	 * @param array $styles Array of style properties.
+	 * @return string The formatted style string.
 	 */
 	private static function build_style_string(array $styles): string {
 		$style_parts = [];
 		foreach ($styles as $property => $value) {
-			$style_parts[] = sprintf('%s: %s', $property, $value);
+			$style_parts[] = $property . ': ' . $value;
 		}
 		return implode('; ', $style_parts);
 	}

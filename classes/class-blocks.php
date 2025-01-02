@@ -50,10 +50,10 @@ class Blocks {
 
 		// Register block patterns
 		self::$block_patterns = [
-			// Gallery pattern - must have both wp-block-gallery AND has-nested-images classes
-			'gallery' => '/<figure[^>]*class="[^"]*\bwp-block-gallery\b[^"]*\bhas-nested-images\b[^"]*"[^>]*>(?:(?!<figure[^>]*>|<\/figure>).|\r|\n|<figure[^>]*>(?:(?!<figure[^>]*>|<\/figure>).|\r|\n)*<\/figure>)*<\/figure>/s',
-			// Image pattern - must have wp-block-image class but NOT be inside a gallery
-			'image' => '/<figure[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>(?:(?!<figure[^>]*class="[^"]*\bwp-block-gallery\b[^"]*"[^>]*>).)*?<\/figure>/s',
+			// Gallery pattern - matches the outer gallery wrapper and all nested figures
+			'gallery' => '/<figure[^>]*\bwp-block-gallery\b[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*|<figure[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*)*<\/figure>)*<\/figure>/s',
+			// Image pattern - matches figures with wp-block-image class
+			'image' => '/<figure[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>.*?<\/figure>/s',
 		];
 
 

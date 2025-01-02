@@ -19,28 +19,67 @@ class Gallery extends Block {
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param string $block_content The block content.
-	 * @param array  $block         The block data.
+	 * @param string $block_html The block content.
+	 * @param array  $block      The block data.
 	 * @return string The transformed block content.
 	 */
-	public function transform(string $block_content, array $block): string {
+	public function transform(string $block_html, array $block): string {
+		
+		// Create a processor for the block HTML
+		$processor = new \WP_HTML_Tag_Processor($block_html);
 
-		// Only add no-picture class if picture wrapping is enabled
-		if (!Features::is_feature_enabled('picture_wrap')) {
-			return $block_content;
+		// First pass: Add no-picture class to all figures and processed class to gallery wrapper
+		$first_figure = true;
+		while ($processor->next_tag('figure')) {
+			$class = $processor->get_attribute('class');
+			if ($first_figure) {
+				// Add both classes to the gallery wrapper
+				$processor->set_attribute('class', trim($class . ' edge-images-no-picture edge-images-processed'));
+				$first_figure = false;
+			} else {
+				// Add only no-picture class to nested figures
+				if (!str_contains($class ?? '', 'edge-images-no-picture')) {
+					$processor->set_attribute('class', trim($class . ' edge-images-no-picture'));
+				}
+			}
 		}
 
-		$processor = new \WP_HTML_Tag_Processor($block_content);
+		// Get the updated HTML
+		$updated_html = $processor->get_updated_html();
 
-		// Skip the outer wrapper figure tag.
-		$processor->next_tag('figure');
+		// Second pass: Transform images
+		$processor = new \WP_HTML_Tag_Processor($updated_html);
+		while ($processor->next_tag('img')) {
 
-		// Process all nested figure tags.
-		while ($processor->next_tag('figure')) {
-			$existing_class = $processor->get_attribute('class') ?? '';
-			$new_class = trim($existing_class . ' edge-images-no-picture');
-			$processor->set_attribute('class', $new_class);
-		
+			// Skip if already processed
+			if (strpos($processor->get_attribute('class') ?? '', 'edge-images-processed') !== false) {
+				continue;
+			}
+
+			// Get current src and dimensions
+			$src = $processor->get_attribute('src');
+			$width = $processor->get_attribute('width');
+			$height = $processor->get_attribute('height');
+
+			if (!$src || !$width || !$height) {
+				continue;
+			}
+
+			// Transform the image URLs directly
+			Images::transform_image_urls(
+				$processor,
+				[
+					'width' => $width,
+					'height' => $height
+				],
+				$updated_html,
+				'gallery',
+				[]
+			);
+
+			// Add processed class
+			$class = $processor->get_attribute('class');
+			$processor->set_attribute('class', trim($class . ' edge-images-processed'));
 		}
 
 		return $processor->get_updated_html();

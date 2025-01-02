@@ -89,9 +89,8 @@ class Handler {
 		// Transform theme images
 		add_filter('wp_get_attachment_image', [$this, 'wrap_attachment_image'], 11, 5);
 
-		// Transform images in content
+		// Transform images in content - move this after the_content filter
 		add_filter('wp_img_tag_add_width_and_height_attr', [$this, 'transform_image'], 5, 4);
-		add_filter('the_content', [$this, 'transform_content_images'], 20);
 		
 		// Enforce dimensions and cleanup
 		add_filter('wp_get_attachment_image_attributes', [$this, 'enforce_dimensions'], 12, 3);
@@ -99,6 +98,9 @@ class Handler {
 
 		// Ensure WordPress's default dimension handling still runs
 		add_filter('wp_img_tag_add_width_and_height_attr', '__return_true', 999);
+
+		// Transform content images last
+		add_filter('the_content', [$this, 'transform_content_images'], 20);
 
 		// Enqueue styles
 		add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);
@@ -352,24 +354,8 @@ class Handler {
 	 * @return string The wrapped HTML.
 	 */
 	public function wrap_attachment_image(string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null): string {
-
-		// Skip if picture wrapping is disabled
-		if (!Features::is_feature_enabled('picture_wrap')) {
-			return $html;
-		}
-
-		// Skip if already wrapped
-		if (strpos($html, '<picture') !== false) {
-			return $html;
-		}
-
-		// Don't wrap the featured image, as that might cause display issues
-		if (strpos($html, 'attachment-post-thumbnail') !== false) {
-			return $html;
-		}
-
-		// Skip if the figure has the no-picture class
-		if (strpos($html, 'edge-images-no-picture') !== false) {
+		// Check if we should wrap this image
+		if (!Picture::should_wrap($html, 'attachment')) {
 			return $html;
 		}
 
@@ -391,14 +377,17 @@ class Handler {
 			'height' => $height
 		];
 
-		// If we have a figure, extract its classes
-		$figure_classes = '';
-		if (strpos($html, '<figure') !== false) {
-			$figure_classes = Helpers::extract_figure_classes($html);
+		// If we have a figure, try to transform it
+		$img_html = Helpers::extract_img_tag($html);
+		if ($img_html && strpos($html, '<figure') !== false) {
+			$picture = Picture::transform_figure($html, $img_html, $dimensions);
+			if ($picture) {
+				return $picture;
+			}
 		}
 
-		// Create picture element
-		return Picture::create(Helpers::extract_img_tag($html) ?: $html, $dimensions, $figure_classes);
+		// Otherwise create picture element with just the image
+		return Picture::create($img_html ?: $html, $dimensions);
 	}
 
 	/**
@@ -411,59 +400,82 @@ class Handler {
 	 * 
 	 * @return string The transformed image HTML
 	 */
-	public function transform_image($value, string $image_html, string $context, $attachment_id): string {
-		// Skip if already processed
-		if (Helpers::is_image_processed($image_html)) {
+	public function transform_image($image_html, $attachment_id = null, $context = ''): string {
+		// Debug for specific image
+		if (strpos($image_html, '51WkQa3KNRL') !== false) {
+			error_log('DEBUG 51WkQa3KNRL - Starting transform_image');
+			error_log('Context: ' . $context);
+			error_log('Attachment ID: ' . ($attachment_id ?? 'null'));
+			error_log('Original HTML: ' . $image_html);
+		}
+
+		// Bail if SVG.
+		if (Helpers::is_svg($image_html)) {
+			if (strpos($image_html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Bailing: Is SVG');
+			}
 			return $image_html;
 		}
 
+		// Create a processor for the image HTML.
 		$processor = new \WP_HTML_Tag_Processor($image_html);
 		if (!$processor->next_tag('img')) {
+			if (strpos($image_html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Bailing: No img tag found');
+			}
 			return $image_html;
 		}
 
-		// Transform the image with context
+		// Transform the image tag.
 		$processor = Images::transform_image_tag($processor, $attachment_id, $image_html, $context);
 		$transformed = $processor->get_updated_html();
 
-		// Check if picture wrapping is disabled or if we're in a block context (where wrapping happens later)
-		if (Features::is_disabled('picture_wrap') || $context === 'block') {
+		if (strpos($image_html, '51WkQa3KNRL') !== false) {
+			error_log('DEBUG 51WkQa3KNRL - After transform_image_tag: ' . $transformed);
+		}
+
+		// If we shouldn't wrap in picture, return the transformed image.
+		if (!Picture::should_wrap($transformed, $context)) {
+			if (strpos($image_html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - Not wrapping in picture. Context: ' . $context);
+			}
 			// If we had a figure tag originally, we should preserve it
 			if (strpos($image_html, '<figure') !== false) {
-				$figure_classes = Helpers::extract_figure_classes($image_html);
 				$img_html = Helpers::extract_img_tag($transformed);
 				if ($img_html) {
+					if (strpos($image_html, '51WkQa3KNRL') !== false) {
+						error_log('DEBUG 51WkQa3KNRL - Preserving figure tag');
+					}
 					return str_replace(Helpers::extract_img_tag($image_html), $img_html, $image_html);
 				}
 			}
-			
 			return $transformed;
 		}
 
 		// Get dimensions for the picture element
-		$dimensions = Image_Dimensions::from_html(new \WP_HTML_Tag_Processor($transformed));
+		$processor->next_tag('img');  // Reset to the img tag
+		$dimensions = Image_Dimensions::from_html($processor);
+		
 		if (!$dimensions) {
+			if (strpos($image_html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - No dimensions from HTML');
+			}
+			// Try getting dimensions from attachment as fallback
+			$dimensions = Image_Dimensions::from_attachment($attachment_id);
+		}
+
+		if (!$dimensions) {
+			if (strpos($image_html, '51WkQa3KNRL') !== false) {
+				error_log('DEBUG 51WkQa3KNRL - No dimensions at all, returning transformed');
+			}
 			return $transformed;
 		}
 
-		// If we have a figure, check for no-picture class before replacing with picture
-		if (strpos($image_html, '<figure') !== false) {
-			$figure_classes = Helpers::extract_figure_classes($image_html);
-			
-			// Skip picture wrapping if the figure has the no-picture class
-			if (strpos($figure_classes, 'edge-images-no-picture') !== false) {
-				$img_html = Helpers::extract_img_tag($transformed);
-				if ($img_html) {
-					return str_replace(Helpers::extract_img_tag($image_html), $img_html, $image_html);
-				}
-				return $transformed;
-			}
-			
-			$img_html = Helpers::extract_img_tag($transformed);
-			return Picture::create($img_html, $dimensions, $figure_classes);
+		if (strpos($image_html, '51WkQa3KNRL') !== false) {
+			error_log('DEBUG 51WkQa3KNRL - Creating picture element with dimensions: ' . print_r($dimensions, true));
 		}
 
-		// Otherwise create picture element with just the image
+		// Create picture element
 		return Picture::create($transformed, $dimensions);
 	}
 

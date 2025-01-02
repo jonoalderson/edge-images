@@ -42,18 +42,14 @@ class Image_Dimensions {
         $width = $processor->get_attribute( 'width' );
         $height = $processor->get_attribute( 'height' );
 
-        // Handle both string and numeric values
-        if ( $width !== null && $height !== null ) {
-            // Convert to numeric values to validate
-            $numeric_width = is_numeric($width) ? (int)$width : null;
-            $numeric_height = is_numeric($height) ? (int)$height : null;
+        $numeric_width = is_numeric($width) ? (float)$width : 0;
+        $numeric_height = is_numeric($height) ? (float)$height : 0;
 
-            if ($numeric_width && $numeric_height && $numeric_width > 0 && $numeric_height > 0) {
-                return [
-                    'width' => (string)$numeric_width,
-                    'height' => (string)$numeric_height,
-                ];
-            }
+        if ($numeric_width > 0 && $numeric_height > 0) {
+            return [
+                'width' => (string)$numeric_width,
+                'height' => (string)$numeric_height,
+            ];
         }
 
         return null;
