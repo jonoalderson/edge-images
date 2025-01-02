@@ -401,28 +401,14 @@ class Handler {
 	 * @return string The transformed image HTML
 	 */
 	public function transform_image($image_html, $attachment_id = null, $context = ''): string {
-		// Debug for specific image
-		if (strpos($image_html, '51WkQa3KNRL') !== false) {
-			error_log('DEBUG 51WkQa3KNRL - Starting transform_image');
-			error_log('Context: ' . $context);
-			error_log('Attachment ID: ' . ($attachment_id ?? 'null'));
-			error_log('Original HTML: ' . $image_html);
-		}
-
 		// Bail if SVG.
 		if (Helpers::is_svg($image_html)) {
-			if (strpos($image_html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Bailing: Is SVG');
-			}
 			return $image_html;
 		}
 
 		// Create a processor for the image HTML.
 		$processor = new \WP_HTML_Tag_Processor($image_html);
 		if (!$processor->next_tag('img')) {
-			if (strpos($image_html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Bailing: No img tag found');
-			}
 			return $image_html;
 		}
 
@@ -430,22 +416,12 @@ class Handler {
 		$processor = Images::transform_image_tag($processor, $attachment_id, $image_html, $context);
 		$transformed = $processor->get_updated_html();
 
-		if (strpos($image_html, '51WkQa3KNRL') !== false) {
-			error_log('DEBUG 51WkQa3KNRL - After transform_image_tag: ' . $transformed);
-		}
-
 		// If we shouldn't wrap in picture, return the transformed image.
 		if (!Picture::should_wrap($transformed, $context)) {
-			if (strpos($image_html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Not wrapping in picture. Context: ' . $context);
-			}
 			// If we had a figure tag originally, we should preserve it
 			if (strpos($image_html, '<figure') !== false) {
 				$img_html = Helpers::extract_img_tag($transformed);
 				if ($img_html) {
-					if (strpos($image_html, '51WkQa3KNRL') !== false) {
-						error_log('DEBUG 51WkQa3KNRL - Preserving figure tag');
-					}
 					return str_replace(Helpers::extract_img_tag($image_html), $img_html, $image_html);
 				}
 			}
@@ -457,22 +433,12 @@ class Handler {
 		$dimensions = Image_Dimensions::from_html($processor);
 		
 		if (!$dimensions) {
-			if (strpos($image_html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - No dimensions from HTML');
-			}
 			// Try getting dimensions from attachment as fallback
 			$dimensions = Image_Dimensions::from_attachment($attachment_id);
 		}
 
 		if (!$dimensions) {
-			if (strpos($image_html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - No dimensions at all, returning transformed');
-			}
 			return $transformed;
-		}
-
-		if (strpos($image_html, '51WkQa3KNRL') !== false) {
-			error_log('DEBUG 51WkQa3KNRL - Creating picture element with dimensions: ' . print_r($dimensions, true));
 		}
 
 		// Create picture element

@@ -46,15 +46,26 @@ class Picture extends Integration {
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param string $img_html   The image HTML to wrap.
-	 * @param array  $dimensions The image dimensions.
-	 * @param string $class      Optional additional class.
+	 * @param string     $img_html   The image HTML to wrap.
+	 * @param array|null $dimensions The image dimensions.
+	 * @param string     $class      Optional additional class.
 	 * @return string The wrapped HTML.
 	 */
-	public static function create(string $img_html, array $dimensions, string $class = ''): string {
+	public static function create(string $img_html, ?array $dimensions, string $class = ''): string {
 		// Skip if already wrapped
 		if (strpos($img_html, '<picture') !== false) {
 			return $img_html;
+		}
+
+		// Try to get dimensions from the image tag if not provided
+		if (!$dimensions) {
+			$processor = new \WP_HTML_Tag_Processor($img_html);
+			if ($processor->next_tag('img')) {
+				$dimensions = Image_Dimensions::from_html($processor);
+			}
+			if (!$dimensions) {
+				return $img_html;
+			}
 		}
 
 		// Transform the image URLs
@@ -97,12 +108,12 @@ class Picture extends Integration {
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param string $html The HTML containing a figure element.
-	 * @param string $img_html The image HTML within the figure.
-	 * @param array  $dimensions The image dimensions.
+	 * @param string     $html The HTML containing a figure element.
+	 * @param string     $img_html The image HTML within the figure.
+	 * @param array|null $dimensions The image dimensions.
 	 * @return string|null The transformed HTML, or null if transformation not possible/needed.
 	 */
-	public static function transform_figure(string $html, string $img_html, array $dimensions): ?string {
+	public static function transform_figure(string $html, string $img_html, ?array $dimensions): ?string {
 		// Skip if picture wrapping is disabled
 		if (!Features::is_feature_enabled('picture_wrap')) {
 			return null;
@@ -127,6 +138,14 @@ class Picture extends Integration {
 			return null;
 		}
 
+		// Try to get dimensions from the image tag if not provided
+		if (!$dimensions) {
+			$processor = new \WP_HTML_Tag_Processor($img_tag);
+			if ($processor->next_tag('img')) {
+				$dimensions = Image_Dimensions::from_html($processor);
+			}
+		}
+
 		// Create picture element with figure classes
 		$picture = self::create($img_tag, $dimensions, $figure_classes);
 
@@ -144,55 +163,29 @@ class Picture extends Integration {
 	 * @return bool Whether the image should be wrapped.
 	 */
 	public static function should_wrap(string $html, string $context = ''): bool {
-		// Debug for specific image
-		if (strpos($html, '51WkQa3KNRL') !== false) {
-			error_log('DEBUG 51WkQa3KNRL - In should_wrap');
-			error_log('Context: ' . $context);
-			error_log('HTML: ' . $html);
-		}
-
 		// Skip if picture wrapping is disabled
 		if (!Features::is_feature_enabled('picture_wrap')) {
-			if (strpos($html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Picture wrapping disabled');
-			}
 			return false;
 		}
 
 		// Skip if already wrapped
 		if (strpos($html, '<picture') !== false) {
-			if (strpos($html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Already wrapped in picture');
-			}
 			return false;
 		}
 
 		// Skip if has no-picture class
 		if (strpos($html, 'edge-images-no-picture') !== false) {
-			if (strpos($html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Has no-picture class');
-			}
 			return false;
 		}
 
 		// Skip featured images
 		if (strpos($html, 'attachment-post-thumbnail') !== false) {
-			if (strpos($html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Is featured image');
-			}
 			return false;
 		}
 
 		// Skip if in gallery context
 		if (in_array($context, ['gallery'], true)) {
-			if (strpos($html, '51WkQa3KNRL') !== false) {
-				error_log('DEBUG 51WkQa3KNRL - Is in gallery context');
-			}
 			return false;
-		}
-
-		if (strpos($html, '51WkQa3KNRL') !== false) {
-			error_log('DEBUG 51WkQa3KNRL - Should wrap: true');
 		}
 
 		return true;
