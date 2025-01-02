@@ -39,6 +39,12 @@ class Avatars extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+
+		// Only add filters if we should be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+
 		add_filter('get_avatar_url', [$this, 'transform_avatar_url'], 10, 3);
 		add_filter('get_avatar', [$this, 'transform_avatar_html'], 10, 6);
 	}
@@ -62,6 +68,7 @@ class Avatars extends Integration {
 	 * @return string             The transformed avatar URL.
 	 */
 	public function transform_avatar_url( string $url, $id_or_email, array $args ): string {
+
 		// Skip if URL is empty or remote.
 		if ( empty( $url ) || ! Helpers::is_local_url( $url ) ) {
 			return $url;
@@ -103,6 +110,11 @@ class Avatars extends Integration {
 	 * @return string             The transformed avatar HTML.
 	 */
 	public function transform_avatar_html( string $avatar, $id_or_email, int $size, string $default, string $alt, array $args ): string {
+		// Skip if in admin
+		if (is_admin()) {
+			return $avatar;
+		}
+
 		// Skip if avatar is empty.
 		if ( empty( $avatar ) ) {
 			return $avatar;

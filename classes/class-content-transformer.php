@@ -108,6 +108,8 @@ class Content_Transformer {
      * @return string Modified content.
      */
     private function transform_standalone_images(string $content): string {
+
+        // Bail if we don't have any images
         if (!preg_match_all('/<img[^>]+>/', $content, $matches)) {
             return $content;
         }

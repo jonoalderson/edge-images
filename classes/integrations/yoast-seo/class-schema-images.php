@@ -57,6 +57,12 @@ class Schema_Images extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+
+		// Bail if we shouldn't be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+		
 		add_filter('wpseo_schema_imageobject', [$this, 'transform_schema_image'], 10, 3);
 		add_filter('wpseo_schema_organization', [$this, 'edge_organization_logo']);
 		add_filter('wpseo_schema_webpage', [$this, 'edge_thumbnail']);

@@ -346,4 +346,5 @@ class Image_Dimensions {
             'height' => (string) round( $height * $ratio ),
         ];
     }
+
 } 

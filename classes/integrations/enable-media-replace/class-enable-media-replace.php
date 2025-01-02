@@ -38,6 +38,12 @@ class Enable_Media_Replace extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+
+		// Bail if we shouldn't be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+
 		add_action('enable-media-replace-upload-done', [Cache::class, 'purge_attachment'], 10, 3);
 	}
 } 

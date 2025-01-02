@@ -50,7 +50,13 @@ class Handler {
 		}
 
 		// Bail if we shouldn't be transforming images
-		if ( ! Helpers::should_transform_images() ) {
+		if (!Helpers::should_transform_images()) {
+			return;
+		}
+
+		// Bail if no valid provider is configured
+		$provider = Helpers::get_edge_provider();
+		if (!$provider || !$provider::is_configured()) {
 			return;
 		}
 

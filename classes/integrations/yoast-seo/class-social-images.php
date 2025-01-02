@@ -61,6 +61,12 @@ class Social_Images extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+
+		// Bail if we shouldn't be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+		
 		add_filter('wpseo_opengraph_image', [$this, 'transform_social_image']);
 		add_filter('wpseo_twitter_image', [$this, 'transform_social_image']);
 	}

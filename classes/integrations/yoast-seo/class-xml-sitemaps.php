@@ -61,6 +61,12 @@ class XML_Sitemaps extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
+
+		// Bail if we shouldn't be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+
 		add_filter('wpseo_xml_sitemap_img_src', [$this, 'transform_sitemap_image']);
 	}
 

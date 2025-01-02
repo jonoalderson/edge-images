@@ -26,6 +26,14 @@ use Edge_Images\{Edge_Provider, Helpers};
 class Accelerated_Domains extends Edge_Provider {
 
 	/**
+	 * Cache of transformed URLs.
+	 *
+	 * @since 4.5.0
+	 * @var array<string,string>
+	 */
+	private static array $url_cache = [];
+
+	/**
 	 * The root of the Accelerated Domains edge URL.
 	 *
 	 * This path identifies Accelerated Domains' image transformation endpoint.
@@ -40,20 +48,8 @@ class Accelerated_Domains extends Edge_Provider {
 	/**
 	 * Get the edge URL for an image.
 	 *
-	 * Transforms the image URL into an Accelerated Domains-compatible format with
-	 * transformation parameters. This method:
-	 * - Combines the rewrite domain with the endpoint
-	 * - Maps standard parameters to full names
-	 * - Constructs the CDN URL
-	 * - Handles parameter formatting
-	 * - Ensures proper URL structure
-	 * - Escapes the final URL
-	 *
-	 * Format: /acd-cgi/img/v1/path-to-image.jpg?width=200&height=200
-	 *
-	 * @since      4.0.0
-	 * 
-	 * @return string The transformed edge URL with Accelerated Domains parameters.
+	 * @since 4.0.0
+	 * @return string The transformed edge URL.
 	 */
 	public function get_edge_url(): string {
 		// Bail early if no path
@@ -61,9 +57,21 @@ class Accelerated_Domains extends Edge_Provider {
 			return '';
 		}
 
+		// Generate cache key from path and args
+		$cache_key = md5(serialize([
+			'path' => $this->path,
+			'args' => $this->args,
+			'domain' => Helpers::get_rewrite_domain()
+		]));
+		
+		// Check cache first
+		if (isset(self::$url_cache[$cache_key])) {
+			return self::$url_cache[$cache_key];
+		}
+
 		// If this is already a transformed URL, extract the original path
 		if (strpos($this->path, self::EDGE_ROOT) !== false) {
-			if (preg_match('#' . self::EDGE_ROOT . '(/[^?]+)#', $this->path, $matches)) {
+			if (preg_match('#' . preg_quote(self::EDGE_ROOT, '#') . '(/[^?]+)#', $this->path, $matches)) {
 				$this->path = $matches[1];
 			} else {
 				return '';
@@ -72,8 +80,6 @@ class Accelerated_Domains extends Edge_Provider {
 
 		// Clean the URL to get just the path
 		$image_path = Helpers::clean_url($this->path);
-		
-		// Debug the cleaned path
 		
 		// If no valid path found, return empty
 		if (empty($image_path)) {
@@ -90,13 +96,18 @@ class Accelerated_Domains extends Edge_Provider {
 
 		// Build the URL with query parameters
 		$edge_url = sprintf(
-			'%s%s?%s',
-			Helpers::get_rewrite_domain() . self::EDGE_ROOT,
+			'%s%s%s?%s',
+			rtrim(Helpers::get_rewrite_domain(), '/'),
+			self::EDGE_ROOT,
 			$image_path,
 			http_build_query($transform_args)
 		);
+
+		// Cache the result
+		$final_url = esc_attr($edge_url);
+		self::$url_cache[$cache_key] = $final_url;
 		
-		return esc_attr($edge_url);
+		return $final_url;
 	}
 
 	/**
@@ -132,7 +143,7 @@ class Accelerated_Domains extends Edge_Provider {
 	 * @return string The regex pattern to match Accelerated Domains-transformed URLs.
 	 */
 	public static function get_transform_pattern(): string {
-		return '/acd-cgi/img/v1/[^?]+\?';
+		return self::EDGE_ROOT . '/[^?]+(?:\?|$)';
 	}
 
 	/**

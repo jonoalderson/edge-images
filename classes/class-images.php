@@ -109,33 +109,29 @@ class Images {
 	/**
 	 * Transform image URLs in an image tag.
 	 *
-	 * @since 4.5.0
+	 * @since 4.0.0
 	 * 
-	 * @param \WP_HTML_Tag_Processor $processor      The tag processor instance.
-	 * @param array|null             $dimensions     The target dimensions array with width and height.
-	 * @param string                 $original_html  The original HTML string.
-	 * @param string                 $context        The context of the transformation.
-	 * @param array                  $transform_args Additional transformation arguments.
-	 * @return void
+	 * @param \WP_HTML_Tag_Processor $processor The HTML processor.
+	 * @param array                  $dimensions The image dimensions.
+	 * @param string                 $original_html The original HTML.
+	 * @param string                 $context The transformation context.
+	 * @param array                  $transform_args Optional. Additional transformation arguments.
 	 */
-	public static function transform_image_urls( 
-		\WP_HTML_Tag_Processor $processor, 
-		?array $dimensions, 
-		string $original_html = '',
-		string $context = '',
+	public static function transform_image_urls(
+		\WP_HTML_Tag_Processor $processor,
+		array $dimensions,
+		string $original_html,
+		string $context,
 		array $transform_args = []
 	): void {
-		// Get src
+		// Get the src
 		$src = $processor->get_attribute('src');
-		if (!$src || !$dimensions || empty($dimensions['width']) || empty($dimensions['height'])) {
+		if (!$src) {
 			return;
 		}
 
-		// Get attachment ID
+		// Get attachment ID if available
 		$attachment_id = Helpers::get_attachment_id_from_classes($processor);
-		if (!$attachment_id) {
-			$attachment_id = attachment_url_to_postid($src);
-		}
 
 		// Calculate aspect ratio and validate dimensions
 		$width = (int) $dimensions['width'];
@@ -169,15 +165,14 @@ class Images {
 			return;
 		}
 		
-		// Transform src with dimensions
+		// Transform src with dimensions - merge in this order to preserve transform_args values
 		$edge_args = array_merge(
-			$provider->get_default_args(),
-			$transform_args,
 			[
 				'width' => $dimensions['width'],
 				'height' => $dimensions['height'],
-				'fit' => 'cover',
-			]
+			],
+			$provider->get_default_args(),
+			$transform_args
 		);
 
 		// Get full size URL
@@ -192,9 +187,9 @@ class Images {
 		
 		// Get sizes attribute
 		$sizes = $processor->get_attribute('sizes') ?? 
-			"(max-width: {$dimensions['width']}px) 100vw, {$dimensions['width']}px";
+			"(max-width: {$dimensions['width']}px) calc(100vw - 2.5rem), {$dimensions['width']}px";
 		
-		// Generate srcset
+		// Generate srcset using the constrained dimensions
 		$srcset = Srcset_Transformer::transform(
 			$full_src, 
 			$dimensions,
@@ -278,36 +273,32 @@ class Images {
 	}
 
 	/**
-	 * Get full size image URL
+	 * Get the full size URL for an image.
 	 *
-	 * @since 4.5.0
+	 * @since 4.0.0
 	 * 
-	 * @param string   $src          The current image URL.
-	 * @param int|null $attachment_id Optional attachment ID.
-	 * @return string The full size image URL
+	 * @param string   $src           The source URL.
+	 * @param int|null $attachment_id Optional. The attachment ID.
+	 * @return string The full size URL.
 	 */
 	public static function get_full_size_url(string $src, ?int $attachment_id = null): string {
-		// Try getting the full URL from attachment ID first
-		if ($attachment_id) {
-			$full_url = wp_get_attachment_image_url($attachment_id, 'full');
-			if ($full_url) {
-				return $full_url;
-			}
-		}
-		
-		// Get the provider instance
-		$provider = self::get_provider_instance();
-		
-		// If no provider, return original URL
-		if (!$provider) {
-			return $src;
+		// If URL is already transformed, get the original URL first
+		if (Helpers::is_transformed_url($src)) {
+			$src = Helpers::get_original_url($src);
 		}
 
-		// Remove any existing transformations
-		$cleaned_url = $provider::clean_transformed_url($src);
+		// If we have an attachment ID, try to get the full size URL
+		if ($attachment_id) {
+			$full_src = wp_get_attachment_url($attachment_id);
+			if ($full_src) {
+				return $full_src;
+			}
+		}
+
+		// Try to get the original filename by removing dimensions
+		$src = preg_replace('/-\d+x\d+(?=\.[a-z]{3,4}$)/i', '', $src);
 		
-		// Return cleaned URL if valid, otherwise return original
-		return $cleaned_url ?: $src;
+		return $src;
 	}
 
 	/**
