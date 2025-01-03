@@ -174,21 +174,21 @@ abstract class Edge_Provider {
 	 */
 	protected function validate_args(array $args): array {
 		$validated = [];
+		
 		foreach ($args as $key => $value) {
-			$original_key = $key;
 			$key = strtolower($key);
 			
-			// Handle direct matches in valid_args
-			if (isset(self::$valid_args[$key])) {
+			// Direct match with canonical form
+			if (array_key_exists($key, self::$valid_args)) {
 				if ($this->is_valid_value($key, $value)) {
 					$validated[$key] = $value;
 				}
 				continue;
 			}
 			
-			// Handle aliases
+			// Check if it's an alias
 			foreach (self::$valid_args as $canonical => $aliases) {
-				if ($aliases && in_array($key, $aliases, true)) {
+				if ($aliases && in_array($key, array_map('strtolower', $aliases), true)) {
 					if ($this->is_valid_value($canonical, $value)) {
 						$validated[$canonical] = $value;
 					}
@@ -196,15 +196,7 @@ abstract class Edge_Provider {
 				}
 			}
 		}
-
-		// Ensure fit and dpr are preserved if valid
-		if (isset($args['fit']) && $this->is_valid_value('fit', $args['fit'])) {
-			$validated['fit'] = $args['fit'];
-		}
-		if (isset($args['dpr']) && $this->is_valid_value('dpr', $args['dpr'])) {
-			$validated['dpr'] = (int) $args['dpr'];
-		}
-
+		
 		return $validated;
 	}
 
@@ -307,13 +299,16 @@ abstract class Edge_Provider {
 	 * @return void
 	 */
 	private function normalize_args(): void {
-		// Merge defaults with provided args, ensuring provided args take precedence
-		$this->args = array_merge($this->default_edge_args, $this->args);
+		// Merge provided args with defaults, ensuring provided args take precedence
+		$this->args = array_replace($this->default_edge_args, $this->args);
 
 		// Convert numeric values
 		foreach ($this->args as $key => $value) {
 			if (is_numeric($value)) {
-				$this->args[$key] = (int) $value;
+				// Only convert to int for width and height
+				if (in_array($key, ['w', 'h', 'width', 'height'], true)) {
+					$this->args[$key] = (int) $value;
+				}
 			}
 		}
 	}

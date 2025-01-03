@@ -206,8 +206,10 @@ class Images {
 		}
 		
 		// Transform src with dimensions - merge in this order to preserve transform_args values
+		$default_args = $provider->get_default_args();
+
 		$edge_args = array_merge(
-			$provider->get_default_args(),
+			$default_args,
 			$transform_args,
 			[
 				'width' => $dimensions['width'],

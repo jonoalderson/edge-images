@@ -149,15 +149,7 @@ class Accelerated_Domains extends Edge_Provider {
 	/**
 	 * Get full transformation arguments with full parameter names.
 	 *
-	 * Maps short parameter names to their full Accelerated Domains equivalents.
-	 * This method:
-	 * - Converts short parameter names to full names
-	 * - Maintains unmapped parameters
-	 * - Ensures parameter compatibility
-	 * - Supports URL generation
-	 *
-	 * @since      4.0.0
-	 * 
+	 * @since 4.0.0
 	 * @return array<string,mixed> Array of formatted Accelerated Domains parameters.
 	 */
 	private function get_full_transform_args(): array {
@@ -174,11 +166,26 @@ class Accelerated_Domains extends Edge_Provider {
 					$full_args['height'] = $value;
 					break;
 				default:
+					// Preserve all other args unchanged
 					$full_args[$key] = $value;
 					break;
 			}
 		}
 
 		return $full_args;
+	}
+
+	/**
+	 * Get the transformation arguments.
+	 *
+	 * @since 4.0.0
+	 * @return array The transformation arguments.
+	 */
+	protected function get_transform_args(): array {
+		// Get parent args - these already include defaults properly merged
+		$args = parent::get_transform_args();
+		
+		// Return parent args without modification
+		return $args;
 	}
 }
