@@ -1,5 +1,6 @@
 === Edge Images ===
-Contributors: jonoalderson
+
+Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Requires at least: 5.6
 Tested up to: 6.7
@@ -191,6 +192,7 @@ Currently supported providers are:
 * Cloudflare (Pro plan or higher required)
 * Accelerated Domains
 * BunnyCDN
+* Imgix
 
 = Do I need to generate different image sizes? =
 
@@ -203,42 +205,6 @@ Yes, the plugin works with your existing media library images.
 = Does this work with Gutenberg? =
 
 Yes, the plugin fully supports the WordPress block editor.
-
-== Screenshots ==
-
-1. Edge Images settings page
-2. Provider selection interface
-3. Integration settings
-
-== Changelog ==
-
-= 4.5.4 =
-* Added browser caching feature via .htaccess
-* Improved error handling for provider connections
-* Fixed compatibility with latest WordPress version
-
-= 4.5.3 =
-* Added support for BunnyCDN
-* Improved image dimension detection
-* Fixed AVIF support detection
-
-= 4.5.2 =
-* Enhanced Yoast SEO integration
-* Added filter for max image width
-* Fixed PHP 8.0 compatibility issues
-
-= 4.5.1 =
-* Added support for picture element wrapping
-* Improved responsive image handling
-* Fixed cache invalidation issues
-
-= 4.5.0 =
-* Initial public release
-
-== Upgrade Notice ==
-
-= 4.5.4 =
-This version adds browser caching support and fixes compatibility with the latest WordPress version.
 
 == Development ==
 

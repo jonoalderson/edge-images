@@ -12,13 +12,15 @@
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @license    GPL-3.0-or-later
+ * @license    GPL-2.0-or-later
  * @since      4.5.0
  */
 
-namespace Edge_Images;
+namespace Edge_Images\Features;
 
-class Cache {
+use Edge_Images\{Integration, Features};
+
+class Cache extends Integration {
 
 	/**
 	 * Cache group for transformed image HTML.
@@ -37,49 +39,40 @@ class Cache {
 	public const CACHE_EXPIRATION = DAY_IN_SECONDS * 30;
 
 	/**
-	 * Whether hooks have been registered.
-	 *
-	 * @since 4.5.0
-	 * @var bool
-	 */
-	private static bool $registered = false;
-
-	/**
-	 * Register cache busting hooks.
+	 * Add integration-specific filters.
 	 *
 	 * @since 4.5.0
 	 * 
 	 * @return void
 	 */
-	public static function register(): void {
-		if (self::$registered) {
+	protected function add_filters(): void {
+
+		// Bail if caching is disabled
+		if (!$this::should_filter()) {
 			return;
 		}
 
-		$instance = new self();
-		$instance->add_filters();
+		// Core post-related hooks
+		add_action('save_post', [$this, 'purge_post_images']);
+		add_action('deleted_post', [$this, 'purge_post_images']);
+		add_action('attachment_updated', [$this, 'purge_attachment'], 10, 3);
+		add_action('delete_attachment', [$this, 'purge_attachment']);
 
-		self::$registered = true;
+		// Settings update hook
+		add_action('update_option', [$this, 'maybe_purge_all'], 10, 3);
 	}
 
 	/**
-	 * Add filters.
+	 * Get default settings for this integration.
 	 *
-	 * @return void
+	 * @since 4.5.0
+	 * 
+	 * @return array<string,mixed> Array of default feature settings.
 	 */
-	private function add_filters() : void {
-
-		// Core post-related hooks
-		add_action('save_post', [self::class, 'purge_post_images']);
-		add_action('deleted_post', [self::class, 'purge_post_images']);
-		add_action('attachment_updated', [self::class, 'purge_attachment'], 10, 3);
-		add_action('delete_attachment', [self::class, 'purge_attachment']);
-
-		// Settings update hook
-		add_action('update_option', [self::class, 'maybe_purge_all'], 10, 3);
-
-		// Allow integrations to register their own cache hooks
-		do_action('edge_images_register_cache_hooks');
+	public static function get_default_settings(): array {
+		return [
+			'edge_images_feature_cache' => true,
+		];
 	}
 
 	/**
@@ -93,8 +86,20 @@ class Cache {
 	 * @return string|false The cached HTML or false if not found.
 	 */
 	public static function get_image_html(int $attachment_id, $size, array $attr = []) {
+		// Return false if caching is disabled
+		if (!Features::is_enabled('cache')) {
+			return false;
+		}
+
 		$cache_key = self::generate_cache_key($attachment_id, $size, $attr);
-		return wp_cache_get($cache_key, self::CACHE_GROUP);
+		$cached_html = wp_cache_get($cache_key, self::CACHE_GROUP);
+
+		// Return false if no cache or invalid HTML
+		if ($cached_html === false || !self::validate_html($cached_html)) {
+			return false;
+		}
+
+		return $cached_html;
 	}
 
 	/**
@@ -109,6 +114,17 @@ class Cache {
 	 * @return bool Whether the value was cached.
 	 */
 	public static function set_image_html(int $attachment_id, $size, array $attr, string $html): bool {
+
+		// Return false if caching is disabled
+		if (!Features::is_enabled('cache')) {
+			return false;
+		}
+
+		// Don't cache invalid HTML
+		if (!self::validate_html($html)) {
+			return false;
+		}
+
 		$cache_key = self::generate_cache_key($attachment_id, $size, $attr);
 		
 		// Store this cache key in the list of keys for this attachment
@@ -129,6 +145,11 @@ class Cache {
 	 * @return void
 	 */
 	public static function purge_post_images(int $post_id): void {
+		// Skip if caching is disabled
+		if (!Features::is_enabled('cache')) {
+			return;
+		}
+
 		// Skip revisions and autosaves
 		if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
 			return;
@@ -157,6 +178,11 @@ class Cache {
 	 * @return void
 	 */
 	public static function purge_attachment(int $attachment_id, array $data = [], array $old_data = []): void {
+		// Skip if caching is disabled
+		if (!Features::is_enabled('cache')) {
+			return;
+		}
+
 		// Get all cached keys for this attachment
 		$keys_cache_key = self::get_keys_cache_key($attachment_id);
 		$cached_keys = wp_cache_get($keys_cache_key, self::CACHE_GROUP) ?: [];
@@ -187,7 +213,7 @@ class Cache {
 		$key_parts = [
 			'image',
 			$attachment_id,
-			is_array($size) ? implode('x', $size) : $size,
+			is_array($size) ? $size[0] . 'x' . $size[1] : $size,
 			md5(serialize($attr))
 		];
 		
@@ -274,7 +300,11 @@ class Cache {
 	 * @return void
 	 */
 	public static function maybe_purge_all(string $option, $old_value, $value): void {
-		
+		// Skip if caching is disabled
+		if (!Features::is_enabled('cache')) {
+			return;
+		}
+
 		// List of options that should trigger a cache purge
 		$trigger_options = [
 			'edge_images_provider',
@@ -297,10 +327,56 @@ class Cache {
 	 * @return void
 	 */
 	public static function purge_all(): void {
-		wp_cache_delete_group(self::CACHE_GROUP);
+		// Skip if caching is disabled
+		if (!Features::is_enabled('cache')) {
+			return;
+		}
+
+		wp_cache_flush_group(self::CACHE_GROUP);
 
 		// Allow integrations to purge their specific caches
 		do_action('edge_images_purge_all_cache');
 	}
 
+	/**
+	 * Validate HTML to ensure it has required attributes.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $html The HTML to validate.
+	 * @return bool Whether the HTML is valid.
+	 */
+	private static function validate_html(string $html): bool {
+		// Skip empty HTML
+		if (empty($html)) {
+			return false;
+		}
+
+		// Create processor to check attributes
+		$processor = new \WP_HTML_Tag_Processor($html);
+		if (!$processor->next_tag('img')) {
+			return false;
+		}
+
+		// Check required attributes
+		$required_attrs = ['src', 'width', 'height'];
+		foreach ($required_attrs as $attr) {
+			if (!$processor->get_attribute($attr)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if this integration should filter.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return boolean
+	 */
+	protected function should_filter(): bool {
+		return Features::is_enabled('cache');
+	}
 } 

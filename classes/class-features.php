@@ -13,7 +13,7 @@
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @license    GPL-3.0-or-later
+ * @license    GPL-2.0-or-later
  * @since      4.5.0
  */
 
@@ -35,6 +35,7 @@ class Features {
 	 * @var array<string,array>
 	 */
 	private static array $features = [
+
 		'avatars' => [
 			'name' => 'Avatars',
 			'description' => 'Transform avatar images in comments and user profiles.',
@@ -46,6 +47,12 @@ class Features {
 			'description' => 'Wrap images in picture elements for better responsive behavior and aspect ratio handling.',
 			'class' => 'Features\Picture',
 			'default' => false,
+		],
+		'cache' => [
+			'name' => 'Image HTML Caching',
+			'description' => 'Cache transformed image HTML to improve performance. Disable for debugging.',
+			'class' => 'Features\Cache',
+			'default' => true,
 		],
 		'htaccess_caching' => [
 			'name' => 'Browser Caching',

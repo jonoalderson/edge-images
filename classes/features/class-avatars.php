@@ -14,7 +14,7 @@
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @license    GPL-3.0-or-later
+ * @license    GPL-2.0-or-later
  * @since      4.5.0
  */
 
@@ -110,6 +110,7 @@ class Avatars extends Integration {
 	 * @return string             The transformed avatar HTML.
 	 */
 	public function transform_avatar_html( string $avatar, $id_or_email, int $size, string $default, string $alt, array $args ): string {
+		
 		// Skip if in admin
 		if (is_admin()) {
 			return $avatar;

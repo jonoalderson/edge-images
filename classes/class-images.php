@@ -11,11 +11,13 @@
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @license    GPL-3.0-or-later
+ * @license    GPL-2.0-or-later
  * @since      4.5.0
  */
 
 namespace Edge_Images;
+
+use Edge_Images\Features\Cache;
 
 class Images {
 
@@ -47,13 +49,20 @@ class Images {
 		array $args = []
 	): \WP_HTML_Tag_Processor {
 		
-		// Check cache first
-		$cache_key = 'img_' . md5($html . serialize($args));
-		$cached_html = Cache::get_image_html($image_id ?: 0, $cache_key, []);
-		
-		// If we have a cached HTML, return it
-		if ($cached_html !== false) {
-			return new \WP_HTML_Tag_Processor($cached_html);
+		// Check cache first if we have an image ID
+		if ($image_id) {
+			// Get dimensions from processor
+			$width = $processor->get_attribute('width');
+			$height = $processor->get_attribute('height');
+			
+			if ($width && $height) {
+				$size = [(int)$width, (int)$height];
+				$cached_html = Cache::get_image_html($image_id, $size, $args);
+				
+				if ($cached_html !== false) {
+					return new \WP_HTML_Tag_Processor($cached_html);
+				}
+			}
 		}
 
 		// Get src
@@ -96,8 +105,11 @@ class Images {
 			// Always add the processed class
 			$new_processor->set_attribute('class', trim($new_processor->get_attribute('class') . ' edge-images-processed'));
 
-			// Cache the result
-			Cache::set_image_html($image_id ?: 0, $cache_key, [], $new_processor->get_updated_html());
+			// Cache the result if we have an image ID
+			if ($image_id) {
+				$size = [(int)$dimensions['width'], (int)$dimensions['height']];
+				Cache::set_image_html($image_id, $size, $args, $new_processor->get_updated_html());
+			}
 
 			// Clean transformation attributes before returning
 			return self::clean_transform_attributes($new_processor);

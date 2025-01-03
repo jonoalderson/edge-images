@@ -12,7 +12,7 @@
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @license    GPL-3.0-or-later
+ * @license    GPL-2.0-or-later
  * @since      4.0.0
  */
 
