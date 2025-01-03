@@ -212,28 +212,22 @@ class Picture extends Integration {
 		$transform_args = [];
 		$valid_args = \Edge_Images\Edge_Provider::get_valid_args();
 		
-		// First check the URL parameters if it's already been transformed
+		// Get the src
 		$src = $processor->get_attribute('src');
-		if ($src && strpos($src, '?') !== false) {
-			$url_parts = parse_url($src);
+		if (!$src) {
+			return $img_html;
+		}
+
+		// Check if already transformed
+		if (Helpers::is_transformed_url($src)) {
+			// Extract existing transform args from URL
+			$url_parts = wp_parse_url($src);
 			if (isset($url_parts['query'])) {
-				parse_str($url_parts['query'], $query_args);
-				foreach ($valid_args as $short => $aliases) {
-					if (isset($query_args[$short])) {
-						$transform_args[$short] = $query_args[$short];
-					} elseif ($aliases) {
-						foreach ($aliases as $alias) {
-							if (isset($query_args[$alias])) {
-								$transform_args[$short] = $query_args[$alias];
-								break;
-							}
-						}
-					}
-				}
+				parse_str($url_parts['query'], $transform_args);
 			}
 		}
 		
-		// Then check attributes which might override URL parameters
+		// Check attributes which might override URL parameters
 		foreach ($valid_args as $short => $aliases) {
 			// Check short form
 			if ($processor->get_attribute($short)) {
