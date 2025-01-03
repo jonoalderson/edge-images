@@ -114,51 +114,38 @@ class Picture extends Integration {
 	 * @return string|null The transformed HTML, or null if transformation not possible/needed.
 	 */
 	public static function transform_figure(string $html, string $img_html, ?array $dimensions): ?string {
-		error_log('DEBUG transform_figure - Starting');
-		error_log('Original HTML: ' . $html);
-		error_log('Image HTML: ' . $img_html);
-		error_log('Dimensions: ' . print_r($dimensions, true));
-
 		// Skip if picture wrapping is disabled
 		if (!Features::is_feature_enabled('picture_wrap')) {
-			error_log('DEBUG transform_figure - Picture wrapping is disabled');
 			return null;
 		}
 
 		// Skip if already wrapped
 		if (strpos($html, '<picture') !== false) {
-			error_log('DEBUG transform_figure - Already wrapped in picture');
 			return null;
 		}
 
 		// Extract just the img tag from the transformed HTML
 		$img_tag = Helpers::extract_img_tag($img_html);
 		if (!$img_tag) {
-			error_log('DEBUG transform_figure - No img tag found');
 			return null;
 		}
 
 		// Extract the figure classes
 		$figure_classes = Helpers::extract_figure_classes($html);
-		error_log('DEBUG transform_figure - Figure classes: ' . $figure_classes);
 
 		// Try to get dimensions from the image tag if not provided
 		if (!$dimensions) {
-			error_log('DEBUG transform_figure - No dimensions provided, trying to extract from img tag');
 			$processor = new \WP_HTML_Tag_Processor($img_tag);
 			if ($processor->next_tag('img')) {
 				$dimensions = Image_Dimensions::from_html($processor);
 			}
 			if (!$dimensions) {
-				error_log('DEBUG transform_figure - Could not get dimensions');
 				return null;
 			}
-			error_log('DEBUG transform_figure - Extracted dimensions: ' . print_r($dimensions, true));
 		}
 
 		// Create picture element with figure classes
 		$picture = self::create($img_tag, $dimensions, $figure_classes);
-		error_log('DEBUG transform_figure - Created picture: ' . $picture);
 
 		// Replace the entire figure with the picture
 		return str_replace($html, $picture, $html);
