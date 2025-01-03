@@ -84,6 +84,19 @@ class Image extends Block {
 			$transformed = str_replace($img_html, $transformed, $link_data['link']);
 		}
 
+		// Extract the figure classes
+		$processor = new \WP_HTML_Tag_Processor($block_content);
+		if ($processor->next_tag('figure')) {
+			$figure_classes = $processor->get_attribute('class');
+			
+			// Create a new figure with the transformed content
+			return sprintf(
+				'<figure class="%s">%s</figure>',
+				trim($figure_classes),
+				$transformed
+			);
+		}
+
 		return $transformed;
 	}
 } 

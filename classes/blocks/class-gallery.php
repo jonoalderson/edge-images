@@ -28,19 +28,14 @@ class Gallery extends Block {
 		// Create a processor for the block HTML
 		$processor = new \WP_HTML_Tag_Processor($block_html);
 
-		// First pass: Add no-picture class to all figures and processed class to gallery wrapper
+		// First pass: Add processed class to gallery wrapper
 		$first_figure = true;
 		while ($processor->next_tag('figure')) {
 			$class = $processor->get_attribute('class');
 			if ($first_figure) {
 				// Add both classes to the gallery wrapper
-				$processor->set_attribute('class', trim($class . ' edge-images-no-picture edge-images-processed'));
+				$processor->set_attribute('class', trim($class . ' edge-images-processed'));
 				$first_figure = false;
-			} else {
-				// Add only no-picture class to nested figures
-				if (!str_contains($class ?? '', 'edge-images-no-picture')) {
-					$processor->set_attribute('class', trim($class . ' edge-images-no-picture'));
-				}
 			}
 		}
 

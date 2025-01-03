@@ -496,17 +496,7 @@ class Handler {
 		// Create a processor from the HTML
 		$processor = new \WP_HTML_Tag_Processor($html);
 
-		// First check for a figure tag
-		if ($processor->next_tag('figure')) {
-			$classes = $processor->get_attribute('class');
-			if ($classes) {
-				$classes = implode(' ', array_diff(explode(' ', $classes), ['edge-images-no-picture']));
-				$processor->set_attribute('class', $classes);
-			}
-		}
-
-		// Now process the img tag
-		$processor = new \WP_HTML_Tag_Processor($processor->get_updated_html());
+		// Process the img tag
 		if (!$processor->next_tag('img')) {
 			return $html;
 		}
