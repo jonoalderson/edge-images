@@ -68,25 +68,6 @@ class Srcset_Transformer {
      */
     public static int $min_srcset_width = 300;
 
-    /**
-     * Default edge transformation arguments.
-     *
-     * Defines the base configuration for image transformations.
-     * These settings ensure consistent image quality and behavior:
-     * - fit: How the image should fit its dimensions
-     * - dpr: Device pixel ratio (resolution scaling)
-     * - f: Image format handling
-     * - gravity: Focus point for image cropping
-     * - q: JPEG quality level
-     *
-     * @since      4.0.0
-     * @var array<string,mixed>
-     */
-    private static array $default_edge_args = [
-        'f' => 'auto',
-        'gravity' => 'auto',
-        'q' => 85
-    ];
 
     /**
      * Transform a URL into a srcset string.
@@ -175,12 +156,6 @@ class Srcset_Transformer {
             array_flip(['width', 'height', 'w', 'h'])
         );
 
-        // Merge defaults with transform args
-        $base_args = array_merge(
-            self::$default_edge_args,
-            $base_args
-        );
-
         // Generate srcset entries.
         $srcset_parts = [];
         foreach ($widths as $width) {
@@ -189,7 +164,8 @@ class Srcset_Transformer {
             
             // Add dimensions to transform args, preserving any explicitly set args
             $edge_args = array_merge(
-                $base_args,
+                $provider->get_default_args(),
+                $transform_args,
                 [
                     'width' => $width,
                     'height' => $height,

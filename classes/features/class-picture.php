@@ -68,9 +68,6 @@ class Picture extends Integration {
 			}
 		}
 
-		// Transform the image URLs
-		$img_html = self::transform_image_urls($img_html, $dimensions);
-
 		// Build classes array
 		$classes = [];
 		if ($class) {
@@ -203,8 +200,56 @@ class Picture extends Integration {
 			return $img_html;
 		}
 
+		// Extract transform args from the image
+		$transform_args = [];
+		$valid_args = \Edge_Images\Edge_Provider::get_valid_args();
+		
+		// First check the URL parameters if it's already been transformed
+		$src = $processor->get_attribute('src');
+		if ($src && strpos($src, '?') !== false) {
+			$url_parts = parse_url($src);
+			if (isset($url_parts['query'])) {
+				parse_str($url_parts['query'], $query_args);
+				foreach ($valid_args as $short => $aliases) {
+					if (isset($query_args[$short])) {
+						$transform_args[$short] = $query_args[$short];
+					} elseif ($aliases) {
+						foreach ($aliases as $alias) {
+							if (isset($query_args[$alias])) {
+								$transform_args[$short] = $query_args[$alias];
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// Then check attributes which might override URL parameters
+		foreach ($valid_args as $short => $aliases) {
+			// Check short form
+			if ($processor->get_attribute($short)) {
+				$transform_args[$short] = $processor->get_attribute($short);
+				continue;
+			}
+			
+			// Check aliases
+			if ($aliases) {
+				foreach ($aliases as $alias) {
+					if ($processor->get_attribute($alias)) {
+						$transform_args[$short] = $processor->get_attribute($alias);
+						break;
+					}
+				}
+			}
+		}
+
+		// Add dimensions to transform args
+		$transform_args['w'] = $dimensions['width'];
+		$transform_args['h'] = $dimensions['height'];
+
 		// Transform the image URLs
-		Images::transform_image_urls($processor, $dimensions, $img_html, 'picture', []);
+		Images::transform_image_urls($processor, $dimensions, $img_html, 'picture', $transform_args);
 
 		return $processor->get_updated_html();
 	}

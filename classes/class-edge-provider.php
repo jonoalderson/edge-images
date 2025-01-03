@@ -242,7 +242,7 @@ abstract class Edge_Provider {
 			
 			case 'g':
 				// Gravity must be one of the predefined positions
-				return in_array($value, ['auto', 'north', 'south', 'east', 'west', 'center', 'left', 'right'], true);
+				return in_array($value, ['auto', 'north', 'south', 'east', 'west', 'center', 'left', 'right', 'top', 'bottom'], true);
 			
 			case 'bg':
 				// Background must be a valid hex color, rgb(a) value, or named color

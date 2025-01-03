@@ -76,19 +76,29 @@ class Images {
 			return $processor;
 		}
 
-		// Get dimensions - first try width/height attributes
-		$width = $processor->get_attribute('width');
-		$height = $processor->get_attribute('height');
-		
+		// Get dimensions from args if they exist
 		$dimensions = null;
-		if ($width && $height) {
+		if (isset($args['w'], $args['h'])) {
 			$dimensions = [
-				'width' => (string) $width,
-				'height' => (string) $height
+				'width' => (string) $args['w'],
+				'height' => (string) $args['h']
 			];
 		}
 
-		// If no dimensions from attributes, try Image_Dimensions::get
+		// If no dimensions in args, try width/height attributes
+		if (!$dimensions) {
+			$width = $processor->get_attribute('width');
+			$height = $processor->get_attribute('height');
+			
+			if ($width && $height) {
+				$dimensions = [
+					'width' => (string) $width,
+					'height' => (string) $height
+				];
+			}
+		}
+
+		// If still no dimensions, try Image_Dimensions::get
 		if (!$dimensions) {
 			$dimensions = Image_Dimensions::get($processor, $image_id);
 		}
@@ -179,12 +189,12 @@ class Images {
 		
 		// Transform src with dimensions - merge in this order to preserve transform_args values
 		$edge_args = array_merge(
+			$provider->get_default_args(),
+			$transform_args,
 			[
 				'width' => $dimensions['width'],
 				'height' => $dimensions['height'],
-			],
-			$provider->get_default_args(),
-			$transform_args
+			]
 		);
 
 		// Get full size URL
@@ -201,12 +211,12 @@ class Images {
 		$sizes = $processor->get_attribute('sizes') ?? 
 			"(max-width: {$dimensions['width']}px) calc(100vw - 2.5rem), {$dimensions['width']}px";
 		
-		// Generate srcset using the constrained dimensions
+		// Generate srcset using the constrained dimensions and original transform args
 		$srcset = Srcset_Transformer::transform(
 			$full_src, 
 			$dimensions,
 			$sizes,
-			$edge_args
+			$transform_args
 		);
 
 		if ($srcset) {

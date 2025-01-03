@@ -317,12 +317,28 @@ class Handler {
 	 */
 	private function extract_transform_args(array $attr): array {
 		$valid_args = Edge_Provider::get_valid_args();
-		$all_valid_args = array_merge(
-			array_keys($valid_args),
-			array_merge(...array_filter(array_values($valid_args)))
-		);
+
+		// First, normalize any long-form args to their short form
+		$normalized = [];
+		foreach ($valid_args as $short => $aliases) {
+			// If we have the short form, use it directly
+			if (isset($attr[$short])) {
+				$normalized[$short] = $attr[$short];
+				continue;
+			}
+			
+			// Check aliases and use the first one found
+			if (is_array($aliases)) {
+				foreach ($aliases as $alias) {
+					if (isset($attr[$alias])) {
+						$normalized[$short] = $attr[$alias];
+						break;
+					}
+				}
+			}
+		}
 		
-		return array_intersect_key($attr, array_flip($all_valid_args));
+		return $normalized;
 	}
 
 	/**
