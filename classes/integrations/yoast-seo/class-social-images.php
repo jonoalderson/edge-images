@@ -20,7 +20,7 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Integration, Helpers, Features};
+use Edge_Images\{Integration, Helpers, Integrations, Settings};
 
 class Social_Images extends Integration {
 
@@ -138,6 +138,18 @@ class Social_Images extends Integration {
 	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-		return Features::is_enabled('yoast_social_images') && Helpers::should_transform_images();
+
+		// Check if Yoast SEO is installed and active
+		if (!Integrations::is_enabled('yoast-seo')) {
+			return false;
+		}
+
+		// Check if image transformation is enabled
+		if (!Helpers::should_transform_images()) {
+			return false;
+		}
+
+		// Check if this specific integration is enabled in settings
+		return Settings::get_option('edge_images_integration_yoast_social', true);
 	}
 }

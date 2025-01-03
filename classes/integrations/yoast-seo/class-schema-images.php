@@ -13,7 +13,7 @@
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Integration, Helpers, Features, Cache};
+use Edge_Images\{Integration, Helpers, Integrations, Settings, Features\Cache};
 
 
 class Schema_Images extends Integration {
@@ -252,6 +252,8 @@ class Schema_Images extends Integration {
 			'quality' => 85,
 		]);
 
+		$image_data['contentUrl'] = $image_data['url'];
+
 		return $image_data;
 	}
 
@@ -290,7 +292,18 @@ class Schema_Images extends Integration {
 	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-		return Features::is_enabled('edge_images_integration_yoast_schema') && Helpers::should_transform_images();
+		// Check if Yoast SEO is installed and active
+		if (!Integrations::is_enabled('yoast-seo')) {
+			return false;
+		}
+
+		// Check if image transformation is enabled
+		if (!Helpers::should_transform_images()) {
+			return false;
+		}
+
+		// Check if this specific integration is enabled in settings
+		return Settings::get_option('edge_images_integration_yoast_schema', true);
 	}
 }
 
