@@ -119,7 +119,7 @@ class Social_Images extends Integration {
 	 */
 	public static function get_default_settings(): array {
 		return [
-			'edge_images_yoast_social_images' => true,
+			'edge_images_integration_yoast_social' => true,
 		];
 	}
 

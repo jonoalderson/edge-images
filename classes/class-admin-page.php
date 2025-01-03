@@ -54,31 +54,28 @@ class Admin_Page {
 	private const IMGIX_SUBDOMAIN_OPTION = 'edge_images_imgix_subdomain';
 
 	/**
-	 * The Yoast SEO schema integration option name.
+	 * Option name for Yoast SEO schema integration.
 	 *
-	 * Controls whether image URLs in Yoast SEO schema should be transformed.
-	 * This setting is only relevant when Yoast SEO is active.
-	 *
-	 * @since 4.1.0
+	 * @since 4.5.0
 	 * @var string
 	 */
-	private const YOAST_SCHEMA_OPTION = 'edge_images_yoast_schema_images';
+	private const YOAST_SCHEMA_OPTION = 'edge_images_integration_yoast_schema';
 
 	/**
-	 * The Yoast SEO social integration option name.
+	 * Option name for Yoast SEO social integration.
 	 *
-	 * @since 4.1.0
+	 * @since 4.5.0
 	 * @var string
 	 */
-	private const YOAST_SOCIAL_OPTION = 'edge_images_yoast_social_images';
+	private const YOAST_SOCIAL_OPTION = 'edge_images_integration_yoast_social';
 
 	/**
-	 * The Yoast SEO sitemap integration option name.
+	 * Option name for Yoast SEO sitemap integration.
 	 *
-	 * @since 4.1.0
+	 * @since 4.5.0
 	 * @var string
 	 */
-	private const YOAST_SITEMAP_OPTION = 'edge_images_yoast_xml_sitemap_images';
+	private const YOAST_SITEMAP_OPTION = 'edge_images_integration_yoast_xml';
 
 	/**
 	 * The max width option name.
@@ -247,18 +244,20 @@ class Admin_Page {
 
 		// Process Imgix subdomain setting
 		if ( isset( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) ) {
-			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) );
-			// Validate subdomain format: alphanumeric with hyphens, max 63 chars
-			if ( preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $subdomain ) ) {
+			$subdomain = self::sanitize_subdomain( wp_unslash( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) );
+			if ( $subdomain === null ) {
+				delete_option( self::IMGIX_SUBDOMAIN_OPTION );
+			} else {
 				update_option( self::IMGIX_SUBDOMAIN_OPTION, $subdomain );
 			}
 		}
 
 		// Process Bunny CDN subdomain setting
 		if ( isset( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) ) {
-			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) );
-			// Validate subdomain format: alphanumeric with hyphens, max 63 chars
-			if ( preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $subdomain ) ) {
+			$subdomain = self::sanitize_subdomain( wp_unslash( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) );
+			if ( $subdomain === null ) {
+				delete_option( self::BUNNY_SUBDOMAIN_OPTION );
+			} else {
 				update_option( self::BUNNY_SUBDOMAIN_OPTION, $subdomain );
 			}
 		}
@@ -288,7 +287,6 @@ class Admin_Page {
 
 		// Clear caches after settings update
 		Settings::reset_cache();
-		Cache::clear();
 
 		// Redirect back to settings page with success message
 		wp_safe_redirect( 
@@ -354,8 +352,15 @@ class Admin_Page {
 			[
 				'type'              => 'string',
 				'description'       => __( 'Your Bunny CDN subdomain (e.g., your-site)', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_subdomain' ],
-				'default'          => '',
+				'sanitize_callback' => function( $value ) {
+					$sanitized = self::sanitize_subdomain( $value );
+					if ( $sanitized === null ) {
+						delete_option( self::BUNNY_SUBDOMAIN_OPTION );
+						return false;
+					}
+					return $sanitized;
+				},
+				'show_in_rest'     => false,
 			]
 		);
 
@@ -366,8 +371,15 @@ class Admin_Page {
 			[
 				'type'              => 'string',
 				'description'       => __( 'Your Imgix subdomain (e.g., your-site)', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_subdomain' ],
-				'default'          => '',
+				'sanitize_callback' => function( $value ) {
+					$sanitized = self::sanitize_subdomain( $value );
+					if ( $sanitized === null ) {
+						delete_option( self::IMGIX_SUBDOMAIN_OPTION );
+						return false;
+					}
+					return $sanitized;
+				},
+				'show_in_rest'     => false,
 			]
 		);
 
@@ -413,7 +425,7 @@ class Admin_Page {
 				'type'              => 'integer',
 				'description'       => __( 'The maximum width for images when content width is not set', 'edge-images' ),
 				'sanitize_callback' => 'absint',
-				'default'           => 800,
+				'default'           => 650,
 				'update_callback'   => function($old_value, $value) {
 					Settings::reset_cache();
 				},
@@ -532,21 +544,6 @@ class Admin_Page {
 	}
 
 	/**
-	 * Sanitize subdomain input.
-	 *
-	 * Cleans and validates subdomain input for providers that require it.
-	 * Removes any invalid characters and ensures the subdomain is properly
-	 * formatted.
-	 *
-	 * @since 4.1.0
-	 * @param string $value The subdomain value to sanitize.
-	 * @return string Sanitized subdomain value.
-	 */
-	public static function sanitize_subdomain( string $value ): string {
-		return sanitize_key( $value );
-	}
-
-	/**
 	 * Enqueue admin-specific assets.
 	 *
 	 * Loads the necessary CSS and JavaScript files for the admin interface.
@@ -608,9 +605,10 @@ class Admin_Page {
 					</p>
 				</div>
 
-				<form method="post" action="options.php">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<input type="hidden" name="action" value="edge_images_update_settings">
 					<?php
-					settings_fields( self::OPTION_GROUP );
+					wp_nonce_field( 'edge_images_settings-options' );
 					do_settings_sections( 'edge_images' );
 					submit_button();
 					?>
@@ -797,7 +795,7 @@ class Admin_Page {
 			   min="1" 
 			   step="1">
 		<p class="description">
-			<?php esc_html_e( 'Set the maximum width for images when content width is not set. Default is 650px.', 'edge-images' ); ?>
+			<?php esc_html_e( 'If your theme does not specify a content width, this sets the maximum width that images will be scaled to. The default value is 650 pixels.', 'edge-images' ); ?>
 		</p>
 		<?php
 	}
@@ -953,5 +951,32 @@ class Admin_Page {
 			<?php endforeach; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Sanitize a subdomain input.
+	 *
+	 * Cleans and validates subdomain input.
+	 * Returns null if the subdomain is empty or invalid.
+	 *
+	 * @since 4.5.0
+	 * @param string|null $value The subdomain value to sanitize.
+	 * @return string|null Sanitized subdomain value or null if empty/invalid.
+	 */
+	public static function sanitize_subdomain( ?string $value ): ?string {
+		
+		// Return null for any "empty" value
+		if ( $value === null || $value === '' || trim( $value ) === '' ) {
+			return null;
+		}
+
+		$subdomain = trim( sanitize_text_field( $value ) );
+		
+		// Return null if sanitization resulted in an empty string
+		if ( empty( $subdomain ) ) {
+			return null;
+		}
+
+		return preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $subdomain ) ? $subdomain : null;
 	}
 } 

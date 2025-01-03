@@ -32,8 +32,7 @@ class Activation {
 	private static array $core_defaults = [
 		'edge_images_provider'             => Providers::DEFAULT_PROVIDER,
 		'edge_images_disable_picture_wrap' => false,
-		'edge_images_max_width'           => 800,
-		'edge_images_imgix_subdomain'     => '',
+		'edge_images_max_width'           => 650,
 	];
 
 	/**
@@ -70,7 +69,7 @@ class Activation {
 		// Get and set integration defaults
 		$integration_defaults = self::get_integration_defaults();
 		foreach ($integration_defaults as $option => $default) {
-			if (get_option($option) === false) {
+			if (get_option($option) === false && !empty($default)) {
 				update_option($option, $default);
 			}
 		}
@@ -78,7 +77,7 @@ class Activation {
 		// Set feature defaults
 		$feature_defaults = Features::get_default_settings();
 		foreach ($feature_defaults as $option => $default) {
-			if (get_option($option) === false) {
+			if (get_option($option) === false && !empty($default)) {
 				update_option($option, $default);
 			}
 		}
@@ -99,10 +98,18 @@ class Activation {
 		$integrations = Integrations::get_integrations();
 
 		foreach ($integrations as $integration => $config) {
+			// Skip if integration requirements aren't met
+			if (!Integrations::is_enabled($integration)) {
+				continue;
+			}
+
 			foreach ($config['classes'] as $class) {
 				$full_class = __NAMESPACE__ . '\\' . $class;
 				if (class_exists($full_class) && method_exists($full_class, 'get_default_settings')) {
-					$defaults = array_merge($defaults, $full_class::get_default_settings());
+					$integration_defaults = $full_class::get_default_settings();
+					if (is_array($integration_defaults)) {
+						$defaults = array_merge($defaults, $integration_defaults);
+					}
 				}
 			}
 		}
@@ -121,7 +128,6 @@ class Activation {
 		return array_merge(
 			[
 				'edge_images_provider' => '',
-				'edge_images_imgix_subdomain' => '',
 				'edge_images_feature_picture_wrap' => false,
 			],
 			Features::get_default_settings()

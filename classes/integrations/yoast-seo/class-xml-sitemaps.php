@@ -44,7 +44,7 @@ class XML_Sitemaps extends Integration {
 	 * @since      4.5.0
 	 * @var        int
 	 */
-	private const SITEMAP_HEIGHT = 630;
+	private const SITEMAP_HEIGHT = 675;
 
 	/**
 	 * Add integration-specific filters.
@@ -118,7 +118,7 @@ class XML_Sitemaps extends Integration {
 	 */
 	public static function get_default_settings(): array {
 		return [
-			'edge_images_yoast_xml_sitemap_images' => true,
+			'edge_images_integration_yoast_xml' => true,
 		];
 	}
 

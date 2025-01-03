@@ -76,7 +76,7 @@ class Settings {
 	 * Retrieves the maximum width setting for image transformations.
 	 * This method:
 	 * - Returns the configured max width value
-	 * - Provides a default of 800 pixels
+	 * - Provides a default of 650 pixels
 	 * - Ensures integer return type
 	 * - Uses cached values when available
 	 * - Integrates with the WordPress options API
@@ -87,7 +87,7 @@ class Settings {
 	 * @return int The maximum width for images in pixels.
 	 */
 	public static function get_max_width(): int {
-		return (int) self::get_option(self::MAX_WIDTH_OPTION, 800);
+		return (int) self::get_option(self::MAX_WIDTH_OPTION, 650);
 	}
 
 	/**
@@ -196,7 +196,7 @@ class Settings {
 				'type' => 'integer',
 				'description' => __('The maximum width for images when content width is not set', 'edge-images'),
 				'sanitize_callback' => 'absint',
-				'default' => 800,
+				'default' => 650,
 				'update_callback' => [self::class, 'reset_cache'],
 			]
 		);

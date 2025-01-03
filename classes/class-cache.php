@@ -75,6 +75,9 @@ class Cache {
 		add_action('attachment_updated', [self::class, 'purge_attachment'], 10, 3);
 		add_action('delete_attachment', [self::class, 'purge_attachment']);
 
+		// Settings update hook
+		add_action('update_option', [self::class, 'maybe_purge_all'], 10, 3);
+
 		// Allow integrations to register their own cache hooks
 		do_action('edge_images_register_cache_hooks');
 	}
@@ -258,6 +261,46 @@ class Cache {
 		}
 		
 		return array_map('intval', $images);
+	}
+
+	/**
+	 * Purge all caches when relevant options are updated.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param string $option    Name of the updated option.
+	 * @param mixed  $old_value The old option value.
+	 * @param mixed  $value     The new option value.
+	 * @return void
+	 */
+	public static function maybe_purge_all(string $option, $old_value, $value): void {
+		
+		// List of options that should trigger a cache purge
+		$trigger_options = [
+			'edge_images_provider',
+			'edge_images_imgix_subdomain',
+			'edge_images_bunny_subdomain',
+			'edge_images_max_width',
+			'edge_images_disable_picture_wrap',
+		];
+
+		if (in_array($option, $trigger_options, true)) {
+			self::purge_all();
+		}
+	}
+
+	/**
+	 * Purge all Edge Images caches.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return void
+	 */
+	public static function purge_all(): void {
+		wp_cache_delete_group(self::CACHE_GROUP);
+
+		// Allow integrations to purge their specific caches
+		do_action('edge_images_purge_all_cache');
 	}
 
 } 

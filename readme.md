@@ -69,10 +69,10 @@ Automatically transforms images in:
 
 Supports the following filters:
 - `edge_images_yoast_disable` (`bool`): Disables the Yoast SEO integration. Defaults to `false`.
-- `edge_images_yoast_disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
-- `edge_images_yoast_disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
-- `edge_images_yoast_disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
-- `edge_images_yoast_social_image_args`: (`array`): Alters the args passed to the social image.
+- `edge_images_integration_yoast_disable_schema_images` (`bool`): Disables filtering images output in Yoast SEO schema. Defaults to `false`.
+- `edge_images_integration_yoast_disable_xml_sitemap_images` (`bool`): Disables filtering images output in Yoast SEO XML sitemaps. Defaults to `false`.
+- `edge_images_integration_yoast_disable_social_images` (`bool`): Disables filtering images output in Yoast social images (`og:image` and `twitter:image`). Defaults to `false`.
+- `edge_images_integration_yoast_social_image_args`: (`array`): Alters the args passed to the social image.
 
 ## Supported Attributes
 When using `wp_get_attachment_image()` or similar functions, you can pass the following attributes to control image transformation:

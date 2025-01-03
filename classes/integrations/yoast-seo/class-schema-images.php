@@ -271,7 +271,7 @@ class Schema_Images extends Integration {
 	 */
 	public static function get_default_settings(): array {
 		return [
-			'edge_images_yoast_schema_images' => true,
+			'edge_images_integration_yoast_schema' => true,
 		];
 	}
 
@@ -290,7 +290,7 @@ class Schema_Images extends Integration {
 	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-		return Features::is_enabled('edge_images_yoast_schema_images') && Helpers::should_transform_images();
+		return Features::is_enabled('edge_images_integration_yoast_schema') && Helpers::should_transform_images();
 	}
 }
 

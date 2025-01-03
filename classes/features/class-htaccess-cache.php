@@ -64,28 +64,23 @@ class Htaccess_Cache extends Integration {
 	 * @return void
 	 */
 	protected function add_filters(): void {
-
-		// Bail if we shouldn't be filtering
-		if (!$this->should_filter()) {
-			return;
-		}
-
 		// Get the correct option name
 		$option_name = 'edge_images_feature_htaccess_caching';
 		
-		// Hook into option updates
+		// Always hook into option updates
 		add_action("update_option_{$option_name}", [$this, 'handle_option_update'], 10, 2);
 		add_action("add_option_{$option_name}", [$this, 'handle_option_update'], 10, 2);
 
-		// Add admin notices
-		add_action('admin_notices', [$this, 'display_admin_notices']);
-
-		// If the feature is enabled, ensure htaccess exists
+		// Only check htaccess on initial load if the feature is enabled
 		if (Features::is_enabled('htaccess_caching')) {
 			$upload_dir = wp_upload_dir();
 			$htaccess_path = $upload_dir['basedir'] . '/.htaccess';
 			
-			if (!file_exists($htaccess_path) || !$this->has_our_rules($htaccess_path)) {
+			// Only create htaccess if it doesn't exist or doesn't have our rules
+			if (!file_exists($htaccess_path)) {
+				$result = $this->create_htaccess();
+				$this->store_admin_notice($result);
+			} elseif (!$this->has_our_rules($htaccess_path)) {
 				$result = $this->create_htaccess();
 				$this->store_admin_notice($result);
 			}
@@ -126,11 +121,16 @@ class Htaccess_Cache extends Integration {
 	 * @return bool                 True if rules exist, false otherwise.
 	 */
 	private function has_our_rules(string $htaccess_path): bool {
+
+		// Bail if the file doesn't exist
 		if (!file_exists($htaccess_path)) {
 			return false;
 		}
 
+		// Get the file contents
 		$content = file_get_contents($htaccess_path);
+
+		// Check if the rules are in the file
 		return $content !== false && strpos($content, '# BEGIN Edge Images Cache Rules') !== false;
 	}
 
@@ -152,26 +152,29 @@ class Htaccess_Cache extends Integration {
 	 * @return void
 	 */
 	public function handle_option_update($old_value, $new_value): void {
-		// Only create/update htaccess when enabling the feature
-		if ($new_value && (!$old_value || $old_value !== $new_value)) {
+		// Convert values to boolean for comparison.
+		$old_enabled = filter_var($old_value, FILTER_VALIDATE_BOOLEAN);
+		$new_enabled = filter_var($new_value, FILTER_VALIDATE_BOOLEAN);
+
+		// Only act if there's a change.
+		if ($old_enabled === $new_enabled) {
+			return;
+		}
+
+		// If enabling.
+		if ($new_enabled) {
 			$result = $this->create_htaccess();
 			$this->store_admin_notice($result);
-		} elseif (!$new_value && $old_value) {
-			$result = $this->remove_htaccess();
-			$this->store_admin_notice($result);
+			return;
 		}
+
+		// If disabling.
+		$result = $this->remove_htaccess();
+		$this->store_admin_notice($result);
 	}
 
 	/**
 	 * Store an admin notice for later display.
-	 *
-	 * Manages temporary storage of admin notifications.
-	 * This method:
-	 * - Stores notice data
-	 * - Sets notice type
-	 * - Manages timing
-	 * - Ensures persistence
-	 * - Handles cleanup
 	 *
 	 * @since      4.5.0
 	 * 
@@ -179,51 +182,13 @@ class Htaccess_Cache extends Integration {
 	 * @return void
 	 */
 	private function store_admin_notice(array $result): void {
-		$notices = get_option('edge_images_admin_notices', []);
-		$notices[] = [
-			'type' => $result['success'] ? 'success' : 'error',
-			'message' => $result['message'],
-			'time' => time(),
-		];
-		update_option('edge_images_admin_notices', $notices);
-	}
-
-	/**
-	 * Display admin notices.
-	 *
-	 * Renders stored admin notifications in the dashboard.
-	 * This method:
-	 * - Retrieves notices
-	 * - Formats messages
-	 * - Handles timing
-	 * - Ensures security
-	 * - Manages cleanup
-	 *
-	 * @since      4.5.0
-	 * 
-	 * @return void
-	 */
-	public function display_admin_notices(): void {
-		$notices = get_option('edge_images_admin_notices', []);
-		if (empty($notices)) {
-			return;
-		}
-
-		foreach ($notices as $notice) {
-			// Only show notices that are less than 5 minutes old
-			if (time() - $notice['time'] > 300) {
-				continue;
-			}
-
+		add_action('admin_notices', function() use ($result) {
 			printf(
 				'<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
-				esc_attr($notice['type']),
-				esc_html($notice['message'])
+				esc_attr($result['success'] ? 'success' : 'error'),
+				esc_html($result['message'])
 			);
-		}
-
-		// Clear notices
-		delete_option('edge_images_admin_notices');
+		});
 	}
 
 	/**
