@@ -538,7 +538,7 @@ class Helpers {
 		}
 
 		// Parse the URL
-		$parsed = parse_url($url);
+		$parsed = wp_parse_url($url);
 
 		// If no path component, return empty string
 		if (!isset($parsed['path'])) {

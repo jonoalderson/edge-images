@@ -49,15 +49,53 @@ class Htaccess_Cache extends Integration {
 # END Edge Images Cache Rules';
 
 	/**
+	 * WordPress Filesystem instance.
+	 *
+	 * @since 4.5.0
+	 * @var \WP_Filesystem_Base|null
+	 */
+	private $filesystem = null;
+
+	/**
+	 * Initialize the filesystem.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @return bool True if filesystem is initialized, false otherwise.
+	 */
+	private function init_filesystem(): bool {
+
+		// Bail if already initialized
+		if ($this->filesystem !== null) {
+			return true;
+		}
+
+		// Initialize the WordPress Filesystem.
+		if (!function_exists('WP_Filesystem')) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		// Initialize the filesystem
+		WP_Filesystem();
+		global $wp_filesystem;
+
+		// Bail if the filesystem isn't initialized
+		if (!$wp_filesystem) {
+			return false;
+		}
+
+		// Set the filesystem
+		$this->filesystem = $wp_filesystem;
+		
+		return true;
+	}
+
+	/**
 	 * Add integration-specific filters.
 	 *
 	 * Sets up required filters and actions for htaccess caching.
 	 * This method:
 	 * - Adds option update handlers
-	 * - Sets up admin notices
-	 * - Checks file existence
-	 * - Validates configuration
-	 * - Ensures proper setup
 	 *
 	 * @since      4.5.0
 	 * 
@@ -67,23 +105,39 @@ class Htaccess_Cache extends Integration {
 		// Get the correct option name
 		$option_name = 'edge_images_feature_htaccess_caching';
 		
-		// Always hook into option updates
+		// Hook into option updates
 		add_action("update_option_{$option_name}", [$this, 'handle_option_update'], 10, 2);
 		add_action("add_option_{$option_name}", [$this, 'handle_option_update'], 10, 2);
 
-		// Only check htaccess on initial load if the feature is enabled
+		// If the feature is enabled, check htaccess on settings page load
 		if (Features::is_enabled('htaccess_caching')) {
-			$upload_dir = wp_upload_dir();
-			$htaccess_path = $upload_dir['basedir'] . '/.htaccess';
-			
-			// Only create htaccess if it doesn't exist or doesn't have our rules
-			if (!file_exists($htaccess_path)) {
-				$result = $this->create_htaccess();
-				$this->store_admin_notice($result);
-			} elseif (!$this->has_our_rules($htaccess_path)) {
-				$result = $this->create_htaccess();
-				$this->store_admin_notice($result);
-			}
+			add_action('load-settings_page_edge-images', [$this, 'initialize_htaccess']);
+		}
+	}
+
+	/**
+	 * Initialize htaccess if needed.
+	 *
+	 * @since      4.5.0
+	 * 
+	 * @return void
+	 */
+	public function initialize_htaccess(): void {
+		if (!$this->init_filesystem()) {
+			$this->store_admin_notice([
+				'success' => false,
+				'message' => __('Failed to initialize WordPress filesystem.', 'edge-images'),
+			]);
+			return;
+		}
+
+		$upload_dir = wp_upload_dir();
+		$htaccess_path = $upload_dir['basedir'] . '/.htaccess';
+		
+		// Only create htaccess if it doesn't exist or doesn't have our rules
+		if (!$this->filesystem->exists($htaccess_path) || !$this->has_our_rules($htaccess_path)) {
+			$result = $this->create_htaccess();
+			$this->store_admin_notice($result);
 		}
 	}
 
@@ -121,14 +175,17 @@ class Htaccess_Cache extends Integration {
 	 * @return bool                 True if rules exist, false otherwise.
 	 */
 	private function has_our_rules(string $htaccess_path): bool {
+		if (!$this->init_filesystem()) {
+			return false;
+		}
 
 		// Bail if the file doesn't exist
-		if (!file_exists($htaccess_path)) {
+		if (!$this->filesystem->exists($htaccess_path)) {
 			return false;
 		}
 
 		// Get the file contents
-		$content = file_get_contents($htaccess_path);
+		$content = $this->filesystem->get_contents($htaccess_path);
 
 		// Check if the rules are in the file
 		return $content !== false && strpos($content, '# BEGIN Edge Images Cache Rules') !== false;
@@ -152,23 +209,23 @@ class Htaccess_Cache extends Integration {
 	 * @return void
 	 */
 	public function handle_option_update($old_value, $new_value): void {
-		// Convert values to boolean for comparison.
+		// Convert values to boolean for comparison
 		$old_enabled = filter_var($old_value, FILTER_VALIDATE_BOOLEAN);
 		$new_enabled = filter_var($new_value, FILTER_VALIDATE_BOOLEAN);
 
-		// Only act if there's a change.
+		// Only act if there's a change
 		if ($old_enabled === $new_enabled) {
 			return;
 		}
 
-		// If enabling.
+		// If enabling, create htaccess
 		if ($new_enabled) {
 			$result = $this->create_htaccess();
 			$this->store_admin_notice($result);
 			return;
 		}
 
-		// If disabling.
+		// If disabling, remove htaccess
 		$result = $this->remove_htaccess();
 		$this->store_admin_notice($result);
 	}
@@ -208,11 +265,18 @@ class Htaccess_Cache extends Integration {
 	 * @return array{success: bool, message: string} Operation result array.
 	 */
 	private function create_htaccess(): array {
+		if (!$this->init_filesystem()) {
+			return [
+				'success' => false,
+				'message' => __('Failed to initialize WordPress filesystem.', 'edge-images'),
+			];
+		}
+
 		$upload_dir = wp_upload_dir();
 		$htaccess_path = $upload_dir['basedir'] . '/.htaccess';
 
 		// Check if we have write permissions
-		if (!is_writable($upload_dir['basedir'])) {
+		if (!$this->filesystem->is_writable($upload_dir['basedir'])) {
 			return [
 				'success' => false,
 				'message' => sprintf(
@@ -225,8 +289,8 @@ class Htaccess_Cache extends Integration {
 
 		// If file exists, read it
 		$current_content = '';
-		if (file_exists($htaccess_path)) {
-			$current_content = file_get_contents($htaccess_path);
+		if ($this->filesystem->exists($htaccess_path)) {
+			$current_content = $this->filesystem->get_contents($htaccess_path);
 			
 			// Check if our rules are already there
 			if (strpos($current_content, '# BEGIN Edge Images Cache Rules') !== false) {
@@ -243,7 +307,8 @@ class Htaccess_Cache extends Integration {
 		}
 
 		// Write the file
-		$result = file_put_contents($htaccess_path, $new_content);
+		$result = $this->filesystem->put_contents($htaccess_path, $new_content);
+
 		if ($result === false) {
 			return [
 				'success' => false,
@@ -274,11 +339,18 @@ class Htaccess_Cache extends Integration {
 	 * @return array{success: bool, message: string} Operation result array.
 	 */
 	private function remove_htaccess(): array {
+		if (!$this->init_filesystem()) {
+			return [
+				'success' => false,
+				'message' => __('Failed to initialize WordPress filesystem.', 'edge-images'),
+			];
+		}
+
 		$upload_dir = wp_upload_dir();
 		$htaccess_path = $upload_dir['basedir'] . '/.htaccess';
 
 		// If file doesn't exist, nothing to do
-		if (!file_exists($htaccess_path)) {
+		if (!$this->filesystem->exists($htaccess_path)) {
 			return [
 				'success' => true,
 				'message' => __('.htaccess file does not exist.', 'edge-images'),
@@ -286,7 +358,7 @@ class Htaccess_Cache extends Integration {
 		}
 
 		// Read the current content
-		$current_content = file_get_contents($htaccess_path);
+		$current_content = $this->filesystem->get_contents($htaccess_path);
 		if ($current_content === false) {
 			return [
 				'success' => false,
@@ -299,7 +371,7 @@ class Htaccess_Cache extends Integration {
 		$new_content = preg_replace($pattern, '', $current_content);
 
 		// Write the file
-		$result = file_put_contents($htaccess_path, $new_content);
+		$result = $this->filesystem->put_contents($htaccess_path, $new_content);
 		if ($result === false) {
 			return [
 				'success' => false,
@@ -331,5 +403,21 @@ class Htaccess_Cache extends Integration {
 		return [
 			'edge_images_feature_htaccess_caching' => false,
 		];
+	}
+
+	/**
+	 * Handle any option being updated.
+	 *
+	 * @since      4.5.0
+	 * 
+	 * @param  string $option    Name of the updated option.
+	 * @param  mixed  $old_value The old option value.
+	 * @param  mixed  $value     The new option value.
+	 * @return void
+	 */
+	public function handle_updated_option(string $option, $old_value, $value): void {
+		if ($option === 'edge_images_feature_htaccess_caching') {
+			$this->handle_option_update($old_value, $value);
+		}
 	}
 } 

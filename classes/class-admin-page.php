@@ -180,8 +180,8 @@ class Admin_Page {
 			<p>
 				<?php
 				printf(
-					/* translators: %s: Settings page URL */
-					esc_html__( 'Edge Images is installed but no provider is selected. Images will not be optimized until you %sconfigure a provider%s.', 'edge-images' ),
+					/* translators: %1$s: Opening link tag, %2$s: Closing link tag */
+					esc_html__( 'Edge Images is installed but no provider is selected. Images will not be optimized until you %1$sconfigure a provider%2$s.', 'edge-images' ),
 					'<a href="' . esc_url( $settings_url ) . '">',
 					'</a>'
 				);
@@ -283,6 +283,15 @@ class Admin_Page {
 					  filter_var( wp_unslash( $_POST[ $option ] ), FILTER_VALIDATE_BOOLEAN ) : 
 					  false;
 			update_option( $option, $value );
+		}
+
+		// Process feature settings
+		foreach ( Features::get_features() as $id => $feature ) {
+			$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
+			$value = isset( $_POST[ $option_name ] ) ? 
+					  filter_var( wp_unslash( $_POST[ $option_name ] ), FILTER_VALIDATE_BOOLEAN ) : 
+					  false;
+			update_option( $option_name, $value );
 		}
 
 		// Clear caches after settings update
