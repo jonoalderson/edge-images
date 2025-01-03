@@ -283,13 +283,19 @@ class Handler {
 				'height' => (string) $size[1]
 			];
 		} else {
-			// Get dimensions from attachment metadata for named size
-			$dimensions = Image_Dimensions::from_attachment($attachment->ID, $size);
+			// Get dimensions from registered size
+			$dimensions = Image_Dimensions::from_size($size, $attachment->ID);
 		}
 
 		// Create a processor from the attributes
 		$processor = new \WP_HTML_Tag_Processor('<img ' . Helpers::attributes_to_string($attr) . ' />');
 		$processor->next_tag();
+
+		// Add wp-image-{id} class if not present
+		$classes = $processor->get_attribute('class') ?? '';
+		if (!str_contains($classes, 'wp-image-' . $attachment->ID)) {
+			$processor->set_attribute('class', trim($classes . ' wp-image-' . $attachment->ID));
+		}
 
 		// Get transform args based on size and attributes
 		$transform_args = array_merge(
@@ -381,17 +387,29 @@ class Handler {
 			return $html;
 		}
 
-		$width = $processor->get_attribute('width');
-		$height = $processor->get_attribute('height');
-
-		if (!$width || !$height) {
-			return $html;
+		// Get dimensions from size first if it's an array
+		$dimensions = null;
+		if (is_array($size) && isset($size[0], $size[1])) {
+			$dimensions = [
+				'width' => (string) $size[0],
+				'height' => (string) $size[1]
+			];
 		}
 
-		$dimensions = [
-			'width' => $width,
-			'height' => $height
-		];
+		// If no dimensions from size, try getting from image attributes
+		if (!$dimensions) {
+			$width = $processor->get_attribute('width');
+			$height = $processor->get_attribute('height');
+
+			if (!$width || !$height) {
+				return $html;
+			}
+
+			$dimensions = [
+				'width' => $width,
+				'height' => $height
+			];
+		}
 
 		// If we have a figure, try to transform it
 		$img_html = Helpers::extract_img_tag($html);
@@ -417,14 +435,28 @@ class Handler {
 	 * @return string The transformed image HTML
 	 */
 	public function transform_image($image_html, $attachment_id = null, $context = ''): string {
-		// Bail if SVG.
-		if (Helpers::is_svg($image_html)) {
-			return $image_html;
-		}
-
 		// Create a processor for the image HTML.
 		$processor = new \WP_HTML_Tag_Processor($image_html);
 		if (!$processor->next_tag('img')) {
+			return $image_html;
+		}
+
+		// Get the src
+		$src = $processor->get_attribute('src');
+		if (!$src) {
+			return $image_html;
+		}
+
+		// Check if this is an SVG
+		if (Helpers::is_svg($src)) {
+			// For SVGs, just enforce dimensions without transforming
+			$dimensions = Image_Dimensions::get($processor, $attachment_id);
+			if ($dimensions) {
+				$processor->set_attribute('width', $dimensions['width']);
+				$processor->set_attribute('height', $dimensions['height']);
+				$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
+				return $processor->get_updated_html();
+			}
 			return $image_html;
 		}
 

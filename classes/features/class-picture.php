@@ -68,6 +68,14 @@ class Picture extends Integration {
 			}
 		}
 
+		// Update the image dimensions
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if ($processor->next_tag('img')) {
+			$processor->set_attribute('width', $dimensions['width']);
+			$processor->set_attribute('height', $dimensions['height']);
+			$img_html = $processor->get_updated_html();
+		}
+
 		// Build classes array
 		$classes = [];
 		if ($class) {

@@ -144,10 +144,18 @@ class Image_Dimensions {
      * 
      * @param \WP_HTML_Tag_Processor $processor     The HTML processor instance.
      * @param int|null               $attachment_id Optional. The attachment ID to check. Default null.
-     * @param string                $size          Optional. The image size to retrieve. Default 'full'.
+     * @param string|array          $size          Optional. The image size to retrieve. Default 'full'.
      * @return array<string,string>|null Array with width and height, or null if not found.
      */
-    public static function get( \WP_HTML_Tag_Processor $processor, ?int $attachment_id = null, string $size = 'full' ): ?array {
+    public static function get( \WP_HTML_Tag_Processor $processor, ?int $attachment_id = null, $size = 'full' ): ?array {
+        // If we have a size array, use those dimensions directly
+        if (is_array($size) && isset($size[0], $size[1])) {
+            return [
+                'width' => (string) $size[0],
+                'height' => (string) $size[1]
+            ];
+        }
+
         // Try HTML first.
         $dimensions = self::from_html( $processor );
         if ( $dimensions ) {

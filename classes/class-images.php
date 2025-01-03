@@ -71,11 +71,6 @@ class Images {
 			return $processor;
 		}
 
-		// Check if we should transform this URL
-		if (!Helpers::should_transform_url($src)) {
-			return $processor;
-		}
-
 		// Get dimensions from args if they exist
 		$dimensions = null;
 		if (isset($args['w'], $args['h'])) {
@@ -108,6 +103,15 @@ class Images {
 			// Create a new processor to preserve the original state
 			$new_processor = new \WP_HTML_Tag_Processor($processor->get_updated_html());
 			$new_processor->next_tag('img');
+
+			// Check if this is an SVG
+			if (Helpers::is_svg($src)) {
+				// For SVGs, just set the dimensions without transforming the URL
+				$new_processor->set_attribute('width', $dimensions['width']);
+				$new_processor->set_attribute('height', $dimensions['height']);
+				$new_processor->set_attribute('class', trim($new_processor->get_attribute('class') . ' edge-images-processed'));
+				return $new_processor;
+			}
 
 			// Use transform_image_urls for consistent behavior
 			self::transform_image_urls($new_processor, $dimensions, $html, $context, $args);
@@ -153,7 +157,13 @@ class Images {
 		}
 
 		// Get attachment ID if available
-		$attachment_id = Helpers::get_attachment_id_from_classes($processor);
+		$attachment_id = null;
+		
+		// First try to get ID from classes
+		$classes = $processor->get_attribute('class') ?? '';
+		if (preg_match('/wp-image-(\d+)/', $classes, $matches)) {
+			$attachment_id = (int) $matches[1];
+		}
 
 		// Calculate aspect ratio and validate dimensions
 		$width = (int) $dimensions['width'];
@@ -177,6 +187,14 @@ class Images {
 				'width' => (string) $max_width,
 				'height' => (string) $max_height
 			];
+		}
+
+		// Check if this is an SVG
+		if (Helpers::is_svg($src)) {
+			// For SVGs, just set the dimensions without transforming the URL
+			$processor->set_attribute('width', $dimensions['width']);
+			$processor->set_attribute('height', $dimensions['height']);
+			return;
 		}
 
 		// Get a provider instance to access default args
