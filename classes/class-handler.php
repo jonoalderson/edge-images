@@ -369,13 +369,13 @@ class Handler {
 	 * @since 4.0.0
 	 * 
 	 * @param string       $html         The HTML img element markup.
-	 * @param int         $attachment_id The attachment ID.
+	 * @param int|null    $attachment_id The attachment ID.
 	 * @param string|array $size         The registered image size or array of width and height values.
 	 * @param array|string $attr_or_icon Array of attributes or 'icon' if it's the fourth argument.
 	 * @param bool|null    $icon         Whether the image should be treated as an icon.
 	 * @return string The wrapped HTML.
 	 */
-	public function wrap_attachment_image(string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null): string {
+	public function wrap_attachment_image(string $html, ?int $attachment_id = null, $size = 'full', $attr_or_icon = [], $icon = null): string {
 		// Check if we should wrap this image
 		if (!Picture::should_wrap($html, 'attachment')) {
 			return $html;
@@ -528,13 +528,13 @@ class Handler {
 	 * @since 4.5.0
 	 * 
 	 * @param string       $html          The HTML img element markup.
-	 * @param int         $attachment_id Image attachment post ID.
+	 * @param int|null    $attachment_id Image attachment post ID.
 	 * @param string|array $size          Requested image size name or dimensions array.
 	 * @param bool|array   $attr_or_icon  Array of attributes or boolean for icon status.
 	 * @param bool|null    $icon          Whether the image should be treated as an icon.
 	 * @return string Modified HTML with cleaned up attributes.
 	 */
-	public function cleanup_image_html(string $html, int $attachment_id, $size, $attr_or_icon = [], $icon = null): string {
+	public function cleanup_image_html(string $html, ?int $attachment_id = null, $size = 'full', $attr_or_icon = [], $icon = null): string {
 	
 		// Skip if no HTML
 		if (empty($html)) {

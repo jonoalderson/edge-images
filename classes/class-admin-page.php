@@ -244,7 +244,8 @@ class Admin_Page {
 
 		// Process Imgix subdomain setting
 		if ( isset( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) ) {
-			$subdomain = self::sanitize_subdomain( wp_unslash( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) );
+			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) );
+			$subdomain = self::sanitize_subdomain( $subdomain );
 			if ( $subdomain === null ) {
 				delete_option( self::IMGIX_SUBDOMAIN_OPTION );
 			} else {
@@ -254,7 +255,8 @@ class Admin_Page {
 
 		// Process Bunny CDN subdomain setting
 		if ( isset( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) ) {
-			$subdomain = self::sanitize_subdomain( wp_unslash( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) );
+			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) );
+			$subdomain = self::sanitize_subdomain( $subdomain );
 			if ( $subdomain === null ) {
 				delete_option( self::BUNNY_SUBDOMAIN_OPTION );
 			} else {
@@ -264,7 +266,7 @@ class Admin_Page {
 
 		// Process max width setting
 		if ( isset( $_POST[ self::MAX_WIDTH_OPTION ] ) ) {
-			$max_width = absint( $_POST[ self::MAX_WIDTH_OPTION ] );
+			$max_width = absint( wp_unslash( $_POST[ self::MAX_WIDTH_OPTION ] ) );
 			// Enforce reasonable limits (100px to 5000px)
 			if ( $max_width >= 100 && $max_width <= 5000 ) {
 				update_option( self::MAX_WIDTH_OPTION, $max_width );
@@ -575,6 +577,14 @@ class Admin_Page {
 			EDGE_IMAGES_VERSION,
 			'all'
 		);
+
+		wp_enqueue_script(
+			'edge-images-admin',
+			EDGE_IMAGES_PLUGIN_URL . 'assets/js/admin.js',
+			['jquery'],
+			EDGE_IMAGES_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -678,28 +688,8 @@ class Admin_Page {
 
 		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
 		$subdomain = get_option( self::BUNNY_SUBDOMAIN_OPTION, '' );
-		$display = $current_provider === 'bunny' ? 'block' : 'none';
 		?>
-		<script>
-		jQuery(document).ready(function($) {
-			// Show/hide Bunny CDN settings based on provider selection
-			function toggleBunnySettings() {
-				if ($('input[name="<?php echo esc_js( self::PROVIDER_OPTION ); ?>"]:checked').val() === 'bunny') {
-					$('.edge-images-bunny-field').show();
-				} else {
-					$('.edge-images-bunny-field').hide();
-				}
-			}
-
-			// Initial state
-			toggleBunnySettings();
-
-			// On change
-			$('input[name="<?php echo esc_js( self::PROVIDER_OPTION ); ?>"]').change(toggleBunnySettings);
-		});
-		</script>
-
-		<div class="edge-images-settings-field">
+		<div class="edge-images-settings-field edge-images-provider-field edge-images-bunny-field">
 			<input 
 				type="text" 
 				id="<?php echo esc_attr( self::BUNNY_SUBDOMAIN_OPTION ); ?>"
@@ -738,28 +728,8 @@ class Admin_Page {
 
 		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
 		$subdomain = get_option( self::IMGIX_SUBDOMAIN_OPTION, '' );
-		$display = $current_provider === 'imgix' ? 'block' : 'none';
 		?>
-		<script>
-		jQuery(document).ready(function($) {
-			// Show/hide Imgix settings based on provider selection
-			function toggleImgixSettings() {
-				if ($('input[name="<?php echo esc_js( self::PROVIDER_OPTION ); ?>"]:checked').val() === 'imgix') {
-					$('.edge-images-imgix-field').show();
-				} else {
-					$('.edge-images-imgix-field').hide();
-				}
-			}
-
-			// Initial state
-			toggleImgixSettings();
-
-			// On change
-			$('input[name="<?php echo esc_js( self::PROVIDER_OPTION ); ?>"]').change(toggleImgixSettings);
-		});
-		</script>
-
-		<div class="edge-images-settings-field">
+		<div class="edge-images-settings-field edge-images-provider-field edge-images-imgix-field">
 			<input 
 				type="text" 
 				id="<?php echo esc_attr( self::IMGIX_SUBDOMAIN_OPTION ); ?>"

@@ -198,8 +198,11 @@ class Helpers {
 		}
 
 		// Allow AJAX requests for Relevanssi
-		if (wp_doing_ajax() && isset($_REQUEST['action']) && $_REQUEST['action'] === 'relevanssi_live_search') {
-			return true;
+		if (wp_doing_ajax() && isset($_REQUEST['action'])) {
+			$action = sanitize_key($_REQUEST['action']);
+			if ($action === 'relevanssi_live_search') {
+				return true;
+			}
 		}
 
 		// Check if this is a valid page request
@@ -471,28 +474,45 @@ class Helpers {
 		}
 
 		// Get the request URI for pattern matching
-		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+		$request_uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
+		
+		// Clean the path for comparison
+		$clean_path = trim(wp_parse_url($request_uri, PHP_URL_PATH) ?? '', '/');
 
-		// Check common non-page URLs
-		$non_page_patterns = [
-			'/favicon.ico',      // Favicon
-			'/feed/',           // Main feed
-			'/feed/atom/',      // Atom feed
-			'/feed/rss/',       // RSS feed
-			'/robots.txt',      // Robots
-			'/wp-json/',        // REST API
-			'.xml',             // XML files (including sitemaps)
-			'.kml',             // KML files
+		// Check system files that should always be excluded
+		$system_files = [
+			'favicon.ico',      // Favicon
+			'robots.txt',      // Robots
 		];
 
-		foreach ($non_page_patterns as $pattern) {
-			if (strpos($request_uri, $pattern) !== false) {
+		// Direct path matches for system files
+		if (in_array($clean_path, $system_files, true)) {
+			return false;
+		}
+
+		// Check WordPress system paths (these should match full paths or have specific positions)
+		$wp_paths = [
+			'^feed$',           // Main feed (exact match)
+			'^feed/',           // Feed with subpath
+			'^wp-json/',        // REST API (must start with)
+			'/feed$',           // Category/taxonomy feed (must end with)
+			'/feed/',           // Nested feed
+		];
+
+		foreach ($wp_paths as $path) {
+			if (preg_match('~' . $path . '~', $clean_path)) {
 				return false;
 			}
 		}
 
+		// Extension checks (for files like .xml, .kml)
+		$extension = strtolower(pathinfo($clean_path, PATHINFO_EXTENSION));
+		if (in_array($extension, ['xml', 'kml'], true)) {
+			return false;
+		}
+
 		// Check content type for JSON/JSONP requests
-		$content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+		$content_type = isset($_SERVER['CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['CONTENT_TYPE'])) : '';
 		if (strpos($content_type, 'application/json') !== false || 
 			strpos($content_type, 'application/javascript') !== false) {
 			return false;
