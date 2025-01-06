@@ -467,7 +467,10 @@ class Admin_Page {
 			[ self::class, 'render_bunny_subdomain_field' ],
 			'edge_images',
 			'edge_images_main_section',
-			[ 'class' => 'edge-images-bunny-field' ]
+			[
+				'label_for' => self::BUNNY_SUBDOMAIN_OPTION,
+				'class' => 'edge-images-provider-field edge-images-bunny-field'
+			]
 		);
 
 		// Add Imgix subdomain field.
@@ -477,7 +480,10 @@ class Admin_Page {
 			[ self::class, 'render_imgix_subdomain_field' ],
 			'edge_images',
 			'edge_images_main_section',
-			[ 'class' => 'edge-images-imgix-field' ]
+			[
+				'label_for' => self::IMGIX_SUBDOMAIN_OPTION,
+				'class' => 'edge-images-provider-field edge-images-imgix-field'
+			]
 		);
 
 		// Add max width field.
@@ -689,7 +695,7 @@ class Admin_Page {
 		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
 		$subdomain = get_option( self::BUNNY_SUBDOMAIN_OPTION, '' );
 		?>
-		<div class="edge-images-settings-field edge-images-provider-field edge-images-bunny-field">
+		<div class="edge-images-settings-field">
 			<input 
 				type="text" 
 				id="<?php echo esc_attr( self::BUNNY_SUBDOMAIN_OPTION ); ?>"
@@ -729,7 +735,7 @@ class Admin_Page {
 		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
 		$subdomain = get_option( self::IMGIX_SUBDOMAIN_OPTION, '' );
 		?>
-		<div class="edge-images-settings-field edge-images-provider-field edge-images-imgix-field">
+		<div class="edge-images-settings-field">
 			<input 
 				type="text" 
 				id="<?php echo esc_attr( self::IMGIX_SUBDOMAIN_OPTION ); ?>"
