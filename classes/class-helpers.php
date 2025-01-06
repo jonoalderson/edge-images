@@ -330,17 +330,24 @@ class Helpers {
 	 * @return bool Whether the URL is local.
 	 */
 	public static function is_local_url(string $url): bool {
-		$site_url = site_url();
-		$home_url = home_url();
-		
-		// Remove protocol and www
-		$url = preg_replace('#^https?://(www\.)?#', '', $url);
-		$site_url = preg_replace('#^https?://(www\.)?#', '', $site_url);
-		$home_url = preg_replace('#^https?://(www\.)?#', '', $home_url);
-		
-		// Check if URL starts with either site_url or home_url
-		$is_local = (strpos($url, $site_url) === 0) || (strpos($url, $home_url) === 0);
-		
+		// If we can't parse the URL, assume it's not local
+		$url_parts = wp_parse_url($url);
+		if (!$url_parts || empty($url_parts['host'])) {
+			error_log('Edge Images: Could not parse URL or no host found: ' . $url);
+			return false;
+		}
+
+		// Get the list of internal hosts
+		$internal_hosts = wp_internal_hosts();
+		$url_host = strtolower($url_parts['host']);
+
+		error_log('Edge Images: Checking URL host: ' . $url_host);
+		error_log('Edge Images: Against internal hosts: ' . implode(', ', $internal_hosts));
+
+		// Check if the URL's host matches any internal host
+		$is_local = in_array($url_host, $internal_hosts, true);
+		error_log('Edge Images: Is local? ' . ($is_local ? 'yes' : 'no'));
+
 		return $is_local;
 	}
 

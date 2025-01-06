@@ -51,10 +51,17 @@ class Content_Transformer {
      * @return string Modified content.
      */
     private function transform_block_images(string $content): string {
+
         // Get all registered block handlers
         $handlers = Blocks::get_handlers();
+
+        // Bail if we don't have any handlers
+        if (empty($handlers)) {
+            return $content;
+        }
         
         foreach ($handlers as $block_type => $handler) {
+
             // Get the block pattern from the Blocks class
             $pattern = Blocks::get_block_pattern($block_type);
             if (!$pattern) {
@@ -63,6 +70,7 @@ class Content_Transformer {
 
             // If we have a pattern, use it to find blocks
             if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
+
                 // Process matches in reverse order to maintain offsets
                 $matches[0] = array_reverse($matches[0]);
 
@@ -93,28 +101,6 @@ class Content_Transformer {
                         // Replace the block content
                         $content = substr_replace($content, $transformed, $start, strlen($block_html));
                     }
-                }
-            }
-        }
-
-        // Also handle wp-block-image divs that aren't caught by block handlers
-        if (preg_match_all('/<div[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>.*?<\/div>/s', $content, $matches, PREG_OFFSET_CAPTURE)) {
-            $matches[0] = array_reverse($matches[0]);
-            foreach ($matches[0] as $match) {
-                $block_html = $match[0];
-                $start = $match[1];
-
-                // Skip if already processed
-                if (strpos($block_html, 'edge-images-processed') !== false) {
-                    continue;
-                }
-
-                // Extract the img tag and transform it
-                if (preg_match('/<figure[^>]*>.*?<img[^>]+>.*?<\/figure>/s', $block_html, $figure_matches)) {
-                    $figure_html = $figure_matches[0];
-                    $transformed = $this->transform_single_image($figure_html, 'content');
-                    $transformed_block = str_replace($figure_html, $transformed, $block_html);
-                    $content = substr_replace($content, $transformed_block, $start, strlen($block_html));
                 }
             }
         }

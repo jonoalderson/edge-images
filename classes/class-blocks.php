@@ -53,7 +53,7 @@ class Blocks {
 			// Gallery pattern - matches the outer gallery wrapper and all nested figures
 			'gallery' => '/<figure[^>]*\bwp-block-gallery\b[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*|<figure[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*)*<\/figure>)*<\/figure>/s',
 			// Image pattern - matches figures with wp-block-image class
-			'image' => '/<figure[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>.*?<\/figure>/s',
+			'image' => '/<(?:figure|div)[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>.*?<\/(?:figure|div)>/s',
 		];
 
 

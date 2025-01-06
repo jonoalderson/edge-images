@@ -88,6 +88,7 @@ class XML_Sitemaps extends Integration {
 	 * @return string           The transformed image URL.
 	 */
 	public function transform_sitemap_image(string $image_url): string {
+		
 		// Skip if empty or not local
 		if (empty($image_url) || !Helpers::is_local_url($image_url)) {
 			return $image_url;

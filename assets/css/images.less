@@ -2,7 +2,7 @@
 .edge-images-container {
 	display: block;
 	position: relative;
-	max-width: var(--max-width, 100%);
+	max-width: var(--wp--style--global--content-size, var(--max-width, 100%));
 	align-content: center;
 
 	img {
@@ -10,7 +10,6 @@
 		max-width: 100%;
 		max-height: 100%;
 		height: auto;
-		margin: auto;
 		border-radius: inherit; // Inherit the border radius from the container
 		
 		// SVGs are a sometimes headache.
