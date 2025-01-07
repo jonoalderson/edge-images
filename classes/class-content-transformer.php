@@ -78,6 +78,11 @@ class Content_Transformer {
                     $block_html = $match[0];
                     $start = $match[1];
 
+                    // Check if transformation should be disabled
+                    if (Helpers::should_disable_transform($block_html)) {
+                        continue;
+                    }
+
                     // Skip if this block has already been processed
                     if (strpos($block_html, 'edge-images-processed') !== false) {
                         continue;

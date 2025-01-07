@@ -86,6 +86,18 @@ class Helpers {
 	public const CACHE_GROUP = 'edge_images';
 
 	/**
+	 * Determines if image transformation should be disabled.
+	 *
+	 * @since 5.3.0
+	 * 
+	 * @param string $html The image HTML to check.
+	 * @return bool Whether image transformation should be disabled.
+	 */
+	public static function should_disable_transform(string $html = ''): bool {
+		return apply_filters('edge_images_disable_transform', false, $html);
+	}
+
+	/**
 	 * Get the configured edge provider name.
 	 *
 	 * Retrieves the provider name from options and validates it.
@@ -168,6 +180,7 @@ class Helpers {
 	 * @return bool Whether images should be transformed.
 	 */
 	public static function should_transform_images(): bool {
+		
 		// Never transform if plugin is disabled
 		if (apply_filters('edge_images_disable', false)) {
 			return false;
@@ -333,20 +346,15 @@ class Helpers {
 		// If we can't parse the URL, assume it's not local
 		$url_parts = wp_parse_url($url);
 		if (!$url_parts || empty($url_parts['host'])) {
-			error_log('Edge Images: Could not parse URL or no host found: ' . $url);
 			return false;
 		}
 
 		// Get the list of internal hosts
 		$internal_hosts = wp_internal_hosts();
 		$url_host = strtolower($url_parts['host']);
-
-		error_log('Edge Images: Checking URL host: ' . $url_host);
-		error_log('Edge Images: Against internal hosts: ' . implode(', ', $internal_hosts));
-
+		
 		// Check if the URL's host matches any internal host
 		$is_local = in_array($url_host, $internal_hosts, true);
-		error_log('Edge Images: Is local? ' . ($is_local ? 'yes' : 'no'));
 
 		return $is_local;
 	}
@@ -691,10 +699,21 @@ class Helpers {
 	 * @return string The attributes string.
 	 */
 	public static function attributes_to_string(array $attributes): string {
+
+		// Initialize the pairs array
 		$pairs = [];
+
+		// Loop through the attributes
 		foreach ($attributes as $name => $value) {
+
+			// Skip empty values
+			if ($value === '' || $value === null) {
+				continue;
+			}
+
 			$pairs[] = sprintf('%s="%s"', $name, esc_attr($value));
 		}
+		
 		return implode(' ', $pairs);
 	}
 

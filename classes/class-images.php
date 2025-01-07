@@ -365,6 +365,13 @@ class Images {
 	 * @return array Cleaned attributes.
 	 */
 	public static function clean_attachment_image_attributes(array $attr): array {
+		
+		// Create temporary HTML to check if transformation should be disabled
+		$temp_html = '<img ' . Helpers::attributes_to_string($attr) . ' />';
+		if (Helpers::should_disable_transform($temp_html)) {
+			return $attr;
+		}
+
 		// Get all valid transformation parameters
 		$valid_args = Edge_Provider::get_valid_args();
 		$all_params = [];

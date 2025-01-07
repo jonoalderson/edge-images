@@ -199,6 +199,13 @@ class Handler {
 	 * @return array Modified attributes with enforced dimensions.
 	 */
 	public function enforce_dimensions(array $attr, $attachment, $size): array {
+
+		// Create temporary HTML to check if transformation should be disabled
+		$temp_html = '<img ' . Helpers::attributes_to_string($attr) . ' />';
+		if (Helpers::should_disable_transform($temp_html)) {
+			return $attr;
+		}
+
 		// Always use data-original-width/height if available
 		if (isset($attr['data-original-width'], $attr['data-original-height'])) {
 			// Validate the original dimensions
@@ -270,6 +277,13 @@ class Handler {
 	 * @return array The transformed attributes.
 	 */
 	public function transform_attachment_image(array $attr, \WP_Post $attachment, $size): array {
+
+		// Create temporary HTML to check if transformation should be disabled
+		$temp_html = '<img ' . Helpers::attributes_to_string($attr) . ' />';
+		if (Helpers::should_disable_transform($temp_html)) {
+			return $attr;
+		}
+
 		// Skip if already processed
 		if (!empty($attr['class']) && Helpers::is_image_processed($attr['class'])) {
 			return $attr;
@@ -376,6 +390,12 @@ class Handler {
 	 * @return string The wrapped HTML.
 	 */
 	public function wrap_attachment_image(string $html, ?int $attachment_id = null, $size = 'full', $attr_or_icon = [], $icon = null): string {
+
+		// Check if transformation should be disabled
+		if (Helpers::should_disable_transform($html)) {
+			return $html;
+		}
+
 		// Check if we should wrap this image
 		if (!Picture::should_wrap($html, 'attachment')) {
 			return $html;
@@ -427,14 +447,21 @@ class Handler {
 	/**
 	 * Transform image
 	 *
+	 * @since 4.5.0
+	 * 
 	 * @param string|bool $value         The filtered value.
 	 * @param string     $image_html    The HTML image tag.
 	 * @param string     $context       The context (header, content, etc).
 	 * @param int        $attachment_id The attachment ID.
-	 * 
 	 * @return string The transformed image HTML
 	 */
-	public function transform_image($image_html, $attachment_id = null, $context = ''): string {
+	public function transform_image($value, $image_html, $context = '', $attachment_id = null): string {
+
+		// Check if transformation should be disabled
+		if (Helpers::should_disable_transform($image_html)) {
+			return $image_html;
+		}
+
 		// Create a processor for the image HTML.
 		$processor = new \WP_HTML_Tag_Processor($image_html);
 		if (!$processor->next_tag('img')) {
@@ -541,6 +568,11 @@ class Handler {
 			return $html;
 		}
 
+		// Check if transformation should be disabled
+		if (Helpers::should_disable_transform($html)) {
+			return $html;
+		}
+
 		// Create a processor from the HTML
 		$processor = new \WP_HTML_Tag_Processor($html);
 
@@ -555,6 +587,7 @@ class Handler {
 		return $processor->get_updated_html();
 	}
 }
+
 
 
 
