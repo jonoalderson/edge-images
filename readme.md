@@ -94,6 +94,7 @@ That's a range of perfectly sized options for different devices and viewports, a
 
 ### Transform Parameters
 Control every aspect of image transformation with attributes like:
+
 * `width`/`height`: Exact dimensions
 * `fit`: Resizing behavior (contain, cover, crop)
 * `quality`: Compression level
@@ -113,11 +114,21 @@ add_filter('edge_images_disable_transform', function($should_disable, $html) {
     }
     return $should_disable;
 }, 10, 2);
+
+// Override max width for constrained content
+add_filter('edge_images_max_width', function($max_width) {
+    // Example: Use a different max width for single posts
+    if (is_single()) {
+        return 800;
+    }
+    return $max_width;
+});
 ```
 
 ## 🔧 Requirements
 
 ### Essential
+
 * A supported edge provider with image transformation features enabled:
   * Cloudflare Pro plan or higher with Image Resizing enabled
   * Accelerated Domains with Image Resizing enabled
@@ -125,6 +136,7 @@ add_filter('edge_images_disable_transform', function($should_disable, $html) {
   * Imgix with a configured source
 
 ### Technical
+
 * PHP 7.4 or higher
 * WordPress 5.9 or higher
 
@@ -139,6 +151,7 @@ add_filter('edge_images_disable_transform', function($should_disable, $html) {
 
 ### Yoast SEO
 Automatically optimizes images in:
+
 * Meta tags (og:image, etc.)
 * Schema.org output
 * XML sitemaps
@@ -148,6 +161,7 @@ Automatically optimizes images in:
 Edge Images processes images through third-party edge providers. Here's what you need to know about privacy:
 
 ### Data Processing
+
 * Images are processed through your chosen edge provider (Cloudflare, Accelerated Domains, etc.)
 * No personal data is collected or stored by the plugin itself
 * Image URLs are passed to the edge provider for transformation
@@ -155,17 +169,20 @@ Edge Images processes images through third-party edge providers. Here's what you
 
 ### Edge Provider Privacy
 Different providers have different privacy implications:
+
 * Cloudflare: Images are processed according to [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/)
 * Accelerated Domains: Images are processed according to [Accelerated Domains' Privacy Policy](https://accelerateddomains.com/privacy/)
 * BunnyCDN: Images are processed according to [BunnyCDN's Privacy Policy](https://bunny.net/privacy/)
 
 ### Data Storage
+
 * The plugin stores your selected settings in your WordPress database
 * No user data is collected or stored
 * No analytics or tracking is performed
 * Cache files may be created in your uploads directory for optimization
 
 ### GDPR Compliance
+
 * The plugin is GDPR-compliant as it does not collect, store, or process personal data
 * Users should review their chosen edge provider's privacy policy and data processing terms
 * Site owners should update their privacy policy to reflect their use of third-party image processing services

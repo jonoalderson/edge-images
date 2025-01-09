@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.3
+Stable tag: 5.2.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -134,6 +134,15 @@ add_filter('edge_images_disable_transform', function($should_disable, $html) {
     }
     return $should_disable;
 }, 10, 2);
+
+// Override max width for constrained content
+add_filter('edge_images_max_width', function($max_width) {
+    // Example: Use a different max width for single posts
+    if (is_single()) {
+        return 800;
+    }
+    return $max_width;
+});
 `
 
 = 🔧 Requirements =
@@ -232,6 +241,12 @@ Yes, the plugin fully supports the WordPress block editor.
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 5.2.4 ( 09/01/2025 ) =
+* BUGFIX: Prevent fatal errors when attachment posts were updated.
+* FEATURE: Disabled 'gravity' settings by default.
+* FEATURE: Added some front-end CSS to unbreak the admin bar avatar.
+* FEATURE: Disabled the htaccess cache feature on non-Apache systems.
 
 = 5.2.3 =
 * Removed some redundant error logging.
