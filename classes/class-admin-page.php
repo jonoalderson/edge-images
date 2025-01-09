@@ -892,47 +892,55 @@ class Admin_Page {
 	}
 
 	/**
-	 * Render the features settings section.
+	 * Render the features section.
 	 *
-	 * @since 4.0.0
+	 * @since      4.5.0
 	 * @return void
 	 */
 	public static function render_features_section(): void {
 		if (!current_user_can('manage_options')) {
 			return;
 		}
-		?>
-		<div class="edge-images-features">
-			<?php foreach (Features::get_features() as $id => $feature): ?>
-				<div class="feature-card">
-					<div class="feature-header">
-						<strong><?php echo esc_html($feature['name']); ?></strong>
-					</div>
-					<div class="feature-settings">
-						<fieldset>
-							<p>
-								<label>
-									<?php 
-									$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
-									$is_enabled = Features::is_feature_enabled($id);
-									?>
-									<input type="checkbox" 
-										name="<?php echo esc_attr($option_name); ?>" 
-										value="1" 
-										<?php checked($is_enabled); ?>
-									>
-									<?php esc_html_e('Enable this feature', 'edge-images'); ?>
-								</label>
-							</p>
-							<p class="description">
-								<?php echo esc_html($feature['description']); ?>
-							</p>
-						</fieldset>
-					</div>
-				</div>
-			<?php endforeach; ?>
-		</div>
-		<?php
+
+		$features = Features::get_features();
+		foreach ($features as $id => $feature) {
+			$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
+			$is_disabled = false;
+			$disabled_reason = '';
+
+			// Check if feature has server requirements
+			if (isset($feature['class'])) {
+				$class = $feature['class'];
+				if (method_exists($class, 'is_available')) {
+					$is_disabled = !$class::is_available();
+					if ($is_disabled && method_exists($class, 'get_unavailable_reason')) {
+						$disabled_reason = $class::get_unavailable_reason();
+					}
+				}
+			}
+
+			$wrapper_class = 'edge-images-settings-field';
+			if ($is_disabled) {
+				$wrapper_class .= ' edge-images-feature-disabled';
+			}
+
+			?>
+			<div class="<?php echo esc_attr($wrapper_class); ?>" <?php echo $disabled_reason ? 'data-disabled-reason="' . esc_attr($disabled_reason) . '"' : ''; ?>>
+				<label>
+					<input type="checkbox" 
+						name="<?php echo esc_attr($option_name); ?>" 
+						value="1" 
+						<?php checked(Features::is_enabled($id)); ?>
+						<?php echo $is_disabled ? 'disabled' : ''; ?>
+					>
+					<?php echo esc_html($feature['name']); ?>
+				</label>
+				<?php if (!empty($feature['description'])): ?>
+					<p class="description"><?php echo esc_html($feature['description']); ?></p>
+				<?php endif; ?>
+			</div>
+			<?php
+		}
 	}
 
 	/**

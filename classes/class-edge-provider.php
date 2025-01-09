@@ -68,7 +68,6 @@ abstract class Edge_Provider {
 		'fit' => 'cover',
 		'dpr' => 1, 
 		'f' => 'auto',
-		'g' => 'auto',
 		'q' => 85,
 	];
 

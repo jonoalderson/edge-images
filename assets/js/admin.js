@@ -14,6 +14,7 @@
         
         // Initial state
         toggleProviderFields();
+        handleDisabledFeatures();
         
         // On change
         $providerInputs.on('change', toggleProviderFields);
@@ -32,6 +33,24 @@
         if (selectedProvider) {
             $(`.edge-images-${selectedProvider}-field`).show();
         }
+    }
+
+    /**
+     * Handle disabled features in the admin interface.
+     */
+    function handleDisabledFeatures() {
+        $('.edge-images-feature-disabled').each(function() {
+            const $feature = $(this);
+            const $checkbox = $feature.find('input[type="checkbox"]');
+            
+            // Disable the checkbox
+            $checkbox.prop('disabled', true);
+            
+            // If it was checked, uncheck it
+            if ($checkbox.prop('checked')) {
+                $checkbox.prop('checked', false);
+            }
+        });
     }
 
     // Initialize when document is ready

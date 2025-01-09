@@ -55,8 +55,8 @@ class Cache extends Integration {
 		// Core post-related hooks
 		add_action('save_post', [$this, 'purge_post_images']);
 		add_action('deleted_post', [$this, 'purge_post_images']);
-		add_action('attachment_updated', [$this, 'purge_attachment'], 10, 3);
-		add_action('delete_attachment', [$this, 'purge_attachment']);
+		add_action('attachment_updated', [$this, 'handle_attachment_updated'], 10, 3);
+		add_action('delete_attachment', [$this, 'handle_delete_attachment'], 10, 2);
 
 		// Settings update hook
 		add_action('update_option', [$this, 'maybe_purge_all'], 10, 3);
@@ -178,6 +178,7 @@ class Cache extends Integration {
 	 * @return void
 	 */
 	public static function purge_attachment(int $attachment_id, array $data = [], array $old_data = []): void {
+
 		// Skip if caching is disabled
 		if (!Features::is_enabled('cache')) {
 			return;
@@ -194,9 +195,6 @@ class Cache extends Integration {
 
 		// Delete the keys cache itself
 		wp_cache_delete($keys_cache_key, self::CACHE_GROUP);
-
-		// Allow integrations to purge their specific caches
-		do_action('edge_images_purge_attachment_cache', $attachment_id, $data, $old_data);
 	}
 
 	/**
@@ -378,5 +376,32 @@ class Cache extends Integration {
 	 */
 	protected function should_filter(): bool {
 		return Features::is_enabled('cache');
+	}
+
+	/**
+	 * Handle attachment update event.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int     $attachment_id The attachment ID.
+	 * @param WP_Post $post_after   The attachment post after the update.
+	 * @param WP_Post $post_before  The attachment post before the update.
+	 * @return void
+	 */
+	public function handle_attachment_updated(int $attachment_id, \WP_Post $post_after, \WP_Post $post_before): void {
+		$this->purge_attachment($attachment_id, [], []);
+	}
+
+	/**
+	 * Handle attachment deletion event.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param int     $attachment_id The attachment ID.
+	 * @param WP_Post $post         The attachment post being deleted.
+	 * @return void
+	 */
+	public function handle_delete_attachment(int $attachment_id, \WP_Post $post): void {
+		$this->purge_attachment($attachment_id, [], []);
 	}
 } 

@@ -318,4 +318,23 @@
 			}
 		}
 	}
+}
+
+// Disabled feature styles
+.edge-images-feature-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    position: relative;
+
+    &::after {
+        content: attr(data-disabled-reason);
+        display: block;
+        margin-top: 8px;
+        color: #d63638;
+        font-style: italic;
+    }
+
+    input[type="checkbox"] {
+        opacity: 0.5;
+    }
 } 

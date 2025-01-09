@@ -91,17 +91,40 @@ class Htaccess_Cache extends Integration {
 	}
 
 	/**
+	 * Check if the server is running Apache.
+	 *
+	 * @since      4.5.0
+	 * 
+	 * @return bool True if Apache server is detected, false otherwise.
+	 */
+	public static function is_apache(): bool {
+		if (!isset($_SERVER['SERVER_SOFTWARE'])) {
+			return false;
+		}
+
+		$server_software = sanitize_text_field(wp_unslash($_SERVER['SERVER_SOFTWARE']));
+		return stripos($server_software, 'apache') !== false;
+	}
+
+	/**
 	 * Add integration-specific filters.
 	 *
 	 * Sets up required filters and actions for htaccess caching.
 	 * This method:
 	 * - Adds option update handlers
+	 * - Checks for Apache server compatibility
 	 *
 	 * @since      4.5.0
 	 * 
 	 * @return void
 	 */
 	protected function add_filters(): void {
+		
+		// Only proceed if we're on Apache
+		if (!self::is_apache()) {
+			return;
+		}
+
 		// Get the correct option name
 		$option_name = 'edge_images_feature_htaccess_caching';
 		
@@ -419,5 +442,36 @@ class Htaccess_Cache extends Integration {
 		if ($option === 'edge_images_feature_htaccess_caching') {
 			$this->handle_option_update($old_value, $value);
 		}
+	}
+
+	/**
+	 * Check if this feature is available.
+	 *
+	 * Determines if the server environment supports htaccess caching.
+	 * This method:
+	 * - Checks server software
+	 * - Validates Apache compatibility
+	 * - Ensures requirements are met
+	 *
+	 * @since      4.5.0
+	 * 
+	 * @return bool True if feature is available, false otherwise.
+	 */
+	public static function is_available(): bool {
+		return self::is_apache();
+	}
+
+	/**
+	 * Get the reason why this feature is unavailable.
+	 *
+	 * Provides a user-friendly message explaining why htaccess caching
+	 * cannot be used in the current environment.
+	 *
+	 * @since      4.5.0
+	 * 
+	 * @return string The reason why the feature is unavailable.
+	 */
+	public static function get_unavailable_reason(): string {
+		return __('This feature requires an Apache web server.', 'edge-images');
 	}
 } 

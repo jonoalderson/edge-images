@@ -87,7 +87,16 @@ class Settings {
 	 * @return int The maximum width for images in pixels.
 	 */
 	public static function get_max_width(): int {
-		return (int) self::get_option(self::MAX_WIDTH_OPTION, 650);
+		$max_width = (int) self::get_option(self::MAX_WIDTH_OPTION, 650);
+
+		/**
+		 * Filters the maximum width for constrained content.
+		 *
+		 * @since 4.5.0
+		 *
+		 * @param int $max_width The maximum width in pixels.
+		 */
+		return (int) apply_filters('edge_images_max_width', $max_width);
 	}
 
 	/**
