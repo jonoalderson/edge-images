@@ -519,13 +519,7 @@ class Helpers {
 				return false;
 			}
 		}
-
-		// Extension checks (for files like .xml, .kml)
-		$extension = strtolower(pathinfo($clean_path, PATHINFO_EXTENSION));
-		if (in_array($extension, ['xml', 'kml'], true)) {
-			return false;
-		}
-
+		
 		// Check content type for JSON/JSONP requests
 		$content_type = isset($_SERVER['CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['CONTENT_TYPE'])) : '';
 		if (strpos($content_type, 'application/json') !== false || 
@@ -548,11 +542,6 @@ class Helpers {
 			) {
 				return false;
 			}
-		}
-
-		// XML sitemaps - check if the query var exists first
-		if ( $wp_query && get_query_var( 'sitemap', false ) ) {
-			return false;
 		}
 
 		return true;

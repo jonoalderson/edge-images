@@ -38,7 +38,29 @@ class Srcset_Transformer {
      * @since      4.0.0
      * @var array<float>
      */
-    public static array $width_multipliers = [0.25, 0.5, 1, 1.5, 2, 2.5];
+    public static array $width_multipliers = [0.25, 0.5, 1, 1.5, 2];
+
+    /**
+     * Get the width multipliers.
+     *
+     * Retrieves the width multipliers array, allowing for filtering.
+     * This method:
+     * - Returns the default multipliers
+     * - Allows for filtering via 'edge_images_width_multipliers'
+     * - Ensures values are floats
+     * - Maintains array structure
+     *
+     * @since      5.3.0
+     * 
+     * @return array<float> Array of width multipliers.
+     */
+    public static function get_width_multipliers(): array {
+
+        $multipliers = apply_filters('edge_images_width_multipliers', self::$width_multipliers);
+
+        // Ensure all values are floats
+        return array_map('floatval', $multipliers);
+    }
 
     /**
      * Maximum width for srcset values.
@@ -113,7 +135,7 @@ class Srcset_Transformer {
         $widths[] = $original_width;
         
         // Add widths for multipliers greater than 1
-        foreach (self::$width_multipliers as $multiplier) {
+        foreach (self::get_width_multipliers() as $multiplier) {
             if ($multiplier > 1) {
                 $width = round($original_width * $multiplier);
                 if ($width <= self::$max_srcset_width) {
@@ -231,8 +253,9 @@ class Srcset_Transformer {
      * @return array Array of widths for srcset.
      */
     public static function get_srcset_widths_from_sizes(string $sizes, int $max_width): array {
+        
         // Get DPR multipliers from Srcset_Transformer
-        $dprs = self::$width_multipliers;
+        $dprs = self::get_width_multipliers();
         
         // Generate variants based on the original width
         $variants = [];

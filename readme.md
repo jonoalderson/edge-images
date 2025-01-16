@@ -123,6 +123,12 @@ add_filter('edge_images_max_width', function($max_width) {
     }
     return $max_width;
 });
+
+// Customize srcset width multipliers
+add_filter('edge_images_width_multipliers', function($multipliers) {
+    // Add more granular steps between sizes
+    return [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+});
 ```
 
 ## 🔧 Requirements
@@ -190,3 +196,8 @@ Different providers have different privacy implications:
 ## Development
 
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues)
+
+= How can I report security bugs? =
+
+You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team help validate, triage and handle any security vulnerabilities. [Report a security vulnerability.](https://patchstack.com/database/wordpress/plugin/edge-images/vdp)
+

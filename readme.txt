@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.4
+Stable tag: 5.2.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -143,6 +143,12 @@ add_filter('edge_images_max_width', function($max_width) {
     }
     return $max_width;
 });
+
+// Customize srcset width multipliers
+add_filter('edge_images_width_multipliers', function($multipliers) {
+    // Add more granular steps between sizes
+    return [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+});
 `
 
 = 🔧 Requirements =
@@ -235,12 +241,23 @@ Yes, the plugin works with your existing media library images.
 
 Yes, the plugin fully supports the WordPress block editor.
 
+= How can I report security bugs? =
+
+You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team help validate, triage and handle any security vulnerabilities. [Report a security vulnerability.](https://patchstack.com/database/wordpress/plugin/edge-images/vdp)
+
 == Development ==
 
 * [GitHub Repository](https://github.com/jonoalderson/edge-images)
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 2.5.6 ( 10/01/2025 ) =
+* FEATURE: Added a filter for customizing the width multipliers used for generating srcset variants (and disabled the 2.5x multiplier by default).
+* FEATURE: Moved CSS to inline styles to avoid extra HTTP requests.
+
+= 5.2.5 ( 09/01/2025 ) =
+* BUGFIX: Fixed the XML sitemap integration.
 
 = 5.2.4 ( 09/01/2025 ) =
 * BUGFIX: Prevent fatal errors when attachment posts were updated.

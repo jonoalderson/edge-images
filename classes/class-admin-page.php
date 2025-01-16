@@ -123,7 +123,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function register(): void {
-		// Only load if user has sufficient permissions.
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -151,7 +152,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function show_no_provider_notice(): void {
-		// Only show to users who can manage options.
+		
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -224,7 +226,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function handle_settings_update(): void {
-		// Verify user capabilities.
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'edge-images' ) );
 		}
@@ -607,6 +610,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_admin_page(): void {
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -653,6 +658,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_provider_field(): void {
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -688,6 +695,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_bunny_subdomain_field( array $args ): void {
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -728,6 +737,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_imgix_subdomain_field( array $args ): void {
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -767,6 +778,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_max_width_field(): void {
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -795,6 +808,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_integrations_section(): void {
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -842,6 +857,8 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_yoast_integration_fields(): void {
+
+		// Bail if user doesn't have sufficient permissions.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -898,7 +915,9 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function render_features_section(): void {
-		if (!current_user_can('manage_options')) {
+
+		// Bail if user doesn't have sufficient permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 

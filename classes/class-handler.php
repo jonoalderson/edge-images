@@ -534,17 +534,27 @@ class Handler {
 	}
 
 	/**
-	 * Enqueue required styles
+	 * Output required styles inline.
 	 *
+	 * @since 4.5.0
 	 * @return void
 	 */
 	public function enqueue_styles(): void {
-		wp_enqueue_style(
-			'edge-images',
-			plugins_url( 'assets/css/images.min.css', dirname( __FILE__ ) ),
-			[],
-			filemtime( plugin_dir_path( dirname( __FILE__ ) ) . 'assets/css/images.min.css')
-		);
+		
+		$transient_key = 'edge_images_css_' . EDGE_IMAGES_VERSION;
+		$css = get_transient($transient_key);
+
+		if ($css === false) {
+			$css_file = plugin_dir_path(dirname(__FILE__)) . 'assets/css/images.min.css';
+			$css = file_exists($css_file) ? file_get_contents($css_file) : '';
+			
+			// Cache for a week, or until plugin update
+			set_transient($transient_key, $css, WEEK_IN_SECONDS);
+		}
+
+		wp_register_style('edge-images', false);
+		wp_enqueue_style('edge-images');
+		wp_add_inline_style('edge-images', $css);
 	}
 
 	/**
