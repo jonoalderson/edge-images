@@ -110,6 +110,14 @@ class Admin_Page {
 	private const BUNNY_SUBDOMAIN_OPTION = 'edge_images_bunny_subdomain';
 
 	/**
+	 * The domain option name.
+	 *
+	 * @since 5.0.0
+	 * @var string
+	 */
+	private const DOMAIN_OPTION = 'edge_images_domain';
+
+	/**
 	 * Register the admin functionality.
 	 *
 	 * Initializes all admin-related hooks and filters. This includes:
@@ -299,6 +307,13 @@ class Admin_Page {
 			update_option( $option_name, $value );
 		}
 
+		// Process domain setting
+		if (isset($_POST[Settings::DOMAIN_OPTION])) {
+			$domain = sanitize_text_field(wp_unslash($_POST[Settings::DOMAIN_OPTION]));
+			$domain = Settings::sanitize_domain($domain);
+			update_option(Settings::DOMAIN_OPTION, $domain);
+		}
+
 		// Clear caches after settings update
 		Settings::reset_cache();
 
@@ -342,6 +357,7 @@ class Admin_Page {
 	 * - Provider-specific settings (e.g., subdomains)
 	 * - Integration options
 	 * - Feature toggles
+	 * - Custom domain setting
 	 *
 	 * @since 4.0.0
 	 * @return void
@@ -446,6 +462,19 @@ class Admin_Page {
 			]
 		);
 
+		// Register domain setting
+		register_setting(
+			self::OPTION_GROUP,
+			Settings::DOMAIN_OPTION,
+			[
+				'type'              => 'string',
+				'description'       => __('The domain to use for transformed images. If empty, the site URL will be used.', 'edge-images'),
+				'sanitize_callback' => [Settings::class, 'sanitize_domain'],
+				'default'           => '',
+				'show_in_rest'     => true,
+			]
+		);
+
 		// Add main section.
 		add_settings_section(
 			'edge_images_main_section',
@@ -489,6 +518,15 @@ class Admin_Page {
 			]
 		);
 
+		// Add domain field
+		add_settings_field(
+			'edge_images_domain',
+			__('Transformation Domain', 'edge-images'),
+			[self::class, 'render_domain_field'],
+			'edge_images',
+			'edge_images_main_section'
+		);
+
 		// Add max width field.
 		add_settings_field(
 			'edge_images_max_width',
@@ -497,8 +535,6 @@ class Admin_Page {
 			'edge_images',
 			'edge_images_main_section'
 		);
-
-
 
 		// Add features section
 		add_settings_section(
@@ -987,5 +1023,48 @@ class Admin_Page {
 		}
 
 		return preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $subdomain ) ? $subdomain : null;
+	}
+
+	/**
+	 * Render the domain field.
+	 *
+	 * Outputs the input field for setting a custom domain for transformed images.
+	 * Only displayed when the selected provider does not use a hosted subdomain.
+	 *
+	 * @since 5.4.0
+	 * @param array $args Field arguments.
+	 * @return void
+	 */
+	public static function render_domain_field(array $args): void {
+
+		// Bail if user doesn't have sufficient permissions.
+		if (!current_user_can('manage_options')) {
+			return;
+		}
+
+		$current_provider = Settings::get_provider();
+		$provider_class = Providers::get_provider_class($current_provider);
+
+		// Hide field if provider uses a hosted subdomain
+		if ($provider_class::uses_hosted_subdomain()) {
+			return;
+		}
+
+		$domain = Settings::get_domain();
+		?>
+		<div class="edge-images-settings-field">
+			<input 
+				type="text" 
+				id="<?php echo esc_attr(Settings::DOMAIN_OPTION); ?>"
+				name="<?php echo esc_attr(Settings::DOMAIN_OPTION); ?>"
+				value="<?php echo esc_attr($domain); ?>"
+				class="regular-text"
+				placeholder="<?php echo esc_attr(get_site_url()); ?>"
+			>
+			<p class="description">
+				<?php esc_html_e('The domain to use for transformed images. If empty, the site URL will be used.', 'edge-images'); ?>
+			</p>
+		</div>
+		<?php
 	}
 } 

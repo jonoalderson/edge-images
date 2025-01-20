@@ -59,6 +59,17 @@ class Settings {
 	public const MAX_WIDTH_OPTION = 'edge_images_max_width';
 
 	/**
+	 * Domain option name.
+	 *
+	 * The option name used to store the custom domain for transformations.
+	 * This setting allows overriding the default site URL for transformed images.
+	 *
+	 * @since      5.0.0
+	 * @var string
+	 */
+	public const DOMAIN_OPTION = 'edge_images_domain';
+
+	/**
 	 * Cache for settings values.
 	 *
 	 * Stores retrieved option values to minimize database queries.
@@ -197,6 +208,19 @@ class Settings {
 			]
 		);
 
+		// Register domain setting
+		register_setting(
+			self::OPTION_GROUP,
+			self::DOMAIN_OPTION,
+			[
+				'type'              => 'string',
+				'description'       => __('The domain to use for transformed images. If empty, the site URL will be used.', 'edge-images'),
+				'sanitize_callback' => [self::class, 'sanitize_domain'],
+				'default'           => '',
+				'show_in_rest'     => true,
+			]
+		);
+
 		// Register max width setting
 		register_setting(
 			self::OPTION_GROUP,
@@ -209,5 +233,52 @@ class Settings {
 				'update_callback' => [self::class, 'reset_cache'],
 			]
 		);
+	}
+
+	/**
+	 * Get the transformation domain.
+	 *
+	 * Retrieves the configured domain for image transformations.
+	 * This method:
+	 * - Returns the custom domain if set
+	 * - Falls back to the site URL if no custom domain
+	 * - Ensures string return type
+	 * - Uses cached values when available
+	 * - Integrates with the WordPress options API
+	 * - Supports filterable values
+	 *
+	 * @since      5.0.0
+	 * 
+	 * @return string The domain to use for transformations.
+	 */
+	public static function get_domain(): string {
+		$domain = self::get_option(self::DOMAIN_OPTION);
+		if (empty($domain)) {
+			return '';
+		}
+
+		return untrailingslashit($domain);
+	}
+
+	/**
+	 * Sanitize the domain setting.
+	 *
+	 * @since 5.4.0
+	 * 
+	 * @param string $value The value to sanitize.
+	 * @return string The sanitized value.
+	 */
+	public static function sanitize_domain(string $value): string {
+		$value = trim($value);
+		if (empty($value)) {
+			return '';
+		}
+
+		// Add scheme if missing
+		if (!preg_match('~^(?:f|ht)tps?://~i', $value)) {
+			$value = 'https://' . $value;
+		}
+
+		return untrailingslashit(esc_url_raw($value));
 	}
 } 

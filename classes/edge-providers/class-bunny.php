@@ -276,4 +276,15 @@ class Bunny extends Edge_Provider {
 
         return $gravity_map[$gravity] ?? 'center';
     }
+
+    /**
+     * Check if this provider uses a hosted subdomain.
+     *
+     * @since 5.4.0
+     * 
+     * @return bool Whether this provider uses a hosted subdomain.
+     */
+    public static function uses_hosted_subdomain(): bool {
+        return true;
+    }
 } 

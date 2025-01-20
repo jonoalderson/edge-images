@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.6
+Stable tag: 5.2.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -252,7 +252,10 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
-= 2.5.6 ( 10/01/2025 ) =
+= 5.2.7 ( 16/01/2025 ) =
+* FEATURE: Added an admin setting for customizing the domain used for transformed images.
+
+= 5.2.6 ( 10/01/2025 ) =
 * FEATURE: Added a filter for customizing the width multipliers used for generating srcset variants (and disabled the 2.5x multiplier by default).
 * FEATURE: Moved CSS to inline styles to avoid extra HTTP requests.
 

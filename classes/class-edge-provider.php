@@ -401,4 +401,19 @@ abstract class Edge_Provider {
 	public static function is_configured(): bool {
 		return true;
 	}
+
+	/**
+	 * Check if this provider uses a hosted subdomain.
+	 *
+	 * Determines if this provider requires a subdomain for image transformation.
+	 * By default, providers do not use hosted subdomains. Child classes that do
+	 * (like Imgix and Bunny) should override this method.
+	 *
+	 * @since 5.4.0
+	 * 
+	 * @return bool Whether this provider uses a hosted subdomain.
+	 */
+	public static function uses_hosted_subdomain(): bool {
+		return false;
+	}
 }

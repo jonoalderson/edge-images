@@ -25,6 +25,7 @@
      */
     function toggleProviderFields() {
         const selectedProvider = $('input[name="edge_images_provider"]:checked').val();
+        const hostedSubdomainProviders = ['imgix', 'bunny'];
         
         // Hide all provider-specific fields first
         $('.edge-images-provider-field').hide();
@@ -32,6 +33,14 @@
         // Show fields for selected provider
         if (selectedProvider) {
             $(`.edge-images-${selectedProvider}-field`).show();
+        }
+
+        // Handle domain field visibility
+        const $domainField = $('input[name="edge_images_domain"]').closest('.edge-images-settings-field');
+        if (hostedSubdomainProviders.includes(selectedProvider)) {
+            $domainField.hide();
+        } else {
+            $domainField.show();
         }
     }
 

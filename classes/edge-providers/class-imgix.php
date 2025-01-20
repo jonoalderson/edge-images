@@ -293,4 +293,15 @@ class Imgix extends Edge_Provider {
 		$subdomain = self::get_subdomain();
 		return !empty($subdomain);
 	}
+
+	/**
+	 * Check if this provider uses a hosted subdomain.
+	 *
+	 * @since 5.4.0
+	 * 
+	 * @return bool Whether this provider uses a hosted subdomain.
+	 */
+	public static function uses_hosted_subdomain(): bool {
+		return true;
+	}
 } 

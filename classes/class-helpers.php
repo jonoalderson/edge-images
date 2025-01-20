@@ -246,7 +246,16 @@ class Helpers {
 	 * @return string The domain to use for edge URLs.
 	 */
 	public static function get_rewrite_domain(): string {
-		return apply_filters( 'edge_images_domain', get_site_url() );
+		// Get custom domain from settings
+		$domain = Settings::get_domain();
+		
+		// If no custom domain, use site URL
+		if (empty($domain)) {
+			$domain = get_site_url();
+		}
+		
+		// Allow filtering
+		return (string) apply_filters('edge_images_domain', $domain);
 	}
 
 	/**
