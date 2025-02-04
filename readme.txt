@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.7
+Stable tag: 5.2.13
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -251,6 +251,23 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 5.2.13 ( 04/02/2025 ) =
+* BUGFIX: Big improvements to consistency of srcset transformation on wp_get_attachment_image_srcset and similar.
+
+= 5.2.12 ( 04/02/2025 ) =
+* BUGFIX: Fixed a src regreggion bug introduced in 5.2.10.
+
+= 5.2.11 ( 04/02/2025 ) =
+* BUGFIX: Fixed a srcset transformation bug introduced in 5.2.10.
+
+= 5.2.10 ( 04/02/2025 ) =
+* BUGFIX: Fixed the transformation when wp_get_attachment_url, wp_get_attachment_image_srcset or wp_get_attachment_image_sizes were used directly.
+* BUGFIX: Ensured that the cache is cleared when the transformation domain is changed.
+
+= 5.2.9 ( 30/01/2025 ) =
+* BUGFIX: Don't try to transform AVIF images in srcset attributes.
+* BUGFIX: Correctly apply custom rewrite domains to src attributes in some edge cases.
 
 = 5.2.7 ( 16/01/2025 ) =
 * FEATURE: Added an admin setting for customizing the domain used for transformed images.

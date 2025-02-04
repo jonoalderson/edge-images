@@ -468,7 +468,7 @@ class Admin_Page {
 			Settings::DOMAIN_OPTION,
 			[
 				'type'              => 'string',
-				'description'       => __('The domain to use for transformed images. If empty, the site URL will be used.', 'edge-images'),
+				'description'       => __('The domain to use for transformed images. You can usually leave this blank, unless this is a staging/development site, or if you serve your images from a different domain.', 'edge-images'),
 				'sanitize_callback' => [Settings::class, 'sanitize_domain'],
 				'default'           => '',
 				'show_in_rest'     => true,
@@ -1062,7 +1062,7 @@ class Admin_Page {
 				placeholder="<?php echo esc_attr(get_site_url()); ?>"
 			>
 			<p class="description">
-				<?php esc_html_e('The domain to use for transformed images. If empty, the site URL will be used.', 'edge-images'); ?>
+				<?php esc_html_e('The domain to use for transformed images. You can usually leave this blank, unless this is a staging/development site, or if you serve your images from a different domain.', 'edge-images'); ?>
 			</p>
 		</div>
 		<?php

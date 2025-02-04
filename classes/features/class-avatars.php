@@ -144,7 +144,6 @@ class Avatars extends Integration {
 		$srcset = \Edge_Images\Srcset_Transformer::transform(
 			$src,
 			$dimensions,
-			$sizes,
 			[
 				'fit' => 'cover',
 				'sharpen' => 1,

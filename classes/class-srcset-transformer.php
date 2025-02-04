@@ -98,18 +98,16 @@ class Srcset_Transformer {
      * 
      * @param string $src            The source URL to transform.
      * @param array  $dimensions     Array containing width and height of the image.
-     * @param string $sizes          The sizes attribute value for responsive images.
      * @param array  $transform_args Optional. Additional transformation arguments to apply.
      * @return string The complete srcset string with multiple image variants.
      */
     public static function transform(
         string $src, 
-        array $dimensions, 
-        string $sizes,
+        array $dimensions,
         array $transform_args = []
     ): string {
-        // Bail if SVG.
-        if (Helpers::is_svg($src)) {
+        // Bail if non-transformable format
+        if (Helpers::is_non_transformable_format($src)) {
             return '';
         }
 
@@ -126,7 +124,11 @@ class Srcset_Transformer {
         // Get original dimensions.
         $original_width = (int) $dimensions['width'];
         $original_height = (int) $dimensions['height'];
-        $aspect_ratio = $original_height / $original_width;
+        
+        // Use provided aspect ratio if available, otherwise calculate it
+        $aspect_ratio = isset($dimensions['aspect_ratio']) ? 
+            (float) $dimensions['aspect_ratio'] : 
+            $original_height / $original_width;
 
         // Calculate srcset widths.
         $widths = [];
@@ -166,21 +168,10 @@ class Srcset_Transformer {
             return '';
         }
 
-        // Store dimension-related args to apply per variant
-        $dimension_args = array_intersect_key(
-            $transform_args,
-            array_flip(['width', 'height', 'w', 'h'])
-        );
-
-        // Remove dimension args from transform args as we'll set these per variant
-        $base_args = array_diff_key(
-            $transform_args,
-            array_flip(['width', 'height', 'w', 'h'])
-        );
-
         // Generate srcset entries.
         $srcset_parts = [];
         foreach ($widths as $width) {
+            
             // Calculate height maintaining aspect ratio
             $height = round($width * $aspect_ratio);
             
@@ -189,8 +180,8 @@ class Srcset_Transformer {
                 $provider->get_default_args(),
                 $transform_args,
                 [
-                    'width' => $width,
-                    'height' => $height,
+                    'w' => $width,
+                    'h' => $height,
                 ]
             );
             

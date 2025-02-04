@@ -133,8 +133,9 @@ class Helpers {
 	 * @return string      The modified URL.
 	 */
 	public static function edge_src(string $src, array $args): string {
-		// Skip SVGs and AVIFs
-		if (preg_match('/\.(svg|avif)$/i', $src)) {
+		
+		// Skip non-transformable formats
+		if (self::is_non_transformable_format($src)) {
 			return $src;
 		}
 
@@ -162,9 +163,15 @@ class Helpers {
 			return $src;
 		}
 
+		// Clean the URL to get just the path
+		$cleaned_path = self::clean_url($src);
+		if (empty($cleaned_path)) {
+			return $src;
+		}
+
 		// Create our provider instance and get edge URL
 		$provider_instance = new $provider_class();
-		$provider_instance->set_path($src);
+		$provider_instance->set_path($cleaned_path);
 		$provider_instance->set_args($args);
 		return $provider_instance->get_edge_url();
 	}
@@ -236,6 +243,33 @@ class Helpers {
 	 */
 	public static function is_svg( string $src ): bool {
 		return strpos( $src, '.svg' ) !== false;
+	}
+
+	/**
+	 * Determines if an image is an AVIF.
+	 *
+	 * @since 5.3.0
+	 * 
+	 * @param string $src The image src value.
+	 * @return bool Whether the image is an AVIF.
+	 */
+	public static function is_avif( string $src ): bool {
+		return strpos( $src, '.avif' ) !== false;
+	}
+
+	/**
+	 * Determines if an image format should not be transformed.
+	 *
+	 * Checks if the image is in a format that should never be transformed,
+	 * such as SVG or AVIF, as these are already optimized formats.
+	 *
+	 * @since 5.3.0
+	 * 
+	 * @param string $src The image src value.
+	 * @return bool Whether the image format should not be transformed.
+	 */
+	public static function is_non_transformable_format( string $src ): bool {
+		return self::is_svg($src) || self::is_avif($src);
 	}
 
 	/**
@@ -317,8 +351,8 @@ class Helpers {
 			return false;
 		}
 
-		// Skip SVGs
-		if (self::is_svg($url)) {
+		// Skip non-transformable formats
+		if (self::is_non_transformable_format($url)) {
 			return false;
 		}
 
@@ -759,6 +793,38 @@ class Helpers {
 			return $matches[1];
 		}
 		return '';
+	}
+
+	/**
+	 * Extract transform arguments from a transformed URL.
+	 *
+	 * @since 5.0.0
+	 * @param string $url The transformed URL to extract arguments from.
+	 * @return array The extracted transform arguments.
+	 */
+	public static function extract_transform_args_from_url(string $url): array {
+		$args = [];
+		
+		// Parse the URL
+		$parsed = parse_url($url);
+		if (!isset($parsed['query'])) {
+			return $args;
+		}
+
+		// Parse the query string
+		parse_str($parsed['query'], $query_args);
+
+		// Get valid transform args
+		$valid_args = \Edge_Images\Edge_Provider::get_valid_args();
+
+		// Extract only valid transform args
+		foreach ($query_args as $key => $value) {
+			if (isset($valid_args[$key]) || in_array($key, array_merge(...array_values($valid_args)), true)) {
+				$args[$key] = $value;
+			}
+		}
+
+		return $args;
 	}
 
 }

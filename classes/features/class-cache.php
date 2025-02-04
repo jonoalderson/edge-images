@@ -298,6 +298,7 @@ class Cache extends Integration {
 	 * @return void
 	 */
 	public static function maybe_purge_all(string $option, $old_value, $value): void {
+		
 		// Skip if caching is disabled
 		if (!Features::is_enabled('cache')) {
 			return;
@@ -310,6 +311,8 @@ class Cache extends Integration {
 			'edge_images_bunny_subdomain',
 			'edge_images_max_width',
 			'edge_images_disable_picture_wrap',
+			'edge_images_domain',
+			'edge_images_feature_cache'
 		];
 
 		if (in_array($option, $trigger_options, true)) {

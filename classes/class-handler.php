@@ -96,12 +96,18 @@ class Handler {
 		add_filter('wp_get_attachment_image_attributes', [$this, 'enforce_dimensions'], 12, 3);
 		add_filter('wp_get_attachment_image', [$this, 'cleanup_image_html'], 999, 5);
 
+		// Hook into image_downsize to handle dimensions before srcset calculation
+		add_filter('image_downsize', [$this, 'handle_image_downsize'], 10, 3);
+
+		// Hook into srcset calculation
+		add_filter('wp_calculate_image_srcset', [$this, 'calculate_image_srcset'], 10, 5);
+
 		// Ensure WordPress's default dimension handling still runs
 		add_filter('wp_img_tag_add_width_and_height_attr', '__return_true', 999);
 
 		// Transform content images last
 		add_filter('the_content', [$this, 'transform_content_images'], 20);
-
+		
 		// Enqueue styles
 		add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);
 
@@ -118,6 +124,7 @@ class Handler {
 	 * Controls when WordPress should scale down large images during upload.
 	 * This ensures that we maintain high-quality source images for edge
 	 * transformations, while still preventing excessively large uploads.
+	 * Images larger than 4800px on either dimension will be scaled down.
 	 *
 	 * @since 4.0.0
 	 * @param int|bool   $threshold     The threshold value in pixels, or false to disable scaling.
@@ -128,7 +135,7 @@ class Handler {
 	 */
 	public function adjust_image_size_threshold($threshold, $imagesize, string $file, int $attachment_id) {
 		if (isset($imagesize[0]) && isset($imagesize[1])) {
-			return max($imagesize[0], $imagesize[1]);
+			return min(4800, max($imagesize[0], $imagesize[1]));
 		}
 		return $threshold;
 	}
@@ -596,6 +603,122 @@ class Handler {
 
 		return $processor->get_updated_html();
 	}
+
+	/**
+	 * Handle image downsizing before WordPress processes srcset.
+	 *
+	 * Intercepts the image downsizing process to ensure we maintain the original
+	 * requested dimensions throughout the srcset generation process.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param array|false  $downsize      Whether to short-circuit the image downsize.
+	 * @param int         $attachment_id The attachment ID.
+	 * @param string|array $size         Requested size. Can be an array of width and height or a registered size.
+	 * @return array|false Array containing the image URL, width, height, and whether it's an intermediate size, or false.
+	 */
+	public function handle_image_downsize($downsize, int $attachment_id, $size) {
+
+		// Skip if transformation should be disabled
+		if (Helpers::should_disable_transform('')) {
+			return $downsize;
+		}
+
+		// Skip if already downsized
+		if ($downsize !== false) {
+			return $downsize;
+		}
+
+		// Get the full size image URL
+		$img_url = wp_get_attachment_url($attachment_id);
+		if (!$img_url) {
+			return false;
+		}
+
+		// If size is an array, use those dimensions directly
+		if (is_array($size) && isset($size[0]) && isset($size[1])) {
+			return [
+				$img_url,
+				(int) $size[0],
+				(int) $size[1],
+				true // Changed to true to indicate this is a valid intermediate size
+			];
+		}
+
+		// For named sizes, let WordPress handle it
+		return false;
+	}
+
+	/**
+	 * Calculate image srcset values.
+	 *
+	 * Generates srcset values based on the original image dimensions and
+	 * the requested size.
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param array  $sources       {
+	 *     One or more arrays of source data to include in the 'srcset'.
+	 *
+	 *     @type array $width {
+	 *         @type string $url        The URL of an image source.
+	 *         @type string $descriptor The descriptor type used in the image candidate string,
+	 *                                  either 'w' or 'x'.
+	 *         @type int    $value      The source width if paired with a 'w' descriptor, or a
+	 *                                  pixel density value if paired with an 'x' descriptor.
+	 *     }
+	 * }
+	 * @param array  $size_array     Array of width and height values in pixels.
+	 * @param string $image_src      The 'src' of the image.
+	 * @param array  $image_meta     The image meta data as returned by wp_get_attachment_metadata().
+	 * @param int    $attachment_id  Image attachment ID or 0.
+	 * @return array|false A list of image sources and descriptors, or false.
+	 */
+	public function calculate_image_srcset($sources, array $size_array, string $image_src, array $image_meta, int $attachment_id) {
+		
+		// Skip if transformation should be disabled
+		if (Helpers::should_disable_transform('')) {
+			return $sources;
+		}
+
+		// Get the original image URL
+		$img_url = wp_get_attachment_url($attachment_id);
+		if (!$img_url) {
+			return $sources;
+		}
+
+		// Get srcset string from transformer
+		$srcset = Srcset_Transformer::transform(
+			$img_url,
+			[
+				'width' => $size_array[0],
+				'height' => $size_array[1],
+			]
+		);
+
+		// If no srcset generated, return original sources
+		if (!$srcset) {
+			return $sources;
+		}
+
+		// Convert srcset string to sources array
+		$sources = [];
+		$srcset_pairs = explode(',', $srcset);
+		foreach ($srcset_pairs as $pair) {
+			if (preg_match('/(.+)\s+(\d+)w$/', trim($pair), $matches)) {
+				$url = trim($matches[1]);
+				$width = (int) $matches[2];
+				$sources[$width] = [
+					'url' => $url,
+					'descriptor' => 'w',
+					'value' => $width,
+				];
+			}
+		}
+
+		return $sources;
+	}
+
 }
 
 

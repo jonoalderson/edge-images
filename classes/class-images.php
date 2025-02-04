@@ -235,7 +235,6 @@ class Images {
 		$srcset = Srcset_Transformer::transform(
 			$full_src, 
 			$dimensions,
-			$sizes,
 			$transform_args
 		);
 
