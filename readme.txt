@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.13
+Stable tag: 5.2.15
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -251,6 +251,12 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 5.2.15 ( 07/02/2025 ) =
+* BUGFIX: Fixed a fatal error where an attachment ID was not provided.
+
+= 5.2.14 ( 05/02/2025 ) =
+* BUGFIX: Prevented intentionally empty alt attributes from being removed.
 
 = 5.2.13 ( 04/02/2025 ) =
 * BUGFIX: Big improvements to consistency of srcset transformation on wp_get_attachment_image_srcset and similar.

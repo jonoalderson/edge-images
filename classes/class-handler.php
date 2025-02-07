@@ -613,11 +613,11 @@ class Handler {
 	 * @since 4.5.0
 	 * 
 	 * @param array|false  $downsize      Whether to short-circuit the image downsize.
-	 * @param int         $attachment_id The attachment ID.
+	 * @param int|null    $attachment_id The attachment ID or null.
 	 * @param string|array $size         Requested size. Can be an array of width and height or a registered size.
 	 * @return array|false Array containing the image URL, width, height, and whether it's an intermediate size, or false.
 	 */
-	public function handle_image_downsize($downsize, int $attachment_id, $size) {
+	public function handle_image_downsize($downsize, ?int $attachment_id, $size) {
 
 		// Skip if transformation should be disabled
 		if (Helpers::should_disable_transform('')) {
@@ -627,6 +627,11 @@ class Handler {
 		// Skip if already downsized
 		if ($downsize !== false) {
 			return $downsize;
+		}
+
+		// Skip if no attachment ID
+		if ($attachment_id === null) {
+			return false;
 		}
 
 		// Get the full size image URL

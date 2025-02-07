@@ -60,6 +60,9 @@ class Cache extends Integration {
 
 		// Settings update hook
 		add_action('update_option', [$this, 'maybe_purge_all'], 10, 3);
+
+		// Handle plugin updates
+		add_action('upgrader_process_complete', [$this, 'handle_plugin_update'], 10, 2);
 	}
 
 	/**
@@ -406,5 +409,43 @@ class Cache extends Integration {
 	 */
 	public function handle_delete_attachment(int $attachment_id, \WP_Post $post): void {
 		$this->purge_attachment($attachment_id, [], []);
+	}
+
+	/**
+	 * Handle plugin updates.
+	 *
+	 * Purges all plugin caches when the plugin is updated.
+	 *
+	 * @since 5.3.0
+	 * 
+	 * @param \WP_Upgrader $upgrader    WP_Upgrader instance.
+	 * @param array        $hook_extra  Array of bulk item update data.
+	 * @return void
+	 */
+	public function handle_plugin_update($upgrader, array $hook_extra): void {
+
+		// Only process plugin updates
+		if (!isset($hook_extra['type']) || $hook_extra['type'] !== 'plugin') {
+			return;
+		}
+
+		// Check if the plugins array is set and is an array
+		if (!isset($hook_extra['plugins']) || !is_array($hook_extra['plugins'])) {
+			return;
+		}
+
+		// Get the plugin file
+		$plugin_file = plugin_basename(EDGE_IMAGES_PLUGIN_FILE);
+
+		// Only purge caches if our plugin was updated
+		if (!in_array($plugin_file, $hook_extra['plugins'], true)) {
+			return;
+		}
+
+		// Delete our transients
+		delete_transient('edge_images_css_' . EDGE_IMAGES_VERSION);
+
+		// Clear any other caches
+		wp_cache_flush_group(\Edge_Images\Helpers::CACHE_GROUP);
 	}
 } 

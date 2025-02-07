@@ -738,12 +738,15 @@ class Helpers {
 		// Loop through the attributes
 		foreach ($attributes as $name => $value) {
 
-			// Skip empty values
-			if ($value === '' || $value === null) {
+			// Skip null values
+			if ($value === null) {
 				continue;
 			}
 
-			$pairs[] = sprintf('%s="%s"', $name, esc_attr($value));
+			// Special handling for alt attribute - always include it if it exists
+			if ($name === 'alt' || $value !== '') {
+				$pairs[] = sprintf('%s="%s"', $name, esc_attr($value));
+			}
 		}
 		
 		return implode(' ', $pairs);
