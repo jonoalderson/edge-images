@@ -446,6 +446,6 @@ class Cache extends Integration {
 		delete_transient('edge_images_css_' . EDGE_IMAGES_VERSION);
 
 		// Clear any other caches
-		wp_cache_flush_group(\Edge_Images\Helpers::CACHE_GROUP);
+		wp_cache_flush_group(self::CACHE_GROUP);
 	}
 } 

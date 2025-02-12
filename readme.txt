@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.15
+Stable tag: 5.2.18
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -251,6 +251,13 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 5.2.18 ( 12/02/2025 ) =
+* FEATURE: Added an integration for Bricks (which disables transformations for SVGs).
+* FEATURE: Added a filter for controlling the default quality of transformed images.
+
+= 5.2.17 ( 07/02/2025 ) =
+* BUGFIX: Fixed a caching bug when updating the plugin.
 
 = 5.2.15 ( 07/02/2025 ) =
 * BUGFIX: Fixed a fatal error where an attachment ID was not provided.

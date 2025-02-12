@@ -72,6 +72,27 @@ abstract class Edge_Provider {
 	];
 
 	/**
+	 * Get the default quality value.
+	 *
+	 * @since 5.2.14
+	 * 
+	 * @return int The default quality value.
+	 */
+	protected function get_default_quality(): int {
+		/**
+		 * Filters the default image quality value.
+		 *
+		 * @since 5.2.14
+		 * 
+		 * @param int $quality The default quality value (1-100). Default 85.
+		 */
+		$quality = apply_filters('edge_images_default_quality', 85);
+
+		// Ensure the quality is within valid bounds
+		return min(100, max(1, (int) $quality));
+	}
+
+	/**
 	 * The image path
 	 *
 	 * @since 4.0.0
@@ -93,7 +114,8 @@ abstract class Edge_Provider {
 	 * @since 4.0.0
 	 */
 	final public function __construct() {
-		// Empty constructor - initialization is done through set_path() and set_args()
+		// Set the default quality value
+		$this->default_edge_args['q'] = $this->get_default_quality();
 	}
 
 	/**

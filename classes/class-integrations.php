@@ -72,6 +72,14 @@ class Integrations {
 				'Integrations\Enable_Media_Replace\Enable_Media_Replace',
 			],
 		],
+		'bricks' => [
+			'check' => 'BRICKS_VERSION',
+			'type' => 'constant',
+			'name' => 'Bricks Builder',
+			'classes' => [
+				'Integrations\Bricks\Bricks',
+			],
+		],
 	];
 
 	/**
