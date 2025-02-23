@@ -133,17 +133,16 @@ class Srcset_Transformer {
         // Calculate srcset widths.
         $widths = [];
         
-        // Get target width from transform args if set
-        $target_width = isset($transform_args['w']) ? (int) $transform_args['w'] : $original_width;
-
-        // Always include target width
-        $widths[] = $target_width;
+        // Always include original width
+        $widths[] = $original_width;
         
-        // Add widths for multipliers
+        // Add widths for multipliers greater than 1
         foreach (self::get_width_multipliers() as $multiplier) {
-            $width = round($target_width * $multiplier);
-            if ($width <= self::$max_srcset_width) {
-                $widths[] = $width;
+            if ($multiplier > 1) {
+                $width = round($original_width * $multiplier);
+                if ($width <= self::$max_srcset_width) {
+                    $widths[] = $width;
+                }
             }
         }
 
@@ -152,7 +151,7 @@ class Srcset_Transformer {
         sort($widths);
 
         // Allow providers to filter srcset widths
-        $widths = apply_filters('edge_images_srcset_widths', $widths, $original_width, $original_height);
+        $widths = apply_filters('edge_images_srcset_widths', $widths, $src);
 
         // Get the original URL
         $original_src = Helpers::get_original_url($src);

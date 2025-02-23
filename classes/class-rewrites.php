@@ -29,6 +29,7 @@ class Rewrites {
 	 * @return void
 	 */
 	public static function register(): void {
+		
 		// Handle htaccess on settings update - this needs to run regardless of current provider
 		add_action('update_option_edge_images_provider', [self::class, 'handle_provider_change'], 10, 2);
 
@@ -59,6 +60,7 @@ class Rewrites {
 	 * @return bool Whether rewrites should be handled.
 	 */
 	private static function should_handle_rewrites(): bool {
+		
 		// Get the selected provider from settings
 		$selected_provider = Settings::get_option('edge_images_provider', 'none');
 

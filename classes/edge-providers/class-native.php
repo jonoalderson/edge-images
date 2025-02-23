@@ -48,10 +48,20 @@ class Native extends Edge_Provider {
 	 * Constructor.
 	 */
 	public function __construct() {
+
+		// Bail if we're not using the native provider
+		if (Settings::get_provider() !== 'native') {
+			return;
+		}
+
+		// Initialize the parent class
 		parent::__construct();
+
+		// Add our filters
 		add_action('parse_request', [$this, 'maybe_transform_image']);
 		add_filter('redirect_canonical', [$this, 'alter_canonical_redirect'], 10, 2);
-		add_filter('edge_images_srcset_widths', [$this, 'filter_srcset_widths'], 10, 3);
+		add_filter('edge_images_srcset_widths', [$this, 'filter_srcset_widths'], 10, 2);
+	
 	}
 
 	/**
@@ -59,13 +69,32 @@ class Native extends Edge_Provider {
 	 *
 	 * @since 5.4.0
 	 * @param array $widths Array of widths.
-	 * @param int $orig_width Original image width.
-	 * @param int $orig_height Original image height.
+	 * @param string $src The source URL.
 	 * @return array Filtered widths.
 	 */
-	public function filter_srcset_widths(array $widths, int $orig_width, int $orig_height): array {
-		return array_filter($widths, function($width) use ($orig_width) {
-			return $width <= $orig_width;
+	public function filter_srcset_widths(array $widths, string $src): array {
+
+		// Get the original image URL
+		$original_src = Helpers::get_original_url($src);
+		if (empty($original_src)) {
+			return $widths;
+		}
+
+		// Get the attachment ID from the URL
+		$attachment_id = Helpers::get_attachment_id_from_url($original_src);
+		if (!$attachment_id) {
+			return $widths;
+		}
+
+		// Get the original dimensions
+		$dimensions = Helpers::get_image_dimensions($attachment_id);
+		if (!$dimensions) {
+			return $widths;
+		}
+
+		// Filter out widths larger than the original
+		return array_filter($widths, function($width) use ($dimensions) {
+			return $width <= $dimensions['width'];
 		});
 	}
 
@@ -138,6 +167,12 @@ location ~* ^/%s/.*\.(jpg|jpeg|png|gif|webp)$ {
 	 * @return array Modified query vars.
 	 */
 	public static function add_query_vars(array $vars): array {
+
+		// Only add rules if native provider is active
+		if (Settings::get_provider() !== 'native') {
+			return $vars;
+		}
+
 		$vars[] = self::TRANSFORM_PARAM;
 		$vars[] = 'width';
 		$vars[] = 'height';
@@ -152,6 +187,12 @@ location ~* ^/%s/.*\.(jpg|jpeg|png|gif|webp)$ {
 	 * @return void
 	 */
 	public static function add_rewrite_rules(): void {
+
+		// Only add rules if native provider is active
+		if (Settings::get_provider() !== 'native') {
+			return;
+		}
+		
 		$upload_path = self::get_upload_path_pattern();
 		
 		// Add rewrite rules for common image extensions
