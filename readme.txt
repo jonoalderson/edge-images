@@ -253,6 +253,9 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
+= 5.4.2 ( 23/02/2025 ) =
+* BUGFIX: Prevent local transformations from outputting upscaled srcset values.
+
 = 5.4 ( 23/02/2025 ) =
 * FEATURE: Added support for transforming image URLs locally (performance warnings apply if you're using a lot of images and not using a CDN to cache them).
 
