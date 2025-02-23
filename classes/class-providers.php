@@ -67,6 +67,7 @@ class Providers {
 	public static function get_providers(): array {
 		return [
 			'none'                => __( 'None (Disabled)', 'edge-images' ),
+			'native'             => __( 'Native (Local Processing)', 'edge-images' ),
 			'cloudflare'          => __( 'Cloudflare', 'edge-images' ),
 			'accelerated_domains' => __( 'Accelerated Domains', 'edge-images' ),
 			'bunny'              => __( 'Bunny CDN', 'edge-images' ),

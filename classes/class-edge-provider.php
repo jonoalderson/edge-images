@@ -113,7 +113,11 @@ abstract class Edge_Provider {
 	 *
 	 * @since 4.0.0
 	 */
-	final public function __construct() {
+	public function __construct() {
+		$this->init();
+	}
+
+	private function init(): void {
 		// Set the default quality value
 		$this->default_edge_args['q'] = $this->get_default_quality();
 	}

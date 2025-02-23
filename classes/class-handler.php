@@ -195,14 +195,10 @@ class Handler {
 	/**
 	 * Enforce image dimensions in attachment attributes.
 	 *
-	 * Ensures that image markup has the correct width and height attributes,
-	 * which is crucial for preventing layout shift and maintaining proper
-	 * aspect ratios during image loading.
-	 *
 	 * @since 4.0.0
 	 * @param array        $attr       Array of attribute values for the image markup.
 	 * @param \WP_Post     $attachment Image attachment post.
-	 * @param string|array $size       Requested image size. Can be any registered image size name or an array of width and height values.
+	 * @param string|array $size       Requested image size.
 	 * @return array Modified attributes with enforced dimensions.
 	 */
 	public function enforce_dimensions(array $attr, $attachment, $size): array {
@@ -210,6 +206,11 @@ class Handler {
 		// Create temporary HTML to check if transformation should be disabled
 		$temp_html = '<img ' . Helpers::attributes_to_string($attr) . ' />';
 		if (Helpers::should_disable_transform($temp_html)) {
+			return $attr;
+		}
+
+		// Skip dimension enforcement for SVGs
+		if (isset($attr['src']) && Helpers::is_non_transformable_format($attr['src'])) {
 			return $attr;
 		}
 
@@ -464,8 +465,13 @@ class Handler {
 	 */
 	public function transform_image($value, $image_html, $context = '', $attachment_id = null): string {
 
-		// Check if transformation should be disabled
+		// Skip if transformation should be disabled
 		if (Helpers::should_disable_transform($image_html)) {
+			return $image_html;
+		}
+
+		// Skip if already processed
+		if (Helpers::is_image_processed($image_html)) {
 			return $image_html;
 		}
 
@@ -481,16 +487,8 @@ class Handler {
 			return $image_html;
 		}
 
-		// Check if this is an SVG
-		if (Helpers::is_svg($src)) {
-			// For SVGs, just enforce dimensions without transforming
-			$dimensions = Image_Dimensions::get($processor, $attachment_id);
-			if ($dimensions) {
-				$processor->set_attribute('width', $dimensions['width']);
-				$processor->set_attribute('height', $dimensions['height']);
-				$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-processed'));
-				return $processor->get_updated_html();
-			}
+		// Skip if it's a non-transformable format
+		if (Helpers::is_non_transformable_format($src)) {
 			return $image_html;
 		}
 

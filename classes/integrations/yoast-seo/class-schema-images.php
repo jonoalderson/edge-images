@@ -78,10 +78,13 @@ class Schema_Images extends Integration {
 	 * @return array The modified properties.
 	 */
 	public function edge_thumbnail( array $data ): array {
+
+		// Bail if no thumbnail URL
 		if ( ! isset( $data['thumbnailUrl'] ) ) {
 			return $data;
 		}
 
+		// Process the image
 		$processed = $this->process_schema_image( $data['thumbnailUrl'] );
 		if ( $processed ) {
 			$data['thumbnailUrl'] = $processed['url'];
@@ -108,12 +111,14 @@ class Schema_Images extends Integration {
 			return $cached_result;
 		}
 
+		// Get the image ID
 		$image_id = Helpers::get_attachment_id_from_url( $image_url );
 		if ( ! $image_id ) {
 			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return false;
 		}
 
+		// Get the image dimensions
 		$dimensions = Helpers::get_image_dimensions( $image_id );
 		if ( ! $dimensions ) {
 			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
@@ -137,12 +142,14 @@ class Schema_Images extends Integration {
 			$args['sharpen'] = 2;
 		}
 
+		// Get the edge URL
 		$edge_url = Helpers::edge_src( $image_url, $args );
 		if ( ! $edge_url ) {
 			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return false;
 		}
 
+		// Build the result
 		$result = [
 			'url'     => $edge_url,
 			'width'   => $args['width'],
@@ -292,6 +299,7 @@ class Schema_Images extends Integration {
 	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
+		
 		// Check if Yoast SEO is installed and active
 		if (!Integrations::is_enabled('yoast-seo')) {
 			return false;
@@ -304,6 +312,63 @@ class Schema_Images extends Integration {
 
 		// Check if this specific integration is enabled in settings
 		return Settings::get_option('edge_images_integration_yoast_schema', true);
+	}
+
+	/**
+	 * Render integration settings.
+	 *
+	 * @since 5.3.0
+	 * @return void
+	 */
+	public static function render_settings(): void {
+		// Bail if user doesn't have sufficient permissions.
+		if (!current_user_can('manage_options')) {
+			return;
+		}
+
+		$schema_enabled = Settings::get_option('edge_images_integration_yoast_schema', true);
+		$social_enabled = Settings::get_option('edge_images_integration_yoast_social', true);
+		$sitemap_enabled = Settings::get_option('edge_images_integration_yoast_xml', true);
+		?>
+		<fieldset>
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="edge_images_integration_yoast_schema" 
+						value="1" 
+						<?php checked($schema_enabled); ?>
+					>
+					<?php esc_html_e('Enable schema.org image optimization', 'edge-images'); ?>
+				</label>
+			</p>
+
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="edge_images_integration_yoast_social" 
+						value="1" 
+						<?php checked($social_enabled); ?>
+					>
+					<?php esc_html_e('Enable social media image optimization', 'edge-images'); ?>
+				</label>
+			</p>
+
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="edge_images_integration_yoast_xml" 
+						value="1" 
+						<?php checked($sitemap_enabled); ?>
+					>
+					<?php esc_html_e('Enable XML sitemap image optimization', 'edge-images'); ?>
+				</label>
+			</p>
+
+			<p class="description">
+				<?php esc_html_e('Edge Images can optimize images in Yoast SEO\'s schema.org output, social media tags, and XML sitemaps. Enable or disable these features as needed.', 'edge-images'); ?>
+			</p>
+		</fieldset>
+		<?php
 	}
 }
 

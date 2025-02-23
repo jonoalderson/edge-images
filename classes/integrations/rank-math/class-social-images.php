@@ -1,8 +1,8 @@
 <?php
 /**
- * Yoast SEO Social Images integration functionality.
+ * Rank Math Social Images integration functionality.
  *
- * Handles integration with Yoast SEO's social image functionality.
+ * Handles integration with Rank Math's social image functionality.
  * This integration:
  * - Transforms social media images
  * - Manages image optimization
@@ -15,22 +15,17 @@
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
  * @license    GPL-2.0-or-later
- * @since      4.5.0
+ * @since      5.2.14
  */
 
-namespace Edge_Images\Integrations\Yoast_SEO;
+namespace Edge_Images\Integrations\Rank_Math;
 
 use Edge_Images\{Integration, Helpers, Integrations, Settings, Features\Cache};
 
+/**
+ * Class Social_Images
+ */
 class Social_Images extends Integration {
-
-	/**
-	 * Cache group for social image processing.
-	 *
-	 * @since 5.2.14
-	 * @var string
-	 */
-	private const SOCIAL_CACHE_GROUP = 'edge_images_social';
 
 	/**
 	 * The default width for social images.
@@ -38,7 +33,7 @@ class Social_Images extends Integration {
 	 * Standard width for social media images.
 	 * This value ensures optimal display across platforms.
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * @var        int
 	 */
 	private const SOCIAL_WIDTH = 1200;
@@ -49,7 +44,7 @@ class Social_Images extends Integration {
 	 * Standard height for social media images.
 	 * This value ensures optimal display across platforms.
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * @var        int
 	 */
 	private const SOCIAL_HEIGHT = 675;
@@ -57,37 +52,42 @@ class Social_Images extends Integration {
 	/**
 	 * Add integration-specific filters.
 	 *
-	 * Sets up required filters for Yoast SEO social integration.
+	 * Sets up required filters for Rank Math social integration.
 	 * This method:
 	 * - Hooks into social filters
 	 * - Manages image transformation
 	 * - Handles multiple platforms
 	 * - Ensures proper integration
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * 
 	 * @return void
 	 */
 	protected function add_filters(): void {
-
 		// Bail if we shouldn't be filtering
 		if (!$this->should_filter()) {
 			return;
 		}
 		
-		add_filter('wpseo_opengraph_image', [$this, 'transform_social_image']);
-		add_filter('wpseo_twitter_image', [$this, 'transform_social_image']);
-		add_filter('wpseo_opengraph_image_width', [$this, 'transform_social_image_width']);
-		add_filter('wpseo_opengraph_image_height', [$this, 'transform_social_image_height']);
+		// Transform OpenGraph images
+		add_filter('rank_math/opengraph/facebook/og_image', [$this, 'transform_social_image']);
+		add_filter('rank_math/opengraph/facebook/og_image_secure_url', [$this, 'transform_social_image']);
+		
+		// Transform Twitter images
+		add_filter('rank_math/opengraph/twitter/image', [$this, 'transform_social_image']);
+		
+		// Set dimensions for OpenGraph
+		add_filter('rank_math/opengraph/facebook/og_image_width', [$this, 'transform_social_image_width']);
+		add_filter('rank_math/opengraph/facebook/og_image_height', [$this, 'transform_social_image_height']);
 	}
 
 	/**
 	 * Set the width for the social image.
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * 
-	 * @param integer|string $width
-	 * @return integer
+	 * @param integer|string $width The original width.
+	 * @return integer The transformed width.
 	 */
 	public function transform_social_image_width($width): int {
 		return (int)self::SOCIAL_WIDTH;
@@ -96,10 +96,10 @@ class Social_Images extends Integration {
 	/**
 	 * Set the height for the social image.
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * 
-	 * @param integer|string $height
-	 * @return integer
+	 * @param integer|string $height The original height.
+	 * @return integer The transformed height.
 	 */
 	public function transform_social_image_height($height): int {
 		return (int)self::SOCIAL_HEIGHT;
@@ -117,13 +117,12 @@ class Social_Images extends Integration {
 	 * - Supports multiple formats
 	 * - Preserves aspect ratios
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * 
 	 * @param  string $image_url The original image URL.
-	 * @return string           The transformed image URL.
+	 * @return string The transformed image URL.
 	 */
 	public function transform_social_image(string $image_url): string {
-		
 		// Skip if empty or not local
 		if (empty($image_url) || !Helpers::is_local_url($image_url)) {
 			return $image_url;
@@ -136,20 +135,19 @@ class Social_Images extends Integration {
 			return $cached_result;
 		}
 
-		// Try to get the image ID from Yoast's meta
+		// Try to get the image ID from Rank Math's meta
 		$image_id = null;
-		$meta = \YoastSEO()->meta->for_current_page();
 		
-		// Check if this is the OpenGraph image
-		if ($meta && $meta->open_graph_image_id) {
-			$image_id = $meta->open_graph_image_id;
+		// First try Facebook image ID
+		$image_id = \RankMath\Post::get_meta('facebook_image_id');
+		
+		// If no Facebook image, try Twitter image ID
+		if (!$image_id) {
+			$image_id = \RankMath\Post::get_meta('twitter_image_id');
 		}
-		// Check if this is the Twitter image
-		elseif ($meta && $meta->twitter_image_id) {
-			$image_id = $meta->twitter_image_id;
-		}
+		
 		// Fallback to getting ID from URL if needed
-		else {
+		if (!$image_id) {
 			$image_id = Helpers::get_attachment_id_from_url($image_url);
 		}
 
@@ -199,13 +197,13 @@ class Social_Images extends Integration {
 	 * - Ensures consistency
 	 * - Supports customization
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * 
 	 * @return array<string,mixed> Array of default feature settings.
 	 */
 	public static function get_default_settings(): array {
 		return [
-			'edge_images_integration_yoast_social' => true,
+			'edge_images_integration_rank_math_social' => true,
 		];
 	}
 
@@ -219,14 +217,13 @@ class Social_Images extends Integration {
 	 * - Ensures requirements
 	 * - Controls processing
 	 *
-	 * @since      4.5.0
+	 * @since      5.2.14
 	 * 
 	 * @return bool True if integration should be active, false otherwise.
 	 */
 	protected function should_filter(): bool {
-
-		// Check if Yoast SEO is installed and active
-		if (!Integrations::is_enabled('yoast-seo')) {
+		// Check if Rank Math is installed and active
+		if (!Integrations::is_enabled('rank-math')) {
 			return false;
 		}
 
@@ -236,6 +233,6 @@ class Social_Images extends Integration {
 		}
 
 		// Check if this specific integration is enabled in settings
-		return Settings::get_option('edge_images_integration_yoast_social', true);
+		return Settings::get_option('edge_images_integration_rank_math_social', true);
 	}
-}
+} 

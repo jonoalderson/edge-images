@@ -134,7 +134,7 @@ class Helpers {
 	 */
 	public static function edge_src(string $src, array $args): string {
 		
-		// Skip non-transformable formats
+		// Skip non-transformable formats (empty URLs, data: URLs, SVG, AVIF)
 		if (self::is_non_transformable_format($src)) {
 			return $src;
 		}
@@ -260,16 +260,51 @@ class Helpers {
 	/**
 	 * Determines if an image format should not be transformed.
 	 *
-	 * Checks if the image is in a format that should never be transformed,
-	 * such as SVG or AVIF, as these are already optimized formats.
-	 *
-	 * @since 5.3.0
-	 * 
-	 * @param string $src The image src value.
+		* Checks if the image URL is:
+		* - Empty
+		* - A data: URL
+		* - An SVG file
+		* - An AVIF file
+		* - Not a string
+		* - Doesn't begin with 'http' or '//'
+		*
+		* These formats should never be transformed as they are either
+		* already optimized or cannot/should not be processed.
+		*
+		* @since 5.3.0
+		* 
+		* @param string|null $src The image src value.
 	 * @return bool Whether the image format should not be transformed.
 	 */
-	public static function is_non_transformable_format( string $src ): bool {
-		return self::is_svg($src) || self::is_avif($src);
+	public static function is_non_transformable_format( ?string $src ): bool {
+		
+		// Skip empty URLs
+		if (empty($src)) {
+			return true;
+		}
+
+		// Skip data URLs
+		if (strpos($src, 'data:') === 0) {
+			return true;
+		}
+
+		// Skip if the $src isn't a string.
+		if (!is_string($src)) {
+			return true;
+		}
+
+		// Skip if the $src doesn't begin with 'http' or '//'
+		if (strpos($src, 'http') !== 0 && strpos($src, '//') !== 0) {
+			return true;
+		}
+
+		// Skip if it's an SVG or AVIF file
+		if (self::is_svg($src) || self::is_avif($src)) {
+			return true;
+		}
+
+		// If we've made it this far, the URL is transformable
+		return false;
 	}
 
 	/**
@@ -662,27 +697,46 @@ class Helpers {
 	}
 
 	/**
-	 * Check if an image has already been processed.
+	 * Check if an image has been processed or skipped.
 	 *
 	 * @since 4.5.0
 	 * 
-	 * @param \WP_HTML_Tag_Processor|string|null $input Either a Tag Processor or HTML string.
-	 * @return bool Whether the image has been processed.
+	 * @param string|array $input Either a class string or array of attributes.
+	 * @return bool Whether the image has been processed or skipped.
 	 */
 	public static function is_image_processed($input): bool {
+		// Get the class string
+		$classes = is_array($input) ? ($input['class'] ?? '') : $input;
 
-		// Bail if no input
-		if (!$input) {
-			return false;
+		// Check for either processed or skipped class
+		return strpos($classes, 'edge-images-processed') !== false || 
+			   strpos($classes, 'edge-images-skipped') !== false;
+	}
+
+	/**
+	 * Check if an image should be skipped from transformation.
+	 *
+	 * @since 5.4.0
+	 * 
+	 * @param string $src The image source URL.
+	 * @param string $html Optional. The complete HTML tag.
+	 * @return bool Whether the image should be skipped.
+	 */
+	public static function should_skip_transform(string $src, string $html = ''): bool {
+
+		// Skip if transformation is disabled for this image
+		if (!empty($html) && self::should_disable_transform($html)) {
+			return true;
+		}
+		
+		// Skip if it's a non-transformable format
+		if (self::is_non_transformable_format($src)) {
+			return true;
 		}
 
-		if ($input instanceof \WP_HTML_Tag_Processor) {
-			$class = $input->get_attribute('class') ?? '';
-			return !empty($class) && str_contains($class, 'edge-images-processed');
-		}
-
-		if (is_string($input)) {
-			return str_contains($input, 'edge-images-processed');
+		// Skip if already processed or marked as skipped
+		if (!empty($html) && self::is_image_processed($html)) {
+			return true;
 		}
 
 		return false;
@@ -697,10 +751,22 @@ class Helpers {
 	 * @return string|null The img tag HTML or null if not found.
 	 */
 	public static function extract_img_tag(string $html): ?string {
-		if (preg_match('/<img[^>]*>/', $html, $matches)) {
-			return $matches[0];
+		$processor = new \WP_HTML_Tag_Processor($html);
+		
+		if (!$processor->next_tag('img')) {
+			return null;
 		}
-		return null;
+
+		// Create a new processor for the output img tag
+		$tag_html = new \WP_HTML_Tag_Processor('<img>');
+		$tag_html->next_tag();
+
+		// Copy all attributes from the source to the new tag
+		foreach ($processor->get_attribute_names_with_prefix('') as $name) {
+			$tag_html->set_attribute($name, $processor->get_attribute($name));
+		}
+
+		return $tag_html->get_updated_html();
 	}
 
 	/**
@@ -828,6 +894,36 @@ class Helpers {
 		}
 
 		return $args;
+	}
+
+	/**
+	 * Check if the server is running Apache.
+	 *
+	 * @since 5.4.0
+	 * @return bool Whether the server is running Apache.
+	 */
+	public static function is_apache(): bool {
+		if (!isset($_SERVER['SERVER_SOFTWARE'])) {
+			return false;
+		}
+
+		$server_software = sanitize_text_field(wp_unslash($_SERVER['SERVER_SOFTWARE']));
+		return stripos($server_software, 'apache') !== false;
+	}
+
+	/**
+	 * Check if the server is running NGINX.
+	 *
+	 * @since 5.4.0
+	 * @return bool Whether the server is running NGINX.
+	 */
+	public static function is_nginx(): bool {
+		if (!isset($_SERVER['SERVER_SOFTWARE'])) {
+			return false;
+		}
+
+		$server_software = sanitize_text_field(wp_unslash($_SERVER['SERVER_SOFTWARE']));
+		return stripos($server_software, 'nginx') !== false;
 	}
 
 }

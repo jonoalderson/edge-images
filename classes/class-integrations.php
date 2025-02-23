@@ -55,6 +55,16 @@ class Integrations {
 				'Integrations\Yoast_SEO\XML_Sitemaps',
 			],
 		],
+		'rank-math' => [
+			'check'  => 'RANK_MATH_VERSION',
+			'type'   => 'constant',
+			'name'   => 'Rank Math SEO',
+			'classes' => [
+				'Integrations\Rank_Math\Schema_Images',
+				'Integrations\Rank_Math\Social_Images',
+				'Integrations\Rank_Math\XML_Sitemaps',
+			],
+		],
 		'relevanssi-live-search' => [
 			'check'   => 'Relevanssi_Live_Search',
 			'type'    => 'class',

@@ -53,7 +53,8 @@ Edge Images solves these problems by:
 * Fine-grained transformation control
 * Multiple CDN provider support
 * Developer-friendly filters
-* Yoast SEO integration
+* Yoast SEO & Rank Math integrations
+* Bricks integration
 * Gutenberg compatibility
 
 ## 🛠️ Technical Example

@@ -1,10 +1,12 @@
+<?php 
 /**
  * Bricks Builder integration.
  *
  * Handles integration with the Bricks Builder theme system.
  * Specifically:
- * - Disables SVG transformation when Bricks is active
- * - Prevents SVG wrapping in picture elements
+ * - Prevents any transformation of SVG images
+ * - Disables dimension enforcement for SVGs
+ * - Maintains original SVG markup
  *
  * @package    Edge_Images
  * @author     Jono Alderson <https://www.jonoalderson.com/>
@@ -16,6 +18,7 @@ namespace Edge_Images\Integrations\Bricks;
 
 use Edge_Images\Integration;
 use Edge_Images\Helpers;
+use Edge_Images\Integrations;
 
 /**
  * Class Bricks
@@ -30,54 +33,83 @@ class Bricks extends Integration {
 	 */
 	public function add_filters(): void {
 		
-		// Disable transformation for SVGs.
-		add_filter('edge_images_should_transform', [$this, 'maybe_disable_svg_transform'], 10, 2);
-		add_filter('edge_images_should_wrap', [$this, 'maybe_disable_svg_wrap'], 10, 2);
+		// Bail if we shouldn't be filtering
+		if (!$this->should_filter()) {
+			return;
+		}
+
+		// Add a filter to check for SVGs before any transformation
+		add_filter('edge_images_disable_transform', [$this, 'maybe_skip_svg'], 0, 2);
 	}
 
 	/**
-	 * Disable transformation for SVGs when Bricks is active.
+	 * Check if we should skip transforming an SVG image.
 	 *
 	 * @since 5.2.14
 	 * 
-	 * @param bool   $should_transform Whether the image should be transformed.
-	 * @param string $html            The image HTML.
-	 * @return bool Whether the image should be transformed.
+	 * @param bool   $should_disable Whether transformation should be disabled.
+	 * @param string $html          The image HTML to check.
+	 * @return bool Whether transformation should be disabled.
 	 */
-	public function maybe_disable_svg_transform(bool $should_transform, string $html): bool {
-		// If transformation is already disabled, return early.
-		if (!$should_transform) {
-			return $should_transform;
+	public function maybe_skip_svg(bool $should_disable, string $html): bool {
+	
+		// If already disabled, return early
+		if ($should_disable) {
+			return $should_disable;
 		}
 
-		// If this is an SVG, disable transformation.
-		if (Helpers::is_svg($html)) {
-			return false;
+		// Get the img tag
+		$img_html = Helpers::extract_img_tag($html);
+		if (!$img_html) {
+			return $should_disable;
 		}
 
-		return $should_transform;
+		// The extract_img_tag helper now returns a normalized tag, so we can use it directly
+		$processor = new \WP_HTML_Tag_Processor($img_html);
+		if (!$processor->next_tag('img')) {
+			return $should_disable;
+		}
+
+		// Get the src
+		$src = $processor->get_attribute('src');
+		if (!$src) {
+			return $should_disable;
+		}
+
+		// Check if this is an SVG
+		if (Helpers::is_svg($src)) {
+			return true;
+		}
+
+		return $should_disable;
 	}
 
 	/**
-	 * Disable wrapping for SVGs when Bricks is active.
+	 * Check if this integration should filter.
+	 *
+	 * Determines if Bricks integration should be active.
+	 * This method:
+	 * - Checks if Bricks is active
+	 * - Validates settings
+	 * - Ensures requirements
 	 *
 	 * @since 5.2.14
 	 * 
-	 * @param bool   $should_wrap Whether the image should be wrapped.
-	 * @param string $html       The image HTML.
-	 * @return bool Whether the image should be wrapped.
+	 * @return bool True if integration should be active, false otherwise.
 	 */
-	public function maybe_disable_svg_wrap(bool $should_wrap, string $html): bool {
-		// If wrapping is already disabled, return early.
-		if (!$should_wrap) {
-			return $should_wrap;
-		}
+	protected function should_filter(): bool {
 
-		// If this is an SVG, disable wrapping.
-		if (Helpers::is_svg($html)) {
+		// Check if Bricks is installed and active
+		if (!Integrations::is_enabled('bricks')) {
 			return false;
 		}
 
-		return $should_wrap;
+		// Check if image transformation is enabled
+		if (!Helpers::should_transform_images()) {
+			return false;
+		}
+
+		return true;
 	}
+
 } 

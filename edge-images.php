@@ -7,13 +7,13 @@
  * @license   GPL-2.0-or-later
  * @link      https://github.com/jonoalderson/edge-images/
  * @since     1.0.0
- * @version   5.2.18
+ * @version   5.4
  *
  * @wordpress-plugin
  * Plugin Name:       Edge Images
  * Plugin URI:        https://github.com/jonoalderson/edge-images/
  * Description:       Routes images through edge providers (like Cloudflare or Accelerated Domains) for automatic optimization and transformation. Improves page speed and image loading performance.
- * Version:           5.2.18
+ * Version:           5.4
  * Requires PHP:      7.4
  * Requires at least: 5.6
  * Tested up to:      6.7
@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'EDGE_IMAGES_VERSION', '5.2.18' );
+define( 'EDGE_IMAGES_VERSION', '5.4' );
 define( 'EDGE_IMAGES_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EDGE_IMAGES_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'EDGE_IMAGES_PLUGIN_FILE', __FILE__ );
@@ -86,3 +86,11 @@ add_action('init', [Features::class, 'register'], 5);
  * @return void
  */
 add_action('init', [Blocks::class, 'register'], 5);
+
+/**
+ * Initialize rewrite functionality.
+ *
+ * @since 5.4.0
+ * @return void
+ */
+add_action('init', [Rewrites::class, 'register'], 5);

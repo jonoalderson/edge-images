@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 5.2.18
+Stable tag: 5.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,7 +64,8 @@ Edge Images solves these problems by:
 * Fine-grained transformation control
 * Multiple CDN provider support
 * Developer-friendly filters
-* Yoast SEO integration
+* Yoast SEO & Rank Math integrations
+* Bricks integration
 * Gutenberg compatibility
 
 = 🔌 Supported Providers =
@@ -251,6 +252,20 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 5.4 ( 23/02/2025 ) =
+* FEATURE: Added support for transforming image URLs locally (performance warnings apply if you're using a lot of images and not using a CDN to cache them).
+
+= 5.3.5 ( 13/02/2025 ) =
+* BUGFIX: Tweaked the Bricks integration to improve SVG handling.
+* FEATURE: Tweaked classes to make it clear when an image has been skipped.
+
+= 5.3.0 ( 13/02/2025 ) =
+* FEATURE: Add Rank Math integration
+* BUGFIX: Fix Bricks integration
+
+= 5.2.19 ( 12/02/2025 ) =
+* FEATURE: Add caching to social images in the Yoast SEO integration, and tweak how small images are handled.
 
 = 5.2.18 ( 12/02/2025 ) =
 * FEATURE: Added an integration for Bricks (which disables transformations for SVGs).

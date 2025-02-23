@@ -48,6 +48,18 @@ class Images {
 		string $context = '',
 		array $args = []
 	): \WP_HTML_Tag_Processor {
+
+		// Get src first
+		$src = $processor->get_attribute('src');
+		if (!$src) {
+			return $processor;
+		}
+
+		// Check for non-transformable formats early
+		if (Helpers::is_non_transformable_format($src)) {
+			$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-skipped'));
+			return $processor;
+		}
 		
 		// Check cache first if we have an image ID
 		if ($image_id) {
@@ -63,12 +75,6 @@ class Images {
 					return new \WP_HTML_Tag_Processor($cached_html);
 				}
 			}
-		}
-
-		// Get src
-		$src = $processor->get_attribute('src');
-		if (!$src) {
-			return $processor;
 		}
 
 		// Get dimensions from args if they exist
@@ -104,15 +110,6 @@ class Images {
 			$new_processor = new \WP_HTML_Tag_Processor($processor->get_updated_html());
 			$new_processor->next_tag('img');
 
-			// Check if this is an SVG
-			if (Helpers::is_svg($src)) {
-				// For SVGs, just set the dimensions without transforming the URL
-				$new_processor->set_attribute('width', $dimensions['width']);
-				$new_processor->set_attribute('height', $dimensions['height']);
-				$new_processor->set_attribute('class', trim($new_processor->get_attribute('class') . ' edge-images-processed'));
-				return $new_processor;
-			}
-
 			// Use transform_image_urls for consistent behavior
 			self::transform_image_urls($new_processor, $dimensions, $html, $context, $args);
 
@@ -129,6 +126,8 @@ class Images {
 			return self::clean_transform_attributes($new_processor);
 		}
 
+		// If we didn't transform, mark as skipped
+		$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-skipped'));
 		return $processor;
 	}
 
@@ -156,6 +155,12 @@ class Images {
 			return;
 		}
 
+		// Bail if the image is non-transformable
+		if (Helpers::is_non_transformable_format($src)) {
+			$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-skipped'));
+			return;
+		}
+
 		// Get attachment ID if available
 		$attachment_id = null;
 		
@@ -169,7 +174,9 @@ class Images {
 		$width = (int) $dimensions['width'];
 		$height = (int) $dimensions['height'];
 		
+		// Bail if the dimensions are invalid
 		if ($width <= 0 || $height <= 0) {
+			$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-skipped'));
 			return;
 		}
 
@@ -189,19 +196,12 @@ class Images {
 			];
 		}
 
-		// Check if this is an SVG
-		if (Helpers::is_svg($src)) {
-			// For SVGs, just set the dimensions without transforming the URL
-			$processor->set_attribute('width', $dimensions['width']);
-			$processor->set_attribute('height', $dimensions['height']);
-			return;
-		}
-
 		// Get a provider instance to access default args
 		$provider = self::get_provider_instance();
 
 		// Bail if we don't have a provider
 		if (!$provider) {
+			$processor->set_attribute('class', trim($processor->get_attribute('class') . ' edge-images-skipped'));
 			return;
 		}
 		

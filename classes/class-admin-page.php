@@ -118,6 +118,30 @@ class Admin_Page {
 	private const DOMAIN_OPTION = 'edge_images_domain';
 
 	/**
+	 * Option name for Rank Math schema integration.
+	 *
+	 * @since 5.2.20
+	 * @var string
+	 */
+	private const RANK_MATH_SCHEMA_OPTION = 'edge_images_integration_rank_math_schema';
+
+	/**
+	 * Option name for Rank Math social integration.
+	 *
+	 * @since 5.2.20
+	 * @var string
+	 */
+	private const RANK_MATH_SOCIAL_OPTION = 'edge_images_integration_rank_math_social';
+
+	/**
+	 * Option name for Rank Math sitemap integration.
+	 *
+	 * @since 5.2.20
+	 * @var string
+	 */
+	private const RANK_MATH_SITEMAP_OPTION = 'edge_images_integration_rank_math_xml';
+
+	/**
 	 * Register the admin functionality.
 	 *
 	 * Initializes all admin-related hooks and filters. This includes:
@@ -247,9 +271,23 @@ class Admin_Page {
 
 		// Process provider setting
 		if ( isset( $_POST[ self::PROVIDER_OPTION ] ) ) {
+			$old_value = get_option(self::PROVIDER_OPTION);
 			$provider = sanitize_text_field( wp_unslash( $_POST[ self::PROVIDER_OPTION ] ) );
 			if ( Providers::is_valid_provider( $provider ) ) {
-				update_option( self::PROVIDER_OPTION, $provider );
+				// Use Settings API to ensure hooks are triggered
+				$updated = update_option( self::PROVIDER_OPTION, $provider );
+				if ($updated) {
+					/**
+					 * Fires after the provider option has been updated.
+					 * This ensures the hook is always triggered, even if update_option doesn't fire it.
+					 *
+					 * @since 5.4.0
+					 *
+					 * @param string $old_value The old option value.
+					 * @param string $provider  The new option value.
+					 */
+					do_action("update_option_" . self::PROVIDER_OPTION, $old_value, $provider);
+				}
 			}
 		}
 
@@ -289,6 +327,9 @@ class Admin_Page {
 			self::YOAST_SCHEMA_OPTION,
 			self::YOAST_SOCIAL_OPTION,
 			self::YOAST_SITEMAP_OPTION,
+			self::RANK_MATH_SCHEMA_OPTION,
+			self::RANK_MATH_SOCIAL_OPTION,
+			self::RANK_MATH_SITEMAP_OPTION,
 		];
 
 		foreach ( $boolean_settings as $option ) {
@@ -472,6 +513,40 @@ class Admin_Page {
 				'sanitize_callback' => [Settings::class, 'sanitize_domain'],
 				'default'           => '',
 				'show_in_rest'     => true,
+			]
+		);
+
+		// Register Rank Math integration settings.
+		register_setting(
+			self::OPTION_GROUP,
+			self::RANK_MATH_SCHEMA_OPTION,
+			[
+				'type'              => 'boolean',
+				'description'       => __( 'Enable Rank Math schema image optimization', 'edge-images' ),
+				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
+				'default'          => true,
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::RANK_MATH_SOCIAL_OPTION,
+			[
+				'type'              => 'boolean',
+				'description'       => __( 'Enable Rank Math social image optimization', 'edge-images' ),
+				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
+				'default'          => true,
+			]
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::RANK_MATH_SITEMAP_OPTION,
+			[
+				'type'              => 'boolean',
+				'description'       => __( 'Enable Rank Math sitemap image optimization', 'edge-images' ),
+				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
+				'default'          => true,
 			]
 		);
 
@@ -710,13 +785,33 @@ class Admin_Page {
 						name="<?php echo esc_attr( self::PROVIDER_OPTION ); ?>" 
 						value="<?php echo esc_attr( $value ); ?>"
 						<?php checked( $current_provider, $value ); ?>
+						data-provider="<?php echo esc_attr( $value ); ?>"
 					>
 					<span class="edge-images-provider-card">
-						<span class="edge-images-provider-name"><?php echo esc_html( $label ); ?></span>
+						<span class="edge-images-provider-name">
+							<?php 
+							echo esc_html( $label );
+							if ($value === 'native') {
+								echo ' *';
+							}
+							?>
+						</span>
 					</span>
 				</label>
 			<?php endforeach; ?>
 		</div>
+		<div id="edge-images-native-notice" class="notice notice-warning inline" style="<?php echo $current_provider === 'native' ? '' : 'display: none;'; ?>">
+			<p>
+				<?php esc_html_e('* The Native provider processes images on-demand using your server resources. This can impact performance unless you have a caching solution in place (e.g., page cache, object cache, or CDN).', 'edge-images'); ?>
+			</p>
+		</div>
+		<script>
+		jQuery(document).ready(function($) {
+			$('input[name="<?php echo esc_js(self::PROVIDER_OPTION); ?>"]').on('change', function() {
+				$('#edge-images-native-notice').toggle($(this).data('provider') === 'native');
+			});
+		});
+		</script>
 		<?php
 	}
 
@@ -868,11 +963,24 @@ class Admin_Page {
 						<strong><?php echo esc_html( Integrations::get_name( $id ) ); ?></strong>
 					</div>
 
-					<?php if ( $integration['active'] && $id === 'yoast-seo' ) : ?>
-						<div class="integration-settings">
-							<?php self::render_yoast_integration_fields(); ?>
-						</div>
-					<?php endif; ?>
+					<?php 
+					// Check if any of the integration classes have settings to render
+					$has_settings = false;
+					if ($integration['active'] && !empty($integration['classes'])) {
+						foreach ($integration['classes'] as $class) {
+							$full_class = __NAMESPACE__ . '\\' . $class;
+							if (method_exists($full_class, 'render_settings')) {
+								$has_settings = true;
+								?>
+								<div class="integration-settings">
+									<?php $full_class::render_settings(); ?>
+								</div>
+								<?php
+								break; // Only need to render settings once per integration
+							}
+						}
+					}
+					?>
 				</div>
 			<?php endforeach; ?>
 
@@ -880,67 +988,6 @@ class Admin_Page {
 				<?php esc_html_e( 'Edge Images automatically integrates with supported plugins when they are active.', 'edge-images' ); ?>
 			</p>
 		</div>
-		<?php
-	}
-
-	/**
-	 * Render Yoast SEO integration fields.
-	 *
-	 * Outputs the settings fields specific to the Yoast SEO integration.
-	 * Only displayed when Yoast SEO is active.
-	 *
-	 * @since 4.1.0
-	 * @return void
-	 */
-	public static function render_yoast_integration_fields(): void {
-
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$schema_enabled = get_option( self::YOAST_SCHEMA_OPTION, true );
-		$social_enabled = get_option( self::YOAST_SOCIAL_OPTION, true );
-		$sitemap_enabled = get_option( self::YOAST_SITEMAP_OPTION, true );
-		?>
-		<fieldset>
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="<?php echo esc_attr( self::YOAST_SCHEMA_OPTION ); ?>" 
-						value="1" 
-						<?php checked( $schema_enabled ); ?>
-					>
-					<?php esc_html_e( 'Enable schema.org image optimization', 'edge-images' ); ?>
-				</label>
-			</p>
-
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="<?php echo esc_attr( self::YOAST_SOCIAL_OPTION ); ?>" 
-						value="1" 
-						<?php checked( $social_enabled ); ?>
-					>
-					<?php esc_html_e( 'Enable social media image optimization', 'edge-images' ); ?>
-				</label>
-			</p>
-
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="<?php echo esc_attr( self::YOAST_SITEMAP_OPTION ); ?>" 
-						value="1" 
-						<?php checked( $sitemap_enabled ); ?>
-					>
-					<?php esc_html_e( 'Enable XML sitemap image optimization', 'edge-images' ); ?>
-				</label>
-			</p>
-
-			<p class="description">
-				<?php esc_html_e( 'Edge Images can optimize images in Yoast SEO\'s schema.org output, social media tags, and XML sitemaps. Enable or disable these features as needed.', 'edge-images' ); ?>
-			</p>
-		</fieldset>
 		<?php
 	}
 
@@ -1065,6 +1112,66 @@ class Admin_Page {
 				<?php esc_html_e('The domain to use for transformed images. You can usually leave this blank, unless this is a staging/development site, or if you serve your images from a different domain.', 'edge-images'); ?>
 			</p>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Render Rank Math integration fields.
+	 *
+	 * Outputs the settings fields specific to the Rank Math integration.
+	 * Only displayed when Rank Math is active.
+	 *
+	 * @since 5.2.20
+	 * @return void
+	 */
+	public static function render_rank_math_integration_fields(): void {
+		// Bail if user doesn't have sufficient permissions.
+		if (!current_user_can('manage_options')) {
+			return;
+		}
+
+		$schema_enabled = get_option(self::RANK_MATH_SCHEMA_OPTION, true);
+		$social_enabled = get_option(self::RANK_MATH_SOCIAL_OPTION, true);
+		$sitemap_enabled = get_option(self::RANK_MATH_SITEMAP_OPTION, true);
+		?>
+		<fieldset>
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="<?php echo esc_attr(self::RANK_MATH_SCHEMA_OPTION); ?>" 
+						value="1" 
+						<?php checked($schema_enabled); ?>
+					>
+					<?php esc_html_e('Enable schema.org image optimization', 'edge-images'); ?>
+				</label>
+			</p>
+
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="<?php echo esc_attr(self::RANK_MATH_SOCIAL_OPTION); ?>" 
+						value="1" 
+						<?php checked($social_enabled); ?>
+					>
+					<?php esc_html_e('Enable social media image optimization', 'edge-images'); ?>
+				</label>
+			</p>
+
+			<p>
+				<label>
+					<input type="checkbox" 
+						name="<?php echo esc_attr(self::RANK_MATH_SITEMAP_OPTION); ?>" 
+						value="1" 
+						<?php checked($sitemap_enabled); ?>
+					>
+					<?php esc_html_e('Enable XML sitemap image optimization', 'edge-images'); ?>
+				</label>
+			</p>
+
+			<p class="description">
+				<?php esc_html_e('Edge Images can optimize images in Rank Math\'s schema.org output, social media tags, and XML sitemaps. Enable or disable these features as needed.', 'edge-images'); ?>
+			</p>
+		</fieldset>
 		<?php
 	}
 } 
