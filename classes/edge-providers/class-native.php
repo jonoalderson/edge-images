@@ -51,6 +51,22 @@ class Native extends Edge_Provider {
 		parent::__construct();
 		add_action('parse_request', [$this, 'maybe_transform_image']);
 		add_filter('redirect_canonical', [$this, 'alter_canonical_redirect'], 10, 2);
+		add_filter('edge_images_srcset_widths', [$this, 'filter_srcset_widths'], 10, 3);
+	}
+
+	/**
+	 * Filter srcset widths to prevent upscaling.
+	 *
+	 * @since 5.4.0
+	 * @param array $widths Array of widths.
+	 * @param int $orig_width Original image width.
+	 * @param int $orig_height Original image height.
+	 * @return array Filtered widths.
+	 */
+	public function filter_srcset_widths(array $widths, int $orig_width, int $orig_height): array {
+		return array_filter($widths, function($width) use ($orig_width) {
+			return $width <= $orig_width;
+		});
 	}
 
 	/**
