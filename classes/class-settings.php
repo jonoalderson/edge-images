@@ -13,6 +13,7 @@
  * - Image dimension settings
  *
  * @package    Edge_Images
+ * @version    1.0.0
  * @author     Jono Alderson <https://www.jonoalderson.com/>
  * @license    GPL-2.0-or-later
  * @since      4.5.0
@@ -68,6 +69,17 @@ class Settings {
 	 * @var string
 	 */
 	public const DOMAIN_OPTION = 'edge_images_domain';
+
+	/**
+	 * Imgproxy URL option name.
+	 *
+	 * The option name used to store the URL for the imgproxy provider.
+	 * This setting allows configuring the URL for a self-hosted imgproxy setup.
+	 *
+	 * @since      5.4.0
+	 * @var string
+	 */
+	public const IMGPROXY_URL_OPTION = 'edge_images_imgproxy_url';
 
 	/**
 	 * Cache for settings values.
@@ -232,6 +244,18 @@ class Settings {
 				'default' => 650,
 				'update_callback' => [self::class, 'reset_cache'],
 			]
+			);
+
+		// Register imgproxy URL setting
+		register_setting(
+			self::OPTION_GROUP,
+			self::IMGPROXY_URL_OPTION,
+			[
+				'type' => 'string',
+				'description' => __('The URL for the imgproxy provider', 'edge-images'),
+				'sanitize_callback' => [self::class, 'sanitize_url'],
+				'default' => '',
+			]
 		);
 	}
 
@@ -281,4 +305,26 @@ class Settings {
 
 		return untrailingslashit(esc_url_raw($value));
 	}
-} 
+
+	/**
+	 * Sanitize the URL setting.
+	 *
+	 * @since 5.4.0
+	 * 
+	 * @param string $value The value to sanitize.
+	 * @return string The sanitized value.
+	 */
+	public static function sanitize_url(string $value): string {
+		$value = trim($value);
+		if (empty($value)) {
+			return '';
+		}
+
+		// Add scheme if missing
+		if (!preg_match('~^(?:f|ht)tps?://~i', $value)) {
+			$value = 'https://' . $value;
+		}
+
+		return untrailingslashit(esc_url_raw($value));
+	}
+}
