@@ -72,6 +72,7 @@ class Providers {
 			'accelerated_domains' => __( 'Accelerated Domains', 'edge-images' ),
 			'bunny'              => __( 'Bunny CDN', 'edge-images' ),
 			'imgix'              => __( 'Imgix', 'edge-images' ),
+			'imgproxy'           => __( 'Imgproxy', 'edge-images' ),
 		];
 	}
 
