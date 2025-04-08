@@ -64,9 +64,82 @@ class Schema_Images extends Integration {
 		}
 		
 		add_filter('wpseo_schema_imageobject', [$this, 'transform_schema_image'], 10, 3);
-		add_filter('wpseo_schema_organization', [$this, 'edge_organization_logo']);
-		add_filter('wpseo_schema_webpage', [$this, 'edge_thumbnail']);
-		add_filter('wpseo_schema_article', [$this, 'edge_thumbnail']);
+		add_filter('wpseo_schema_organization', [$this, 'edge_organization_logo'], PHP_INT_MAX - 10);
+		add_filter('wpseo_schema_webpage', [$this, 'edge_thumbnail'], PHP_INT_MAX - 10);
+		add_filter('wpseo_schema_article', [$this, 'edge_thumbnail'], PHP_INT_MAX - 10);
+		add_filter('wpseo_schema_webpage', [$this, 'edge_images'], PHP_INT_MAX - 10);
+		add_filter('wpseo_schema_article', [$this, 'edge_images'], PHP_INT_MAX - 10);
+	}
+
+	/**
+	 * Process and transform image properties in schema data.
+	 *
+	 * Handles multiple image formats in schema:
+	 * - Single image URL as string
+	 * - Array of image URLs
+	 * - Array of reference objects with @id properties
+	 *
+	 * @since 4.5.0
+	 * 
+	 * @param array $data The schema data containing image properties.
+	 * @return array The modified schema data with transformed image URLs.
+	 */
+	public function edge_images( array $data ): array {
+		// Process 'image' property if it exists.
+		if ( isset( $data['image'] ) ) {
+			// Case 1: Single image URL as string.
+			if ( is_string( $data['image'] ) ) {
+				$processed = $this->process_schema_image( $data['image'] );
+				if ( $processed ) {
+					$data['image'] = $processed['url'];
+				}
+			}
+			// Case 2: Array of values (either URLs or reference objects).
+			elseif ( is_array( $data['image'] ) ) {
+				foreach ( $data['image'] as $key => $image ) {
+					// Case 2a: Direct URL string in array.
+					if ( is_string( $image ) ) {
+						$processed = $this->process_schema_image( $image );
+						if ( $processed ) {
+							$data['image'][ $key ] = $processed['url'];
+						}
+					}
+					// Case 2b: Reference object with @id.
+					elseif ( is_array( $image ) && isset( $image['@id'] ) ) {
+						// Only process if @id looks like a URL (not just a reference ID).
+						if ( filter_var( $image['@id'], FILTER_VALIDATE_URL ) ) {
+							$processed = $this->process_schema_image( $image['@id'] );
+							if ( $processed ) {
+								$data['image'][ $key ]['@id'] = $processed['url'];
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Process 'primaryImageOfPage' property if it exists.
+		if ( isset( $data['primaryImageOfPage'] ) ) {
+			// Case 1: Direct URL string.
+			if ( is_string( $data['primaryImageOfPage'] ) ) {
+				$processed = $this->process_schema_image( $data['primaryImageOfPage'] );
+				if ( $processed ) {
+					$data['primaryImageOfPage'] = $processed['url'];
+				}
+			}
+			// Case 2: Reference object with @id.
+			elseif ( is_array( $data['primaryImageOfPage'] ) && isset( $data['primaryImageOfPage']['@id'] ) ) {
+				// Only process if @id looks like a URL (not just a reference ID).
+				if ( filter_var( $data['primaryImageOfPage']['@id'], FILTER_VALIDATE_URL ) ) {
+					$processed = $this->process_schema_image( $data['primaryImageOfPage']['@id'] );
+					if ( $processed ) {
+						$data['primaryImageOfPage']['@id'] = $processed['url'];
+					}
+				}
+			}
+		}
+
+		return $data;
 	}
 
 	/**
@@ -103,7 +176,7 @@ class Schema_Images extends Integration {
 	 * @return array|false Array of edge URL and dimensions, or false on failure.
 	 */
 	private function process_schema_image( string $image_url, array $custom_args = [] ) {
-
+		
 		// Check cache first
 		$cache_key = 'schema_' . md5($image_url . serialize($custom_args));
 		$cached_result = wp_cache_get($cache_key, Cache::CACHE_GROUP);
@@ -130,17 +203,10 @@ class Schema_Images extends Integration {
 			'width'   => self::SCHEMA_WIDTH,
 			'height'  => self::SCHEMA_HEIGHT,
 			'fit'     => 'cover',
-			'sharpen' => (int) $dimensions['width'] < self::SCHEMA_WIDTH ? 3 : 2,
 		];
 
 		// Merge with custom args
 		$args = array_merge( $args, $custom_args );
-
-		// Tweak the behaviour for small images
-		if ( (int) $dimensions['width'] < self::SCHEMA_WIDTH || (int) $dimensions['height'] < self::SCHEMA_HEIGHT ) {
-			$args['fit']     = 'pad';
-			$args['sharpen'] = 2;
-		}
 
 		// Get the edge URL
 		$edge_url = Helpers::edge_src( $image_url, $args );

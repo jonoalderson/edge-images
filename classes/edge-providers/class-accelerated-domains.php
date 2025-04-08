@@ -52,6 +52,7 @@ class Accelerated_Domains extends Edge_Provider {
 	 * @return string The transformed edge URL.
 	 */
 	public function get_edge_url(): string {
+
 		// Bail early if no path
 		if (empty($this->path)) {
 			return '';
@@ -100,7 +101,7 @@ class Accelerated_Domains extends Edge_Provider {
 			rtrim(Helpers::get_rewrite_domain(), '/'),
 			self::EDGE_ROOT,
 			$image_path,
-			http_build_query($transform_args)
+			\http_build_query($transform_args)
 		);
 
 		// Cache the result

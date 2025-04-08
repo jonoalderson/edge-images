@@ -58,10 +58,9 @@ class Native extends Edge_Provider {
 		parent::__construct();
 
 		// Add our filters
-		add_action('parse_request', [$this, 'maybe_transform_image']);
-		add_filter('redirect_canonical', [$this, 'alter_canonical_redirect'], 10, 2);
-		add_filter('edge_images_srcset_widths', [$this, 'filter_srcset_widths'], 10, 2);
-	
+		\add_action('parse_request', [$this, 'maybe_transform_image']);
+		\add_filter('redirect_canonical', [$this, 'alter_canonical_redirect'], 10, 2);
+		\add_filter('edge_images_srcset_widths', [$this, 'filter_srcset_widths'], 10, 2);
 	}
 
 	/**

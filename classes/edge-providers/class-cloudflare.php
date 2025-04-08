@@ -60,7 +60,7 @@ class Cloudflare extends Edge_Provider {
 		$transform_args = $this->get_transform_args();
 
 		// Build the URL with comma-separated parameters.
-		$edge_url = $edge_prefix . http_build_query(
+		$edge_url = $edge_prefix . \http_build_query(
 			$transform_args,
 			'',
 			'%2C' // comma

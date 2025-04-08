@@ -68,7 +68,7 @@ class Imgix extends Edge_Provider {
 	 * @return void
 	 */
 	public static function register_settings(): void {
-		register_setting(
+		\register_setting(
 			Settings::OPTION_GROUP,
 			self::SUBDOMAIN_OPTION,
 			[
@@ -110,6 +110,7 @@ class Imgix extends Edge_Provider {
 	 * @return string The transformed edge URL with Imgix parameters.
 	 */
 	public function get_edge_url(): string {
+
 		// Get the Imgix subdomain from settings
 		$subdomain = self::get_subdomain();
 		if (empty($subdomain)) {
@@ -167,7 +168,11 @@ class Imgix extends Edge_Provider {
 	 * @return array<string,mixed> Array of Imgix parameters.
 	 */
 	private function get_imgix_transform_args(): array {
+
+		// Get the standard transform args
 		$args = $this->get_transform_args();
+
+		// Initialize the imgix args array
 		$imgix_args = [];
 
 		// Map width and height
@@ -272,8 +277,11 @@ class Imgix extends Edge_Provider {
 	 * @return string The pattern to match in transformed URLs.
 	 */
 	public static function get_transform_pattern(): string {
+
 		// Get the configured subdomain
 		$subdomain = self::get_subdomain();
+
+		// Bail if no subdomain is configured
 		if (empty($subdomain)) {
 			return '';
 		}

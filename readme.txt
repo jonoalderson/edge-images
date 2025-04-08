@@ -1,9 +1,9 @@
 === Edge Images ===
 Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 5.4
+Stable tag: 5.5.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -252,6 +252,13 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 5.5.1 ( 08/04/2025 ) =
+* FEATURE: Tested up to WP 6.8.
+* MISC: Tidied up some code.
+
+= 5.5 ( 10/03/2025) =
+* BUGFIX: Prevented a layout-breaking bug for images in content, wrapped in picture els.
 
 = 5.4.2 ( 23/02/2025 ) =
 * BUGFIX: Prevent local transformations from outputting upscaled srcset values.

@@ -71,17 +71,6 @@ class Settings {
 	public const DOMAIN_OPTION = 'edge_images_domain';
 
 	/**
-	 * Imgproxy URL option name.
-	 *
-	 * The option name used to store the URL for the imgproxy provider.
-	 * This setting allows configuring the URL for a self-hosted imgproxy setup.
-	 *
-	 * @since      5.4.0
-	 * @var string
-	 */
-	public const IMGPROXY_URL_OPTION = 'edge_images_imgproxy_url';
-
-	/**
 	 * Cache for settings values.
 	 *
 	 * Stores retrieved option values to minimize database queries.
@@ -119,7 +108,7 @@ class Settings {
 		 *
 		 * @param int $max_width The maximum width in pixels.
 		 */
-		return (int) apply_filters('edge_images_max_width', $max_width);
+		return (int) \apply_filters('edge_images_max_width', $max_width);
 	}
 
 	/**
@@ -208,8 +197,9 @@ class Settings {
 	 * @return void
 	 */
 	public static function register_settings(): void {
+		
 		// Register provider setting
-		register_setting(
+		\register_setting(
 			self::OPTION_GROUP,
 			self::PROVIDER_OPTION,
 			[
@@ -221,7 +211,7 @@ class Settings {
 		);
 
 		// Register domain setting
-		register_setting(
+		\register_setting(
 			self::OPTION_GROUP,
 			self::DOMAIN_OPTION,
 			[
@@ -234,7 +224,7 @@ class Settings {
 		);
 
 		// Register max width setting
-		register_setting(
+		\register_setting(
 			self::OPTION_GROUP,
 			self::MAX_WIDTH_OPTION,
 			[
@@ -246,17 +236,6 @@ class Settings {
 			]
 			);
 
-		// Register imgproxy URL setting
-		register_setting(
-			self::OPTION_GROUP,
-			self::IMGPROXY_URL_OPTION,
-			[
-				'type' => 'string',
-				'description' => __('The URL for the imgproxy provider', 'edge-images'),
-				'sanitize_callback' => [self::class, 'sanitize_url'],
-				'default' => '',
-			]
-		);
 	}
 
 	/**
@@ -276,12 +255,11 @@ class Settings {
 	 * @return string The domain to use for transformations.
 	 */
 	public static function get_domain(): string {
-		$domain = self::get_option(self::DOMAIN_OPTION);
+		$domain = self::get_option(self::DOMAIN_OPTION, '');
 		if (empty($domain)) {
 			return '';
 		}
-
-		return untrailingslashit($domain);
+		return rtrim($domain, '/');
 	}
 
 	/**
@@ -293,6 +271,7 @@ class Settings {
 	 * @return string The sanitized value.
 	 */
 	public static function sanitize_domain(string $value): string {
+		
 		$value = trim($value);
 		if (empty($value)) {
 			return '';
@@ -303,7 +282,7 @@ class Settings {
 			$value = 'https://' . $value;
 		}
 
-		return untrailingslashit(esc_url_raw($value));
+		return \untrailingslashit(esc_url_raw($value));
 	}
 
 	/**
@@ -315,6 +294,7 @@ class Settings {
 	 * @return string The sanitized value.
 	 */
 	public static function sanitize_url(string $value): string {
+		
 		$value = trim($value);
 		if (empty($value)) {
 			return '';
@@ -325,6 +305,6 @@ class Settings {
 			$value = 'https://' . $value;
 		}
 
-		return untrailingslashit(esc_url_raw($value));
+		return \untrailingslashit(esc_url_raw($value));
 	}
 }

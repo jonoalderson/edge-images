@@ -52,7 +52,6 @@ class Helpers {
 	public static array $valid_html_attrs = [
 		'alt',
 		'class',
-		'container-class',
 		'decoding',
 		'height',
 		'id',
@@ -61,11 +60,8 @@ class Helpers {
 		'src',
 		'srcset',
 		'style',
-		'title',
 		'width',
 		'data-attachment-id',
-		'data-original-width',
-		'data-original-height',
 		'data-wrap-in-picture',
 		'fetchpriority'
 	];

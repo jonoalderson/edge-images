@@ -153,6 +153,8 @@ class Bunny extends Edge_Provider {
      * @return array<string> Array of formatted Bunny CDN parameters.
      */
     private function get_bunny_transform_args(): array {
+
+        // Get the parent args
         $args = $this->get_transform_args();
         $bunny_args = [];
 
