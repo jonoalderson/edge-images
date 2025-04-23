@@ -179,7 +179,36 @@ class Image_Dimensions {
             }
         }
 
+        // Fall back to getting it from the file.
+        $dimensions = self::from_file( $processor );
+        if ( $dimensions ) {
+            return $dimensions;
+        }
+
         return null;
+    }
+
+    /**
+     * Get dimensions from image file.
+     * 
+     * @since 4.5.0
+     * 
+     * @param \WP_HTML_Tag_Processor $processor The HTML processor instance.
+     * @return array<string,string>|null Array with width and height, or null if not found.
+     */
+    public static function from_file( \WP_HTML_Tag_Processor $processor ): ?array {
+        $src = $processor->get_attribute( 'src' );
+        if ( ! $src ) {
+            return null;
+        }
+        
+        $file = wp_get_image_editor( $src );
+        if ( is_wp_error( $file ) ) {
+            return null;
+        }
+
+        $dimensions = $file->get_size();
+        return $dimensions;
     }
 
     /**

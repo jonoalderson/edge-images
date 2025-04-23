@@ -47,6 +47,8 @@ class Blocks {
 			'gallery' => new Blocks\Gallery(),
 			'block_image' => new Blocks\Image(),
 			'block_image_with_link' => new Blocks\Image(),
+			'standalone_figure' => new Blocks\Image(),
+			'standalone_figure_link' => new Blocks\Image()
 		];
 
 		// Register block patterns
@@ -55,7 +57,10 @@ class Blocks {
 			'gallery'		         => '/<figure[^>]*\bwp-block-gallery\b[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*|<figure[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*)*<\/figure>)*<\/figure>/s',
 			// Image patterns
 			'block_image' 		     => '/<div[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>\s*<figure[^>]*>.*?<\/figure>\s*<\/div>/s',
-			'block_image_with_link'  => '/<div[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>\s*<figure[^>]*>\s*<a[^>]*>.*?<\/a>\s*<\/figure>\s*<\/div>/s'
+			'block_image_with_link'  => '/<div[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>\s*<figure[^>]*>\s*<a[^>]*>.*?<\/a>\s*<\/figure>\s*<\/div>/s',
+			// Standalone figure patterns
+			'standalone_figure'      => '/<figure[^>]*>\s*<img[^>]*>\s*<\/figure>/s',
+			'standalone_figure_link' => '/<figure[^>]*>\s*<a[^>]*>\s*<img[^>]*>\s*<\/a>\s*<\/figure>/s'
 		];
 
 

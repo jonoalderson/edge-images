@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 5.5.1
+Stable tag: 5.5.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -252,6 +252,9 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+= 5.5.2 ( 23/04/2025) = 
+* BUGFIX: Fixed some regex mismatches for images in content blocks.
 
 = 5.5.1 ( 08/04/2025 ) =
 * FEATURE: Tested up to WP 6.8.

@@ -34,6 +34,7 @@ class Image extends Block {
 	 * @return string The transformed block content.
 	 */
 	public function transform(string $block_content, array $block): string {
+		
 		// Extract the image tag
 		$img_html = $this->extract_image($block_content);
 		if (!$img_html) {
