@@ -45,15 +45,17 @@ class Blocks {
 		// Register block handlers
 		self::$handlers = [
 			'gallery' => new Blocks\Gallery(),
-			'image' => new Blocks\Image(),
+			'block_image' => new Blocks\Image(),
+			'block_image_with_link' => new Blocks\Image(),
 		];
 
 		// Register block patterns
 		self::$block_patterns = [
 			// Gallery pattern - matches the outer gallery wrapper and all nested figures
-			'gallery' => '/<figure[^>]*\bwp-block-gallery\b[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*|<figure[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*)*<\/figure>)*<\/figure>/s',
-			// Image pattern - matches figures with wp-block-image class
-			'image' => '/<(?:figure|div)[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>.*?<\/(?:figure|div)>/s',
+			'gallery'		         => '/<figure[^>]*\bwp-block-gallery\b[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*|<figure[^>]*>(?:[^<]*|<(?!figure[^>]*>|\/figure>)[^<]*)*<\/figure>)*<\/figure>/s',
+			// Image patterns
+			'block_image' 		     => '/<div[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>\s*<figure[^>]*>.*?<\/figure>\s*<\/div>/s',
+			'block_image_with_link'  => '/<div[^>]*class="[^"]*\bwp-block-image\b[^"]*"[^>]*>\s*<figure[^>]*>\s*<a[^>]*>.*?<\/a>\s*<\/figure>\s*<\/div>/s'
 		];
 
 
