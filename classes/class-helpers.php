@@ -922,4 +922,54 @@ class Helpers {
 		return stripos($server_software, 'nginx') !== false;
 	}
 
+	/**
+	 * Display admin notice when Nginx is detected.
+	 *
+	 * Shows a warning notice in the WordPress admin when Nginx is detected,
+	 * as it requires additional configuration for the plugin to work properly.
+	 *
+	 * @since 4.0.0
+	 * @return void
+	 */
+	public static function show_nginx_notice(): void {
+		
+		// Bail if user doesn't have sufficient permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Get current screen.
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		// Only show on dashboard, plugins page, and our settings page.
+		$allowed_screens = [ 'dashboard', 'plugins', 'settings_page_' . EDGE_IMAGES_ADMIN_PAGE_SLUG ];
+		if ( ! in_array( $screen->id, $allowed_screens, true ) ) {
+			return;
+		}
+
+		// Check if Nginx is detected.
+		if ( ! self::is_nginx() ) {
+			return;
+		}
+
+		$settings_url = admin_url( 'options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG );
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<?php
+				printf(
+					/* translators: %1$s: Opening link tag, %2$s: Closing link tag */
+					esc_html__( 'Edge Images has detected that you are using Nginx. Please ensure you have configured the necessary rewrite rules in your Nginx configuration. See the %1$sdocumentation%2$s for details.', 'edge-images' ),
+					'<a href="' . esc_url( $settings_url ) . '">',
+					'</a>'
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
 }

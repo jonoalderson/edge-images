@@ -196,27 +196,30 @@ class Admin_Page {
 			return;
 		}
 
-		// Only show on dashboard, plugins page, and our settings page.
-		$allowed_screens = [ 'dashboard', 'plugins', 'settings_page_edge-images' ];
-		if ( ! in_array( $screen->id, $allowed_screens, true ) ) {
+		// Only show on allowed screens
+		$allowed_screens = [ 'dashboard', 'plugins', EDGE_IMAGES_ADMIN_SCREEN_ID ];
+		if (!in_array($screen->id, $allowed_screens)) {
 			return;
 		}
 
-		// Check if a provider is selected.
-		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
-		if ( $current_provider !== 'none' ) {
+		// Get the selected provider
+		$provider = get_option(self::PROVIDER_OPTION, 'none');
+
+		// Bail if a provider is selected
+		if ($provider !== 'none') {
 			return;
 		}
 
-		$settings_url = admin_url( 'options-general.php?page=edge-images' );
+		// Get settings URL
+		$settings_url = admin_url('options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG);
 		?>
 		<div class="notice notice-warning">
 			<p>
 				<?php
 				printf(
 					/* translators: %1$s: Opening link tag, %2$s: Closing link tag */
-					esc_html__( 'Edge Images is installed but no provider is selected. Images will not be optimized until you %1$sconfigure a provider%2$s.', 'edge-images' ),
-					'<a href="' . esc_url( $settings_url ) . '">',
+					esc_html__('Edge Images is installed but no provider is selected. Images will not be optimized until you %1$sconfigure a provider%2$s.', 'edge-images'),
+					'<a href="' . esc_url($settings_url) . '">',
 					'</a>'
 				);
 				?>
@@ -236,14 +239,14 @@ class Admin_Page {
 	 * @param array $links Array of plugin action links.
 	 * @return array Modified array of plugin action links.
 	 */
-	public static function add_settings_link( array $links ): array {
+	public static function add_settings_link(array $links): array {
 		$settings_link = sprintf(
 			'<a href="%s">%s</a>',
-			esc_url( admin_url( 'options-general.php?page=edge-images' ) ),
-			esc_html__( 'Settings', 'edge-images' )
+			esc_url(admin_url('options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG)),
+			esc_html__('Settings', 'edge-images')
 		);
 		
-		array_unshift( $links, $settings_link );
+		array_unshift($links, $settings_link);
 		return $links;
 	}
 
@@ -359,12 +362,12 @@ class Admin_Page {
 		Settings::reset_cache();
 
 		// Redirect back to settings page with success message
-		wp_safe_redirect( 
-			add_query_arg( 
-				'settings-updated', 
-				'true', 
-				admin_url( 'options-general.php?page=edge-images' ) 
-			) 
+		wp_safe_redirect(
+			add_query_arg(
+				'settings-updated',
+				'true',
+				admin_url('options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG)
+			)
 		);
 		exit;
 	}
@@ -384,7 +387,7 @@ class Admin_Page {
 			__( 'Edge Images Settings', 'edge-images' ),
 			__( 'Edge Images', 'edge-images' ),
 			'manage_options',
-			'edge-images',
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
 			[ self::class, 'render_admin_page' ]
 		);
 	}
@@ -686,21 +689,24 @@ class Admin_Page {
 	 * @return void
 	 */
 	public static function enqueue_admin_assets( string $hook ): void {
-		if ( 'settings_page_edge-images' !== $hook ) {
+		
+		// Only load on our settings page
+		if (EDGE_IMAGES_ADMIN_SCREEN_ID !== $hook) {
 			return;
 		}
 
+		// Enqueue admin styles
 		wp_enqueue_style(
 			'edge-images-admin',
 			EDGE_IMAGES_PLUGIN_URL . 'assets/css/admin.min.css',
 			[],
-			EDGE_IMAGES_VERSION,
-			'all'
+			EDGE_IMAGES_VERSION
 		);
 
+		// Enqueue admin scripts
 		wp_enqueue_script(
 			'edge-images-admin',
-			EDGE_IMAGES_PLUGIN_URL . 'assets/js/admin.js',
+			EDGE_IMAGES_PLUGIN_URL . 'assets/js/admin.min.js',
 			['jquery'],
 			EDGE_IMAGES_VERSION,
 			true

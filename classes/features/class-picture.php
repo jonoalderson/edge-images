@@ -52,7 +52,8 @@ class Picture extends Integration {
 	 * @return string The wrapped HTML.
 	 */
 	public static function create(string $img_html, ?array $dimensions, string $class = ''): string {
-		// Skip if already wrapped
+
+		// Bail if already wrapped
 		if (strpos($img_html, '<picture') !== false) {
 			return $img_html;
 		}
@@ -87,9 +88,16 @@ class Picture extends Integration {
 
 		// Build inline styles
 		$style_array = [
-			'--max-width' => $dimensions['width'] . 'px',
+			'--max-width' => $dimensions['width'] . 'px', // Utility variable for max-width
+			'--content-visibility' => 'auto', // Only load the image when it nears the viewport
+			'--width' => $dimensions['width'] . 'px',
+			'--height' => $dimensions['height'] . 'px',
 		];
 
+		// Organize the properties alphabetically.
+		ksort($style_array);
+
+		// Build the style string.
 		$style_string = self::build_style_string($style_array);
 
 		// Create the picture element

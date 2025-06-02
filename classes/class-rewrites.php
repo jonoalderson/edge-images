@@ -89,16 +89,24 @@ class Rewrites {
 	 * @return void
 	 */
 	public static function show_nginx_notice(): void {
+
+		// Only show on our plugin's admin page
+		$screen = get_current_screen();
+		if (!$screen || $screen->id !== EDGE_IMAGES_ADMIN_SCREEN_ID) {
+			return;
+		}
+
+		// Bail if user doesn't have manage_options capability
 		if (!current_user_can('manage_options')) {
 			return;
 		}
 
-		// Only show if native provider is selected
+		// Only show if native provider is selected.
 		if (!self::should_handle_rewrites()) {
 			return;
 		}
 
-		// Check if rules appear to be working
+		// Bail if rules appear to be working
 		if (self::are_nginx_rules_working()) {
 			return;
 		}

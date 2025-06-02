@@ -3,6 +3,8 @@
 	display: block;
 	position: relative;
 	max-width: var(--wp--style--global--content-size, var(--max-width, 100%));
+	content-visibility: var(--content-visibility);
+	contain-intrinsic-size: var(--width) var(--height);
 	align-content: center;
 	justify-items: center;
 
@@ -22,11 +24,11 @@
 	}
 	
 	&.contain {
-		 img {
+		img {
 			object-fit: contain;
 		}
 	}
-
+	
 	&.cover {
 		img {
 			object-fit: cover;

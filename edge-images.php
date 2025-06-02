@@ -7,13 +7,13 @@
  * @license   GPL-2.0-or-later
  * @link      https://github.com/jonoalderson/edge-images/
  * @since     1.0.0
- * @version   5.5.2
+ * @version   5.5.6
  *
  * @wordpress-plugin
  * Plugin Name:       Edge Images
  * Plugin URI:        https://github.com/jonoalderson/edge-images/
  * Description:       Routes images through edge providers (like Cloudflare or Accelerated Domains) for automatic optimization and transformation. Improves page speed and image loading performance.
- * Version:           5.5.2
+ * Version:           5.5.6
  * Requires PHP:      7.4
  * Requires at least: 5.6
  * Tested up to:      6.8
@@ -33,10 +33,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'EDGE_IMAGES_VERSION', '5.5.2' );
+define( 'EDGE_IMAGES_VERSION', '5.5.6' );
 define( 'EDGE_IMAGES_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EDGE_IMAGES_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'EDGE_IMAGES_PLUGIN_FILE', __FILE__ );
+define( 'EDGE_IMAGES_ADMIN_PAGE_SLUG', 'edge-images' );
+define( 'EDGE_IMAGES_ADMIN_SCREEN_ID', 'settings_page_' . EDGE_IMAGES_ADMIN_PAGE_SLUG );
 
 // Load autoloader.
 require_once EDGE_IMAGES_PLUGIN_DIR . 'autoload.php';
@@ -94,3 +96,46 @@ add_action('init', [Blocks::class, 'register'], 5);
  * @return void
  */
 add_action('init', [Rewrites::class, 'register'], 5);
+
+/**
+ * Convert an image URL into an Edge Image URL.
+ * 
+ * @param string $src The image URL to convert.
+ * @param mixed $size The size of the image to convert (a string or array of h/w values).
+ * @param array $args Additional arguments for the conversion.
+ * .
+ * @return string The converted image URL, or the original URL if the conversion fails.
+ */
+function convert_src(string $src, mixed $size, array $args = []) : string {
+
+    // If size is a string, get the h/w values from the registered size.
+    if (is_string($size)) {
+        $size_data = \wp_get_registered_image_subsizes();
+        if (isset($size_data[$size])) {
+            $args['w'] = $size_data[$size]['width'];
+            $args['h'] = $size_data[$size]['height'];
+            return Helpers::edge_src($src, $args);
+        } else {
+            // If the size is not registered, use the original URL.
+            return $src;
+        }
+    }
+
+   // If size is an array, add the width and height to the args.
+   if (is_array($size)) {
+        // If we don't have values for [0] and [1], use the original URL.
+        if (!isset($size[0]) || !isset($size[1])) {
+            return $src;
+        }
+
+        // Add the width and height to the args.
+        $args['w'] = $size[0];
+        $args['h'] = $size[1];
+        
+        // Return the converted URL.
+        return Helpers::edge_src($src, $args);
+   }
+
+   // If size is not a string or array, use the original URL.
+   return $src;
+}

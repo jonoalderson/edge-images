@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 5.5.2
+Stable tag: 5.5.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -252,6 +252,15 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues) 
 
 == Changelog ==
+
+- 5.5.6 ( 02/06/2025 )
+* BUGFIX: Prevent the 'No provider selected' notice showing up incorrectly.
+* BUGFIX: Tweak CSS containment approach to be more easily overridden.
+
+= 5.5.4 ( 02/06/2025 )
+* FEATURE: Add content-visibility CSS to <picture> containers.
+* FEATURE: Add a 'edge_src' function to support direct/manual transformation.
+* BUGFIX: Only show the NGINX config warning on our settings page (and tidy up some variables).
 
 = 5.5.2 ( 23/04/2025) = 
 * BUGFIX: Fixed some regex mismatches for images in content blocks.

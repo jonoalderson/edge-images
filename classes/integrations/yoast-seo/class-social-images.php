@@ -159,7 +159,10 @@ class Social_Images extends Integration {
 			return $image_url;
 		}
 
+		// Get the image dimensions.
 		$dimensions = Helpers::get_image_dimensions($image_id);
+
+		// If we didn't get the dimensions, don't try to transform.
 		if (!$dimensions) {
 			wp_cache_set($cache_key, $image_url, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
 			return $image_url;
@@ -169,7 +172,7 @@ class Social_Images extends Integration {
 		$args = [
 			'width' => self::SOCIAL_WIDTH,
 			'height' => self::SOCIAL_HEIGHT,
-			'fit' => 'contain',
+			'fit' => 'cover',
 			'sharpen' => 1,
 			'quality' => 85,
 		];
