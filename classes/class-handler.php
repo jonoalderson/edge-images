@@ -391,13 +391,13 @@ class Handler {
 	 * @since 4.0.0
 	 * 
 	 * @param string       $html         The HTML img element markup.
-	 * @param int|null    $attachment_id The attachment ID.
+	 * @param mixed        $attachment_id The attachment ID.
 	 * @param string|array $size         The registered image size or array of width and height values.
 	 * @param array|string $attr_or_icon Array of attributes or 'icon' if it's the fourth argument.
 	 * @param bool|null    $icon         Whether the image should be treated as an icon.
 	 * @return string The wrapped HTML.
 	 */
-	public function wrap_attachment_image(string $html, ?int $attachment_id = null, $size = 'full', $attr_or_icon = [], $icon = null): string {
+	public function wrap_attachment_image(string $html, $attachment_id = null, $size = 'full', $attr_or_icon = [], $icon = null): string {
 
 		// Check if transformation should be disabled
 		if (Helpers::should_disable_transform($html)) {
@@ -570,13 +570,13 @@ class Handler {
 	 * @since 4.5.0
 	 * 
 	 * @param string       $html          The HTML img element markup.
-	 * @param int|null    $attachment_id Image attachment post ID.
+	 * @param mixed        $attachment_id Image attachment post ID.
 	 * @param string|array $size          Requested image size name or dimensions array.
 	 * @param bool|array   $attr_or_icon  Array of attributes or boolean for icon status.
 	 * @param bool|null    $icon          Whether the image should be treated as an icon.
 	 * @return string Modified HTML with cleaned up attributes.
 	 */
-	public function cleanup_image_html(string $html, ?int $attachment_id = null, $size = 'full', $attr_or_icon = [], $icon = null): string {
+	public function cleanup_image_html(string $html, $attachment_id = null, $size = 'full', $attr_or_icon = [], $icon = null): string {
 	
 		// Skip if no HTML
 		if (empty($html)) {
@@ -611,11 +611,11 @@ class Handler {
 	 * @since 4.5.0
 	 * 
 	 * @param array|false  $downsize      Whether to short-circuit the image downsize.
-	 * @param int|null    $attachment_id The attachment ID or null.
+	 * @param mixed        $attachment_id The attachment ID or null.
 	 * @param string|array $size         Requested size. Can be an array of width and height or a registered size.
 	 * @return array|false Array containing the image URL, width, height, and whether it's an intermediate size, or false.
 	 */
-	public function handle_image_downsize($downsize, ?int $attachment_id, $size) {
+	public function handle_image_downsize($downsize, $attachment_id, $size) {
 
 		// Skip if transformation should be disabled
 		if (Helpers::should_disable_transform('')) {
@@ -627,10 +627,13 @@ class Handler {
 			return $downsize;
 		}
 
-		// Skip if no attachment ID
-		if ($attachment_id === null) {
+		// Skip if no attachment ID or invalid type
+		if ($attachment_id === null || !is_numeric($attachment_id)) {
 			return false;
 		}
+
+		// Convert to integer
+		$attachment_id = (int) $attachment_id;
 
 		// Get the full size image URL
 		$img_url = wp_get_attachment_url($attachment_id);
@@ -674,15 +677,23 @@ class Handler {
 	 * @param array  $size_array     Array of width and height values in pixels.
 	 * @param string $image_src      The 'src' of the image.
 	 * @param array  $image_meta     The image meta data as returned by wp_get_attachment_metadata().
-	 * @param int    $attachment_id  Image attachment ID or 0.
+	 * @param mixed  $attachment_id  Image attachment ID or 0.
 	 * @return array|false A list of image sources and descriptors, or false.
 	 */
-	public function calculate_image_srcset($sources, array $size_array, string $image_src, array $image_meta, int $attachment_id) {
+	public function calculate_image_srcset($sources, array $size_array, string $image_src, array $image_meta, $attachment_id) {
 		
 		// Skip if transformation should be disabled
 		if (Helpers::should_disable_transform('')) {
 			return $sources;
 		}
+
+		// Skip if no attachment ID or invalid type
+		if (!is_numeric($attachment_id)) {
+			return $sources;
+		}
+
+		// Convert to integer
+		$attachment_id = (int) $attachment_id;
 
 		// Get the original image URL
 		$img_url = wp_get_attachment_url($attachment_id);

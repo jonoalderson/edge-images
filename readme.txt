@@ -3,7 +3,7 @@ Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 5.5.6
+Stable tag: 5.5.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -253,7 +253,10 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
-- 5.5.6 ( 02/06/2025 )
+= 5.5.7 ( 28/06/2025 )
+* BUGFIX: Prevent fatal errors when image_downsize has been filtered.
+
+= 5.5.6 ( 02/06/2025 )
 * BUGFIX: Prevent the 'No provider selected' notice showing up incorrectly.
 * BUGFIX: Tweak CSS containment approach to be more easily overridden.
 
