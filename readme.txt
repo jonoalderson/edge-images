@@ -253,14 +253,14 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
-= 5.5.7 ( 28/06/2025 )
+= 5.5.7 ( 28/06/2025 ) =
 * BUGFIX: Prevent fatal errors when image_downsize has been filtered.
 
-= 5.5.6 ( 02/06/2025 )
+= 5.5.6 ( 02/06/2025 ) =
 * BUGFIX: Prevent the 'No provider selected' notice showing up incorrectly.
 * BUGFIX: Tweak CSS containment approach to be more easily overridden.
 
-= 5.5.4 ( 02/06/2025 )
+= 5.5.4 ( 02/06/2025 ) =
 * FEATURE: Add content-visibility CSS to <picture> containers.
 * FEATURE: Add a 'edge_src' function to support direct/manual transformation.
 * BUGFIX: Only show the NGINX config warning on our settings page (and tidy up some variables).
