@@ -198,7 +198,7 @@ Different providers have different privacy implications:
 
 * [Report Issues](https://github.com/jonoalderson/edge-images/issues)
 
-= How can I report security bugs? =
+## How can I report security bugs?
 
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team help validate, triage and handle any security vulnerabilities. [Report a security vulnerability.](https://patchstack.com/database/wordpress/plugin/edge-images/vdp)
 
