@@ -571,13 +571,15 @@ class Admin_Page {
 			<div class="edge-images-callout edge-images-callout--warn">
 				<p><strong>%4$s</strong> %5$s</p>
 				<p>%6$s</p>
+				<p>%7$s</p>
 			</div>',
 			\esc_attr( Settings::LOCALIZE_OPTION ),
 			\checked( Settings::is_localization_enabled(), true, false ),
 			\esc_html__( 'Store transformed images locally under Uploads', 'edge-images' ),
 			\esc_html__( 'Off by default.', 'edge-images' ),
 			\esc_html__( 'While files are missing, pages still use edge URLs. A background cron job fetches the 1× / 1.5× / 2× variants and swaps the markup once they exist.', 'edge-images' ),
-			\esc_html__( 'This adds origin storage and fetch traffic. Prefer leaving it off when the edge CDN already caches transformed images well.', 'edge-images' )
+			\esc_html__( 'This adds origin storage and fetch traffic. Prefer leaving it off when the edge CDN already caches transformed images well.', 'edge-images' ),
+			\esc_html__( 'On Cloudflare, local copies might reduce cost. Image Resizing is billed on unique transformations per month, so a stored variant is only requested once instead of counting again each month.', 'edge-images' )
 		);
 	}
 

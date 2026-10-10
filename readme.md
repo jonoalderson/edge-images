@@ -28,6 +28,8 @@ Localization is off until you enable **Store transformed images locally under Up
 
 While it is on, the first view of an attachment still uses the edge URL and adds a job to `edge_images_localize_queue`. A cron task (`edge_images_process_localize_queue`) runs about once a minute and fetches up to three jobs. Each job saves the 1x, 1.5x, and 2x files under uploads and records them in the `_edge_images_sizes` attachment meta. The next request serves those local files. Editing or deleting the attachment deletes the files and the meta.
 
+Local copies use origin storage and an extra fetch. On Cloudflare they might still be worth it: Image Resizing is billed on unique transformations per month, and a stored variant is only requested once instead of counting again each month. Leave this off when another provider already caches the transformed images cheaply.
+
 ## Features
 
 * Markup rewrite for `wp_get_attachment_image`, content, excerpts, widgets, and local avatars
@@ -103,7 +105,7 @@ Image URLs are sent to your chosen edge provider for transformation. The plugin 
 * BREAKING: Dimension engine, feature registry, native provider, rewrites, HTML and htaccess caches, Relevanssi, Enable Media Replace, and Bricks integrations removed.
 * BREAKING: Requires PHP 8.0 and WordPress 6.4.
 * BREAKING: `edge_images_max_width` and `edge_images_width_multipliers` removed. The width-multiplier `srcset` ladder is gone.
-* FEATURE: Optional localization, off by default. The first view keeps the edge URL and queues a job. A one-minute cron writes the 1x / 1.5x / 2x files under uploads, three jobs at a time. Later requests serve those files. Editing or deleting the attachment removes them.
+* FEATURE: Optional localization, off by default. The first view keeps the edge URL and queues a job. A one-minute cron writes the 1x / 1.5x / 2x files under uploads, three jobs at a time. Later requests serve those files. Editing or deleting the attachment removes them. On Cloudflare this might reduce Image Resizing cost, which is billed on unique transformations per month.
 * FEATURE: Yoast SEO and Rank Math social, schema, and sitemap images use the shared URL helper at 1200×675. Those URLs stay on the edge even when localization is on. The settings screen detects each plugin and offers a toggle per surface. Toggles stay inactive until that plugin is active.
 * FEATURE: Settings screen shows a status panel (inactive, needs attention, or active), warns elsewhere in admin when transformations cannot run, and adds a settings link on the Plugins screen.
 * SVGs and existing AVIF files keep their original URLs. Local avatars are rewritten, and they are not picture-wrapped or localized.

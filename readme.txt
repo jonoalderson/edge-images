@@ -26,6 +26,8 @@ Yoast SEO and Rank Math social, schema, and sitemap images use the same URL help
 
 Optional localization is off until you enable it. The first view of an attachment still uses the edge URL and queues a job. A cron task runs about once a minute and fetches up to three jobs, saving the 1x, 1.5x, and 2x files under uploads. The next request serves those local files. Editing or deleting the attachment removes them.
 
+Local copies use origin storage and an extra fetch. On Cloudflare they might still be worth it: Image Resizing is billed on unique transformations per month, and a stored variant is only requested once instead of counting again each month. Leave this off when another provider already caches the transformed images cheaply.
+
 ⚠️ **Important**: You need a supported edge provider with image transformation enabled.
 
 = Features =
@@ -105,6 +107,8 @@ Gallery images are rewritten with a column-based layout width and `sizes="(max-w
 
 Only after you enable “Store transformed images locally under Uploads”. The first page view still uses edge URLs and queues the variants. A cron task running about once a minute fetches them in batches of three. Reload after that job has run and the markup points at the files under uploads. Social, schema, and sitemap images always stay on the edge.
 
+On Cloudflare, local copies might reduce cost. Image Resizing is billed on unique transformations per month, so a stored variant is only requested once instead of counting again each month.
+
 = What do Yoast and Rank Math change? =
 
 When the matching plugin is active, and its checkbox is on, social, schema, and sitemap image URLs are rewritten at 1200×675. The settings screen shows each plugin as detected or not detected. Checkboxes for a plugin that is not installed stay inactive.
@@ -124,7 +128,7 @@ Use the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/dat
 * BREAKING: Dimension engine, feature registry, native provider, rewrites, HTML and htaccess caches, Relevanssi, Enable Media Replace, and Bricks integrations removed.
 * BREAKING: Requires PHP 8.0 and WordPress 6.4.
 * BREAKING: `edge_images_max_width` and `edge_images_width_multipliers` removed. The width-multiplier `srcset` ladder is gone.
-* FEATURE: Optional localization, off by default. The first view keeps the edge URL and queues a job. A one-minute cron writes the 1x / 1.5x / 2x files under uploads, three jobs at a time. Later requests serve those files. Editing or deleting the attachment removes them.
+* FEATURE: Optional localization, off by default. The first view keeps the edge URL and queues a job. A one-minute cron writes the 1x / 1.5x / 2x files under uploads, three jobs at a time. Later requests serve those files. Editing or deleting the attachment removes them. On Cloudflare this might reduce Image Resizing cost, which is billed on unique transformations per month.
 * FEATURE: Yoast SEO and Rank Math social, schema, and sitemap images use the shared URL helper at 1200×675. Those URLs stay on the edge even when localization is on. The settings screen detects each plugin and offers a toggle per surface. Toggles stay inactive until that plugin is active.
 * FEATURE: Settings screen shows a status panel (inactive, needs attention, or active), warns elsewhere in admin when transformations cannot run, and adds a settings link on the Plugins screen.
 * SVGs and existing AVIF files keep their original URLs. Local avatars are rewritten, and they are not picture-wrapped or localized.
