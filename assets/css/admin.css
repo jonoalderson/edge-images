@@ -1,0 +1,237 @@
+/**
+ * Edge Images settings screen.
+ * Scoped to .edge-images-settings; follows wp-admin conventions.
+ */
+
+.edge-images-settings {
+	max-width: 780px;
+}
+
+.edge-images-settings .edge-images-lead {
+	margin: 0.25rem 0 1.25rem;
+	color: #50575e;
+	font-size: 14px;
+	line-height: 1.5;
+	max-width: 52rem;
+}
+
+.edge-images-settings .form-table th {
+	padding-top: 16px;
+	width: 200px;
+}
+
+.edge-images-settings .form-table td {
+	padding-top: 12px;
+}
+
+.edge-images-settings .edge-images-section-intro {
+	margin: 0 0 0.5rem;
+	color: #50575e;
+}
+
+/* Status panel */
+.edge-images-status {
+	display: flex;
+	gap: 1rem;
+	align-items: flex-start;
+	margin: 0 0 1.5rem;
+	padding: 1rem 1.15rem;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left-width: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.edge-images-status.is-ready {
+	border-left-color: #00a32a;
+}
+
+.edge-images-status.is-warning {
+	border-left-color: #dba617;
+}
+
+.edge-images-status.is-error {
+	border-left-color: #d63638;
+}
+
+.edge-images-status__badge {
+	flex: 0 0 auto;
+	margin-top: 0.1rem;
+	padding: 0.15rem 0.55rem;
+	border-radius: 2px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	line-height: 1.4;
+	color: #1d2327;
+	background: #f0f0f1;
+}
+
+.edge-images-status.is-ready .edge-images-status__badge {
+	color: #fff;
+	background: #00a32a;
+}
+
+.edge-images-status.is-warning .edge-images-status__badge {
+	color: #1d2327;
+	background: #f0c33c;
+}
+
+.edge-images-status.is-error .edge-images-status__badge {
+	color: #fff;
+	background: #d63638;
+}
+
+.edge-images-status__body {
+	min-width: 0;
+}
+
+.edge-images-status__summary {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.edge-images-status__details {
+	margin: 0.45rem 0 0;
+	padding: 0;
+	list-style: none;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.edge-images-status__details li {
+	margin: 0.15rem 0;
+}
+
+.edge-images-status__details li::before {
+	content: "·";
+	margin-right: 0.4rem;
+	color: #8c8f94;
+}
+
+/* Conditional provider rows — JS toggles [hidden] */
+.edge-images-settings tr.edge-images-conditional[hidden] {
+	display: none;
+}
+
+/* Checkboxes + callouts */
+.edge-images-checkbox {
+	display: inline-flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.edge-images-checkbox input {
+	margin: 0.2rem 0 0;
+}
+
+.edge-images-callout {
+	margin: 0.85rem 0 0;
+	padding: 0.75rem 0.9rem;
+	border-left: 4px solid #c3c4c7;
+	background: #f6f7f7;
+}
+
+.edge-images-callout--warn {
+	border-left-color: #dba617;
+	background: #fcf9e8;
+}
+
+.edge-images-callout p {
+	margin: 0 0 0.4rem;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #3c434a;
+}
+
+.edge-images-callout p:last-child {
+	margin-bottom: 0;
+}
+
+/* Integration detection list */
+.edge-images-detection {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	max-width: 28rem;
+}
+
+.edge-images-detection li {
+	display: grid;
+	grid-template-columns: 1.5rem 1fr auto;
+	gap: 0.5rem;
+	align-items: center;
+	margin: 0 0 0.4rem;
+	padding: 0.55rem 0.7rem;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	background: #f6f7f7;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.edge-images-detection li.is-detected {
+	border-color: #c3e6cb;
+	background: #edfaef;
+}
+
+.edge-images-detection__mark {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	text-align: center;
+	color: #8c8f94;
+}
+
+.edge-images-detection li.is-detected .edge-images-detection__mark {
+	color: #00a32a;
+}
+
+.edge-images-detection__label {
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.edge-images-detection__state {
+	color: #50575e;
+}
+
+.edge-images-detection li.is-detected .edge-images-detection__state {
+	color: #007a1f;
+}
+
+.edge-images-settings tr.is-inactive th,
+.edge-images-settings tr.is-inactive td {
+	opacity: 0.72;
+}
+
+.edge-images-checkbox.is-muted {
+	font-weight: 400;
+	color: #646970;
+}
+
+.edge-images-settings .submit {
+	margin-top: 0.5rem;
+	padding-top: 0.5rem;
+}
+
+@media screen and (max-width: 782px) {
+	.edge-images-settings {
+		max-width: none;
+	}
+
+	.edge-images-status {
+		flex-direction: column;
+		gap: 0.65rem;
+	}
+
+	.edge-images-settings .form-table th {
+		width: auto;
+	}
+}

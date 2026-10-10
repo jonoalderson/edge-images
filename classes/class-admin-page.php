@@ -1,1183 +1,625 @@
 <?php
 /**
- * Admin interface functionality.
+ * Admin settings page.
  *
- * Handles the creation and management of the plugin's admin settings page.
- * This class manages all aspects of the WordPress admin interface including:
- * - Settings page creation and rendering
- * - Option registration and sanitization
- * - Admin notices and warnings
- * - Asset enqueueing
- * - Integration settings
- * - Feature management
- *
- * @package    Edge_Images
- * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @license    GPL-2.0-or-later
- * @since      1.0.0
+ * @package Edge_Images
  */
 
 namespace Edge_Images;
 
+/**
+ * Registers and renders the settings screen.
+ */
 class Admin_Page {
-	/**
-	 * The option group name for settings.
-	 *
-	 * Used to group related settings together in the WordPress options system.
-	 * This is used as the first parameter in register_setting().
-	 *
-	 * @since 4.0.0
-	 * @var string
-	 */
-	private const OPTION_GROUP = 'edge_images_settings';
 
 	/**
-	 * The provider option name.
+	 * Register the admin page and related hooks.
 	 *
-	 * Stores the selected edge provider (e.g., Cloudflare, Bunny, etc.).
-	 * This setting determines which provider is used for image transformation.
-	 *
-	 * @since 4.0.0
-	 * @var string
-	 */
-	private const PROVIDER_OPTION = 'edge_images_provider';
-
-	/**
-	 * The Imgix subdomain option name.
-	 *
-	 * Stores the Imgix subdomain when Imgix is selected as the provider.
-	 * This is required for Imgix integration to function properly.
-	 *
-	 * @since 4.1.0
-	 * @var string
-	 */
-	private const IMGIX_SUBDOMAIN_OPTION = 'edge_images_imgix_subdomain';
-
-	/**
-	 * Option name for Yoast SEO schema integration.
-	 *
-	 * @since 4.5.0
-	 * @var string
-	 */
-	private const YOAST_SCHEMA_OPTION = 'edge_images_integration_yoast_schema';
-
-	/**
-	 * Option name for Yoast SEO social integration.
-	 *
-	 * @since 4.5.0
-	 * @var string
-	 */
-	private const YOAST_SOCIAL_OPTION = 'edge_images_integration_yoast_social';
-
-	/**
-	 * Option name for Yoast SEO sitemap integration.
-	 *
-	 * @since 4.5.0
-	 * @var string
-	 */
-	private const YOAST_SITEMAP_OPTION = 'edge_images_integration_yoast_xml';
-
-	/**
-	 * The max width option name.
-	 *
-	 * @since 4.2.0
-	 * @var string
-	 */
-	private const MAX_WIDTH_OPTION = 'edge_images_max_width';
-
-	/**
-	 * The integrations section ID.
-	 *
-	 * @since 4.2.0
-	 * @var string
-	 */
-	private const INTEGRATIONS_SECTION = 'edge_images_integrations_section';
-
-	/**
-	 * The features section ID.
-	 *
-	 * @since 4.5.0
-	 * @var string
-	 */
-	private const FEATURES_SECTION = 'edge_images_features_section';
-
-	/**
-	 * The Bunny CDN subdomain option name.
-	 *
-	 * @since 4.5.4
-	 * @var string
-	 */
-	private const BUNNY_SUBDOMAIN_OPTION = 'edge_images_bunny_subdomain';
-
-	/**
-	 * The domain option name.
-	 *
-	 * @since 5.0.0
-	 * @var string
-	 */
-	private const DOMAIN_OPTION = 'edge_images_domain';
-
-	/**
-	 * Option name for Rank Math schema integration.
-	 *
-	 * @since 5.2.20
-	 * @var string
-	 */
-	private const RANK_MATH_SCHEMA_OPTION = 'edge_images_integration_rank_math_schema';
-
-	/**
-	 * Option name for Rank Math social integration.
-	 *
-	 * @since 5.2.20
-	 * @var string
-	 */
-	private const RANK_MATH_SOCIAL_OPTION = 'edge_images_integration_rank_math_social';
-
-	/**
-	 * Option name for Rank Math sitemap integration.
-	 *
-	 * @since 5.2.20
-	 * @var string
-	 */
-	private const RANK_MATH_SITEMAP_OPTION = 'edge_images_integration_rank_math_xml';
-
-	/**
-	 * Register the admin functionality.
-	 *
-	 * Initializes all admin-related hooks and filters. This includes:
-	 * - Adding the settings page to the admin menu
-	 * - Registering settings
-	 * - Adding settings link to plugins page
-	 * - Setting up admin notices
-	 * - Handling settings updates
-	 *
-	 * @since 4.0.0
 	 * @return void
 	 */
 	public static function register(): void {
 
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		add_action( 'admin_menu', [ self::class, 'add_admin_menu' ] );
-		add_action( 'admin_init', [ self::class, 'register_settings' ] );
-		add_action( 'admin_enqueue_scripts', [ self::class, 'enqueue_admin_assets' ] );
-		add_action( 'admin_post_edge_images_update_settings', [ self::class, 'handle_settings_update' ] );
-		add_action( 'admin_notices', [ self::class, 'show_no_provider_notice' ] );
-		
-		// Add settings link to plugins page.
-		$plugin_basename = plugin_basename( EDGE_IMAGES_PLUGIN_DIR . 'edge-images.php' );
-		add_filter( 'plugin_action_links_' . $plugin_basename, [ self::class, 'add_settings_link' ] );
+		$instance = new self();
+		\add_action( 'admin_menu', [ $instance, 'add_menu_page' ] );
+		\add_action( 'admin_init', [ $instance, 'register_fields' ] );
+		\add_action( 'admin_enqueue_scripts', [ $instance, 'enqueue_assets' ] );
+		\add_action( 'admin_notices', [ $instance, 'maybe_show_global_notice' ] );
+		\add_filter( 'plugin_action_links_' . \plugin_basename( EDGE_IMAGES_PLUGIN_FILE ), [ $instance, 'add_settings_link' ] );
 	}
 
 	/**
-	 * Display admin notice when no provider is configured.
+	 * Add the settings page under Settings.
 	 *
-	 * Shows a warning notice in the WordPress admin when:
-	 * - No edge provider is selected
-	 * - The selected provider is not properly configured
-	 * This helps administrators identify and fix configuration issues.
-	 *
-	 * @since 4.0.0
 	 * @return void
 	 */
-	public static function show_no_provider_notice(): void {
-		
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
+	public function add_menu_page(): void {
 
-		// Get current screen.
-		$screen = get_current_screen();
-		if ( ! $screen ) {
-			return;
-		}
-
-		// Only show on allowed screens
-		$allowed_screens = [ 'dashboard', 'plugins', EDGE_IMAGES_ADMIN_SCREEN_ID ];
-		if (!in_array($screen->id, $allowed_screens)) {
-			return;
-		}
-
-		// Get the selected provider
-		$provider = get_option(self::PROVIDER_OPTION, 'none');
-
-		// Bail if a provider is selected
-		if ($provider !== 'none') {
-			return;
-		}
-
-		// Get settings URL
-		$settings_url = admin_url('options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG);
-		?>
-		<div class="notice notice-warning">
-			<p>
-				<?php
-				printf(
-					/* translators: %1$s: Opening link tag, %2$s: Closing link tag */
-					esc_html__('Edge Images is installed but no provider is selected. Images will not be optimized until you %1$sconfigure a provider%2$s.', 'edge-images'),
-					'<a href="' . esc_url($settings_url) . '">',
-					'</a>'
-				);
-				?>
-			</p>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Add settings link to plugin listing.
-	 *
-	 * Adds a "Settings" link to the plugin's entry in the WordPress
-	 * plugins list. This provides quick access to the plugin settings
-	 * directly from the plugins page.
-	 *
-	 * @since 4.0.0
-	 * @param array $links Array of plugin action links.
-	 * @return array Modified array of plugin action links.
-	 */
-	public static function add_settings_link(array $links): array {
-		$settings_link = sprintf(
-			'<a href="%s">%s</a>',
-			esc_url(admin_url('options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG)),
-			esc_html__('Settings', 'edge-images')
-		);
-		
-		array_unshift($links, $settings_link);
-		return $links;
-	}
-
-	/**
-	 * Handle settings form submission and updates.
-	 *
-	 * Processes the settings form submission, validates the data,
-	 * and updates the options in the database. Also handles any
-	 * necessary cleanup or cache invalidation after settings changes.
-	 *
-	 * @since 4.0.0
-	 * @return void
-	 */
-	public static function handle_settings_update(): void {
-
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'edge-images' ) );
-		}
-
-		// Verify nonce.
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), 'edge_images_settings-options' ) ) {
-			wp_die( esc_html__( 'Invalid nonce verification.', 'edge-images' ) );
-		}
-
-		// Process provider setting
-		if ( isset( $_POST[ self::PROVIDER_OPTION ] ) ) {
-			$old_value = get_option(self::PROVIDER_OPTION);
-			$provider = sanitize_text_field( wp_unslash( $_POST[ self::PROVIDER_OPTION ] ) );
-			if ( Providers::is_valid_provider( $provider ) ) {
-				// Use Settings API to ensure hooks are triggered
-				$updated = update_option( self::PROVIDER_OPTION, $provider );
-				if ($updated) {
-					/**
-					 * Fires after the provider option has been updated.
-					 * This ensures the hook is always triggered, even if update_option doesn't fire it.
-					 *
-					 * @since 5.4.0
-					 *
-					 * @param string $old_value The old option value.
-					 * @param string $provider  The new option value.
-					 */
-					do_action("update_option_" . self::PROVIDER_OPTION, $old_value, $provider);
-				}
-			}
-		}
-
-		// Process Imgix subdomain setting
-		if ( isset( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) ) {
-			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::IMGIX_SUBDOMAIN_OPTION ] ) );
-			$subdomain = self::sanitize_subdomain( $subdomain );
-			if ( $subdomain === null ) {
-				delete_option( self::IMGIX_SUBDOMAIN_OPTION );
-			} else {
-				update_option( self::IMGIX_SUBDOMAIN_OPTION, $subdomain );
-			}
-		}
-
-		// Process Bunny CDN subdomain setting
-		if ( isset( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) ) {
-			$subdomain = sanitize_text_field( wp_unslash( $_POST[ self::BUNNY_SUBDOMAIN_OPTION ] ) );
-			$subdomain = self::sanitize_subdomain( $subdomain );
-			if ( $subdomain === null ) {
-				delete_option( self::BUNNY_SUBDOMAIN_OPTION );
-			} else {
-				update_option( self::BUNNY_SUBDOMAIN_OPTION, $subdomain );
-			}
-		}
-
-		// Process max width setting
-		if ( isset( $_POST[ self::MAX_WIDTH_OPTION ] ) ) {
-			$max_width = absint( wp_unslash( $_POST[ self::MAX_WIDTH_OPTION ] ) );
-			// Enforce reasonable limits (100px to 5000px)
-			if ( $max_width >= 100 && $max_width <= 5000 ) {
-				update_option( self::MAX_WIDTH_OPTION, $max_width );
-			}
-		}
-
-		// Process boolean integration settings with validation
-		$boolean_settings = [
-			self::YOAST_SCHEMA_OPTION,
-			self::YOAST_SOCIAL_OPTION,
-			self::YOAST_SITEMAP_OPTION,
-			self::RANK_MATH_SCHEMA_OPTION,
-			self::RANK_MATH_SOCIAL_OPTION,
-			self::RANK_MATH_SITEMAP_OPTION,
-		];
-
-		foreach ( $boolean_settings as $option ) {
-			$value = isset( $_POST[ $option ] ) ? 
-					  filter_var( wp_unslash( $_POST[ $option ] ), FILTER_VALIDATE_BOOLEAN ) : 
-					  false;
-			update_option( $option, $value );
-		}
-
-		// Process feature settings
-		foreach ( Features::get_features() as $id => $feature ) {
-			$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
-			$value = isset( $_POST[ $option_name ] ) ? 
-					  filter_var( wp_unslash( $_POST[ $option_name ] ), FILTER_VALIDATE_BOOLEAN ) : 
-					  false;
-			update_option( $option_name, $value );
-		}
-
-		// Process domain setting
-		if (isset($_POST[Settings::DOMAIN_OPTION])) {
-			$domain = sanitize_text_field(wp_unslash($_POST[Settings::DOMAIN_OPTION]));
-			$domain = Settings::sanitize_domain($domain);
-			update_option(Settings::DOMAIN_OPTION, $domain);
-		}
-
-		// Clear caches after settings update
-		Settings::reset_cache();
-
-		// Redirect back to settings page with success message
-		wp_safe_redirect(
-			add_query_arg(
-				'settings-updated',
-				'true',
-				admin_url('options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG)
-			)
-		);
-		exit;
-	}
-
-	/**
-	 * Add the plugin settings page to the admin menu.
-	 *
-	 * Creates a new menu item under the Settings menu for the plugin's
-	 * configuration page. Sets up the page title, menu title, and
-	 * necessary capabilities.
-	 *
-	 * @since 4.0.0
-	 * @return void
-	 */
-	public static function add_admin_menu(): void {
-		add_options_page(
-			__( 'Edge Images Settings', 'edge-images' ),
+		\add_options_page(
+			__( 'Edge Images', 'edge-images' ),
 			__( 'Edge Images', 'edge-images' ),
 			'manage_options',
 			EDGE_IMAGES_ADMIN_PAGE_SLUG,
-			[ self::class, 'render_admin_page' ]
+			[ $this, 'render_page' ]
 		);
 	}
 
 	/**
-	 * Register all plugin settings.
+	 * Enqueue admin assets on our settings screen only.
 	 *
-	 * Sets up all settings fields, sections, and options used by the plugin.
-	 * This includes:
-	 * - Provider selection
-	 * - Provider-specific settings (e.g., subdomains)
-	 * - Integration options
-	 * - Feature toggles
-	 * - Custom domain setting
-	 *
-	 * @since 4.0.0
+	 * @param string $hook Current admin page hook.
 	 * @return void
 	 */
-	public static function register_settings(): void {
-		// Register provider setting.
-		register_setting(
-			self::OPTION_GROUP,
-			self::PROVIDER_OPTION,
-			[
-				'type'              => 'string',
-				'description'       => __( 'The edge provider to use for image optimization', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_provider' ],
-				'default'          => 'none',
-			]
-		);
+	public function enqueue_assets( string $hook ): void {
 
-		// Register Bunny CDN subdomain setting.
-		register_setting(
-			self::OPTION_GROUP,
-			self::BUNNY_SUBDOMAIN_OPTION,
-			[
-				'type'              => 'string',
-				'description'       => __( 'Your Bunny CDN subdomain (e.g., your-site)', 'edge-images' ),
-				'sanitize_callback' => function( $value ) {
-					$sanitized = self::sanitize_subdomain( $value );
-					if ( $sanitized === null ) {
-						delete_option( self::BUNNY_SUBDOMAIN_OPTION );
-						return false;
-					}
-					return $sanitized;
-				},
-				'show_in_rest'     => false,
-			]
-		);
-
-		// Register Imgix subdomain setting.
-		register_setting(
-			self::OPTION_GROUP,
-			self::IMGIX_SUBDOMAIN_OPTION,
-			[
-				'type'              => 'string',
-				'description'       => __( 'Your Imgix subdomain (e.g., your-site)', 'edge-images' ),
-				'sanitize_callback' => function( $value ) {
-					$sanitized = self::sanitize_subdomain( $value );
-					if ( $sanitized === null ) {
-						delete_option( self::IMGIX_SUBDOMAIN_OPTION );
-						return false;
-					}
-					return $sanitized;
-				},
-				'show_in_rest'     => false,
-			]
-		);
-
-		// Register Yoast SEO integration settings.
-		register_setting(
-			self::OPTION_GROUP,
-			self::YOAST_SCHEMA_OPTION,
-			[
-				'type'              => 'boolean',
-				'description'       => __( 'Enable Yoast SEO schema image optimization', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => true,
-			]
-		);
-
-		register_setting(
-			self::OPTION_GROUP,
-			self::YOAST_SOCIAL_OPTION,
-			[
-				'type'              => 'boolean',
-				'description'       => __( 'Enable Yoast SEO social image optimization', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => true,
-			]
-		);
-
-		register_setting(
-			self::OPTION_GROUP,
-			self::YOAST_SITEMAP_OPTION,
-			[
-				'type'              => 'boolean',
-				'description'       => __( 'Enable Yoast SEO sitemap image optimization', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => true,
-			]
-		);
-
-		// Register max width setting.
-		register_setting(
-			self::OPTION_GROUP,
-			self::MAX_WIDTH_OPTION,
-			[
-				'type'              => 'integer',
-				'description'       => __( 'The maximum width for images when content width is not set', 'edge-images' ),
-				'sanitize_callback' => 'absint',
-				'default'           => 650,
-				'update_callback'   => function($old_value, $value) {
-					Settings::reset_cache();
-				},
-			]
-		);
-
-		// Register domain setting
-		register_setting(
-			self::OPTION_GROUP,
-			Settings::DOMAIN_OPTION,
-			[
-				'type'              => 'string',
-				'description'       => __('The domain to use for transformed images. You can usually leave this blank, unless this is a staging/development site, or if you serve your images from a different domain.', 'edge-images'),
-				'sanitize_callback' => [Settings::class, 'sanitize_domain'],
-				'default'           => '',
-				'show_in_rest'     => true,
-			]
-		);
-
-		// Register Rank Math integration settings.
-		register_setting(
-			self::OPTION_GROUP,
-			self::RANK_MATH_SCHEMA_OPTION,
-			[
-				'type'              => 'boolean',
-				'description'       => __( 'Enable Rank Math schema image optimization', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => true,
-			]
-		);
-
-		register_setting(
-			self::OPTION_GROUP,
-			self::RANK_MATH_SOCIAL_OPTION,
-			[
-				'type'              => 'boolean',
-				'description'       => __( 'Enable Rank Math social image optimization', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => true,
-			]
-		);
-
-		register_setting(
-			self::OPTION_GROUP,
-			self::RANK_MATH_SITEMAP_OPTION,
-			[
-				'type'              => 'boolean',
-				'description'       => __( 'Enable Rank Math sitemap image optimization', 'edge-images' ),
-				'sanitize_callback' => [ self::class, 'sanitize_boolean' ],
-				'default'          => true,
-			]
-		);
-
-		// Add main section.
-		add_settings_section(
-			'edge_images_main_section',
-			'',
-			'__return_false',
-			'edge_images'
-		);
-
-		// Add provider field.
-		add_settings_field(
-			'edge_images_provider',
-			__( 'Edge Provider', 'edge-images' ),
-			[ self::class, 'render_provider_field' ],
-			'edge_images',
-			'edge_images_main_section'
-		);
-
-		// Add Bunny CDN subdomain field.
-		add_settings_field(
-			'edge_images_bunny_subdomain',
-			__( 'Bunny CDN Subdomain', 'edge-images' ),
-			[ self::class, 'render_bunny_subdomain_field' ],
-			'edge_images',
-			'edge_images_main_section',
-			[
-				'label_for' => self::BUNNY_SUBDOMAIN_OPTION,
-				'class' => 'edge-images-provider-field edge-images-bunny-field'
-			]
-		);
-
-		// Add Imgix subdomain field.
-		add_settings_field(
-			'edge_images_imgix_subdomain',
-			__( 'Imgix Subdomain', 'edge-images' ),
-			[ self::class, 'render_imgix_subdomain_field' ],
-			'edge_images',
-			'edge_images_main_section',
-			[
-				'label_for' => self::IMGIX_SUBDOMAIN_OPTION,
-				'class' => 'edge-images-provider-field edge-images-imgix-field'
-			]
-		);
-
-		// Add domain field
-		add_settings_field(
-			'edge_images_domain',
-			__('Transformation Domain', 'edge-images'),
-			[self::class, 'render_domain_field'],
-			'edge_images',
-			'edge_images_main_section'
-		);
-
-		// Add max width field.
-		add_settings_field(
-			'edge_images_max_width',
-			__( 'Max Image Width', 'edge-images' ),
-			[ self::class, 'render_max_width_field' ],
-			'edge_images',
-			'edge_images_main_section'
-		);
-
-		// Add features section
-		add_settings_section(
-			self::FEATURES_SECTION,
-			__('Features', 'edge-images'),
-			[self::class, 'render_features_section'],
-			'edge_images'
-		);
-
-		// Add integrations section
-		add_settings_section(
-			self::INTEGRATIONS_SECTION,
-			__( 'Integrations', 'edge-images' ),
-			[ self::class, 'render_integrations_section' ],
-			'edge_images'
-		);
-
-		// Register feature settings
-		foreach (Features::get_features() as $id => $feature) {
-			// Get the option name (either custom or default)
-			$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
-
-			register_setting(
-				self::OPTION_GROUP,
-				$option_name,
-				[
-					'type' => 'boolean',
-					'default' => $feature['default'],
-					'sanitize_callback' => [self::class, 'sanitize_boolean'],
-				]
-			);
-		}
-	}
-
-	/**
-	 * Sanitize the provider option value.
-	 *
-	 * Ensures that the selected provider is valid and registered
-	 * with the plugin. Returns the default provider if an invalid
-	 * value is provided.
-	 *
-	 * @since 4.0.0
-	 * @param string $value The provider value to sanitize.
-	 * @return string Sanitized provider value.
-	 */
-	public static function sanitize_provider( string $value ): string {
-		return Providers::is_valid_provider( $value ) ? $value : 'none';
-	}
-
-	/**
-	 * Sanitize boolean option values.
-	 *
-	 * Ensures that boolean settings are properly sanitized and
-	 * converted to the correct type. Handles various input formats
-	 * and converts them to true/false.
-	 *
-	 * @since 4.0.0
-	 * @param mixed $value The value to sanitize.
-	 * @return bool Sanitized boolean value.
-	 */
-	public static function sanitize_boolean( $value ): bool {
-		return (bool) $value;
-	}
-
-	/**
-	 * Enqueue admin-specific assets.
-	 *
-	 * Loads the necessary CSS and JavaScript files for the admin interface.
-	 * Only loads assets on the plugin's admin pages to avoid unnecessary
-	 * resource loading.
-	 *
-	 * @since 4.0.0
-	 * @param string $hook The current admin page hook.
-	 * @return void
-	 */
-	public static function enqueue_admin_assets( string $hook ): void {
-		
-		// Only load on our settings page
-		if (EDGE_IMAGES_ADMIN_SCREEN_ID !== $hook) {
+		if ( EDGE_IMAGES_ADMIN_SCREEN_ID !== $hook ) {
 			return;
 		}
 
-		// Enqueue admin styles
-		wp_enqueue_style(
+		\wp_enqueue_style(
 			'edge-images-admin',
-			EDGE_IMAGES_PLUGIN_URL . 'assets/css/admin.min.css',
+			EDGE_IMAGES_PLUGIN_URL . 'assets/css/admin.css',
 			[],
 			EDGE_IMAGES_VERSION
 		);
 
-		// Enqueue admin scripts
-		wp_enqueue_script(
+		\wp_enqueue_script(
 			'edge-images-admin',
-			EDGE_IMAGES_PLUGIN_URL . 'assets/js/admin.min.js',
-			['jquery'],
+			EDGE_IMAGES_PLUGIN_URL . 'assets/js/admin.js',
+			[],
 			EDGE_IMAGES_VERSION,
 			true
 		);
 	}
 
 	/**
-	 * Render the main admin settings page.
+	 * Settings link on the Plugins screen.
 	 *
-	 * Outputs the HTML for the plugin's settings page, including:
-	 * - Settings form
-	 * - Provider selection
-	 * - Provider-specific options
-	 * - Integration settings
-	 * - Feature toggles
+	 * @param array<int, string> $links Links.
+	 * @return array<int, string>
+	 */
+	public function add_settings_link( array $links ): array {
+
+		$url = \admin_url( 'options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG );
+		array_unshift(
+			$links,
+			sprintf(
+				'<a href="%s">%s</a>',
+				\esc_url( $url ),
+				\esc_html__( 'Settings', 'edge-images' )
+			)
+		);
+
+		return $links;
+	}
+
+	/**
+	 * Soft notice elsewhere in admin when transformations cannot run.
 	 *
-	 * @since 4.0.0
 	 * @return void
 	 */
-	public static function render_admin_page(): void {
+	public function maybe_show_global_notice(): void {
 
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! \current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		?>
-		<div class="wrap edge-images-wrap">
-			<h1><?php esc_html_e( 'Edge Images Settings', 'edge-images' ); ?></h1>
-			
-			<div class="edge-images-container">
-				<div class="edge-images-intro">
-					<p>
-						<?php esc_html_e( 'Edge Images automatically optimizes your images by routing them through an edge provider. This can significantly improve your page load times and Core Web Vitals scores.', 'edge-images' ); ?>
-					</p>
-					<p>
-						<?php 
-						printf(
-							/* translators: %s: URL to documentation */
-							esc_html__( 'Select your preferred edge provider below. Each provider has different features and requirements. Learn more in our %s.', 'edge-images' ),
-							'<a href="https://github.com/jonoalderson/edge-images#readme" target="_blank" rel="noopener noreferrer">' . esc_html__( 'documentation', 'edge-images' ) . '</a>'
-						);
-						?>
-					</p>
-				</div>
 
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="edge_images_update_settings">
-					<?php
-					wp_nonce_field( 'edge_images_settings-options' );
-					do_settings_sections( 'edge_images' );
-					submit_button();
-					?>
-				</form>
+		$screen = \get_current_screen();
+		if ( ! $screen || EDGE_IMAGES_ADMIN_SCREEN_ID === $screen->id ) {
+			return;
+		}
+
+		// Only nudge on the dashboard and plugins list.
+		if ( ! in_array( $screen->id, [ 'dashboard', 'plugins' ], true ) ) {
+			return;
+		}
+
+		$status = $this->get_status();
+		if ( 'ready' === $status['state'] ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-%1$s is-dismissible"><p>%2$s <a href="%3$s">%4$s</a></p></div>',
+			\esc_attr( 'error' === $status['state'] ? 'error' : 'warning' ),
+			\esc_html( $status['summary'] ),
+			\esc_url( \admin_url( 'options-general.php?page=' . EDGE_IMAGES_ADMIN_PAGE_SLUG ) ),
+			\esc_html__( 'Review Edge Images settings', 'edge-images' )
+		);
+	}
+
+	/**
+	 * Register settings fields.
+	 *
+	 * @return void
+	 */
+	public function register_fields(): void {
+
+		\add_settings_section(
+			'edge_images_provider',
+			__( 'Provider', 'edge-images' ),
+			[ $this, 'render_provider_section' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG
+		);
+
+		\add_settings_field(
+			Settings::PROVIDER_OPTION,
+			__( 'Edge provider', 'edge-images' ),
+			[ $this, 'render_provider_field' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_provider'
+		);
+
+		\add_settings_field(
+			Settings::DOMAIN_OPTION,
+			__( 'Transform domain', 'edge-images' ),
+			[ $this, 'render_domain_field' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_provider',
+			[
+				'class' => 'edge-images-conditional edge-images-show-cloudflare edge-images-show-accelerated_domains',
+			]
+		);
+
+		\add_settings_field(
+			'edge_images_bunny_subdomain',
+			__( 'Bunny subdomain', 'edge-images' ),
+			[ $this, 'render_bunny_field' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_provider',
+			[
+				'class' => 'edge-images-conditional edge-images-show-bunny',
+			]
+		);
+
+		\add_settings_field(
+			'edge_images_imgix_subdomain',
+			__( 'Imgix subdomain', 'edge-images' ),
+			[ $this, 'render_imgix_field' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_provider',
+			[
+				'class' => 'edge-images-conditional edge-images-show-imgix',
+			]
+		);
+
+		\add_settings_field(
+			'edge_images_imgproxy_url',
+			__( 'Imgproxy URL', 'edge-images' ),
+			[ $this, 'render_imgproxy_field' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_provider',
+			[
+				'class' => 'edge-images-conditional edge-images-show-imgproxy',
+			]
+		);
+
+		\add_settings_section(
+			'edge_images_delivery',
+			__( 'Delivery', 'edge-images' ),
+			[ $this, 'render_delivery_section' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG
+		);
+
+		\add_settings_field(
+			Settings::LOCALIZE_OPTION,
+			__( 'Local copies', 'edge-images' ),
+			[ $this, 'render_localize_field' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_delivery'
+		);
+
+		\add_settings_section(
+			'edge_images_integrations',
+			__( 'SEO integrations', 'edge-images' ),
+			[ $this, 'render_integrations_section' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG
+		);
+
+		\add_settings_field(
+			'edge_images_integrations_status',
+			__( 'Detected plugins', 'edge-images' ),
+			[ $this, 'render_integrations_status' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_integrations'
+		);
+
+		$this->register_integration_fields();
+	}
+
+	/**
+	 * Register Yoast / Rank Math toggles.
+	 *
+	 * Inactive plugins still render their rows (greyed out) so detection is visible.
+	 * Their inputs are omitted from the form so saving does not wipe stored options.
+	 *
+	 * @return void
+	 */
+	private function register_integration_fields(): void {
+
+		$groups = [
+			'yoast-seo' => [
+				'yoast_social' => __( 'Yoast social images', 'edge-images' ),
+				'yoast_schema' => __( 'Yoast schema images', 'edge-images' ),
+				'yoast_xml'    => __( 'Yoast XML sitemap images', 'edge-images' ),
+			],
+			'rank-math' => [
+				'rank_math_social' => __( 'Rank Math social images', 'edge-images' ),
+				'rank_math_schema' => __( 'Rank Math schema images', 'edge-images' ),
+				'rank_math_xml'    => __( 'Rank Math XML sitemap images', 'edge-images' ),
+			],
+		];
+
+		foreach ( $groups as $group => $fields ) {
+			$active = Integrations::is_enabled( $group );
+
+			foreach ( $fields as $key => $label ) {
+				$option = 'edge_images_integration_' . $key;
+
+				\add_settings_field(
+					$option,
+					$label,
+					[ $this, 'render_integration_checkbox' ],
+					EDGE_IMAGES_ADMIN_PAGE_SLUG,
+					'edge_images_integrations',
+					[
+						'option' => $option,
+						'group'  => $group,
+						'active' => $active,
+						'class'  => 'edge-images-integration-row' . ( $active ? ' is-active' : ' is-inactive' ),
+					]
+				);
+			}
+		}
+	}
+
+	/**
+	 * Render the settings page.
+	 *
+	 * @return void
+	 */
+	public function render_page(): void {
+
+		if ( ! \current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$status = $this->get_status();
+		?>
+		<div class="wrap edge-images-settings" data-edge-images-admin>
+			<h1><?php echo \esc_html__( 'Edge Images', 'edge-images' ); ?></h1>
+			<p class="edge-images-lead">
+				<?php echo \esc_html__( 'Rewrite image markup through your edge provider. Choose a provider, confirm it is configured, then optionally keep local copies of transformed files.', 'edge-images' ); ?>
+			</p>
+
+			<?php $this->render_status_panel( $status ); ?>
+
+			<form action="options.php" method="post" class="edge-images-form">
+				<?php
+				\settings_fields( Settings::OPTION_GROUP );
+				\do_settings_sections( EDGE_IMAGES_ADMIN_PAGE_SLUG );
+				\submit_button( __( 'Save settings', 'edge-images' ) );
+				?>
+			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Provider section intro.
+	 *
+	 * @return void
+	 */
+	public function render_provider_section(): void {
+
+		echo '<p class="edge-images-section-intro">' . \esc_html__( 'Image Resizing / transformation must already be enabled on the provider account. This plugin only rewrites URLs and markup.', 'edge-images' ) . '</p>';
+	}
+
+	/**
+	 * Delivery section intro.
+	 *
+	 * @return void
+	 */
+	public function render_delivery_section(): void {
+
+		echo '<p class="edge-images-section-intro">' . \esc_html__( 'By default every page request uses edge URLs. Localization is optional and off until you enable it.', 'edge-images' ) . '</p>';
+	}
+
+	/**
+	 * Integrations section intro.
+	 *
+	 * @return void
+	 */
+	public function render_integrations_section(): void {
+
+		echo '<p class="edge-images-section-intro">' . \esc_html__( 'Social, schema, and sitemap images are rewritten at 1200×675 when the matching plugin is active. These always use edge URLs (not localized files).', 'edge-images' ) . '</p>';
+	}
+
+	/**
+	 * Detection status for Yoast / Rank Math.
+	 *
+	 * @return void
+	 */
+	public function render_integrations_status(): void {
+
+		$plugins = [
+			'yoast-seo' => __( 'Yoast SEO', 'edge-images' ),
+			'rank-math' => __( 'Rank Math SEO', 'edge-images' ),
+		];
+
+		echo '<ul class="edge-images-detection">';
+		foreach ( $plugins as $id => $label ) {
+			$active = Integrations::is_enabled( $id );
+			printf(
+				'<li class="%1$s"><span class="dashicons %2$s edge-images-detection__mark" aria-hidden="true"></span><span class="edge-images-detection__label">%3$s</span><span class="edge-images-detection__state">%4$s</span></li>',
+				\esc_attr( $active ? 'is-detected' : 'is-missing' ),
+				\esc_attr( $active ? 'dashicons-yes-alt' : 'dashicons-marker' ),
+				\esc_html( $label ),
+				\esc_html( $active ? __( 'Detected — integrated', 'edge-images' ) : __( 'Not detected', 'edge-images' ) )
+			);
+		}
+		echo '</ul>';
+	}
+
+	/**
+	 * Status panel at the top of the page.
+	 *
+	 * @param array{state:string,summary:string,details:array<int,string>} $status Status.
+	 * @return void
+	 */
+	private function render_status_panel( array $status ): void {
+
+		$state_class = match ( $status['state'] ) {
+			'ready'   => 'is-ready',
+			'error'   => 'is-error',
+			default   => 'is-warning',
+		};
+
+		$label = match ( $status['state'] ) {
+			'ready'   => __( 'Active', 'edge-images' ),
+			'error'   => __( 'Needs attention', 'edge-images' ),
+			default   => __( 'Inactive', 'edge-images' ),
+		};
+		?>
+		<div class="edge-images-status <?php echo \esc_attr( $state_class ); ?>" role="status">
+			<div class="edge-images-status__badge"><?php echo \esc_html( $label ); ?></div>
+			<div class="edge-images-status__body">
+				<p class="edge-images-status__summary"><?php echo \esc_html( $status['summary'] ); ?></p>
+				<?php if ( ! empty( $status['details'] ) ) : ?>
+					<ul class="edge-images-status__details">
+						<?php foreach ( $status['details'] as $detail ) : ?>
+							<li><?php echo \esc_html( $detail ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
 			</div>
 		</div>
 		<?php
 	}
 
 	/**
-	 * Render the provider selection field.
+	 * Compute configuration status for notices and the status panel.
 	 *
-	 * Outputs the dropdown field for selecting the edge provider.
-	 * Shows all available providers and handles the current selection.
-	 *
-	 * @since 4.0.0
-	 * @return void
+	 * @return array{state:string,summary:string,details:array<int,string>}
 	 */
-	public static function render_provider_field(): void {
+	private function get_status(): array {
 
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
+		$provider = Settings::get_provider();
+		$labels   = Providers::get_providers();
+		$label    = $labels[ $provider ] ?? $provider;
+		$details  = [];
+
+		if ( 'none' === $provider || ! Providers::is_valid_provider( $provider ) ) {
+			return [
+				'state'   => 'warning',
+				'summary' => __( 'Image transformations are disabled. Select an edge provider to begin.', 'edge-images' ),
+				'details' => [
+					__( 'Front-end images will not be rewritten until a provider is selected and configured.', 'edge-images' ),
+				],
+			];
 		}
 
-		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
-		$providers       = Providers::get_providers();
+		$provider_class = Providers::get_provider_class( $provider );
+		if ( ! class_exists( $provider_class ) || ! $provider_class::is_configured() ) {
+			$hint = match ( $provider ) {
+				'bunny'    => __( 'Enter your Bunny CDN subdomain (without .b-cdn.net).', 'edge-images' ),
+				'imgix'    => __( 'Enter your Imgix subdomain (without .imgix.net).', 'edge-images' ),
+				'imgproxy' => __( 'Enter the full Imgproxy base URL.', 'edge-images' ),
+				default    => __( 'Complete the provider settings below.', 'edge-images' ),
+			};
+
+			return [
+				'state'   => 'error',
+				'summary' => sprintf(
+					/* translators: %s: provider label */
+					__( '%s is selected but not fully configured.', 'edge-images' ),
+					$label
+				),
+				'details' => [ $hint ],
+			];
+		}
+
+		$domain = Settings::get_domain();
+		if ( '' === $domain ) {
+			$domain = \get_site_url();
+		}
+
+		$details[] = sprintf(
+			/* translators: %s: provider label */
+			__( 'Provider: %s', 'edge-images' ),
+			$label
+		);
+
+		if ( in_array( $provider, [ 'cloudflare', 'accelerated_domains' ], true ) ) {
+			$details[] = sprintf(
+				/* translators: %s: domain URL */
+				__( 'Transform domain: %s', 'edge-images' ),
+				$domain
+			);
+		}
+
+		$details[] = Settings::is_localization_enabled()
+			? __( 'Local copies: on (edge URLs until files are fetched)', 'edge-images' )
+			: __( 'Local copies: off (edge URLs only)', 'edge-images' );
+
+		return [
+			'state'   => 'ready',
+			'summary' => sprintf(
+				/* translators: %s: provider label */
+				__( 'Images are being rewritten through %s.', 'edge-images' ),
+				$label
+			),
+			'details' => $details,
+		];
+	}
+
+	/**
+	 * Provider select field.
+	 *
+	 * @return void
+	 */
+	public function render_provider_field(): void {
+
+		$current = Settings::get_provider();
 		?>
-		<div class="edge-images-provider-selector">
-			<?php foreach ( $providers as $value => $label ) : ?>
-				<label class="edge-images-provider-option">
-					<input type="radio" 
-						name="<?php echo esc_attr( self::PROVIDER_OPTION ); ?>" 
-						value="<?php echo esc_attr( $value ); ?>"
-						<?php checked( $current_provider, $value ); ?>
-						data-provider="<?php echo esc_attr( $value ); ?>"
-					>
-					<span class="edge-images-provider-card">
-						<span class="edge-images-provider-name">
-							<?php 
-							echo esc_html( $label );
-							if ($value === 'native') {
-								echo ' *';
-							}
-							?>
-						</span>
-					</span>
-				</label>
+		<select name="<?php echo \esc_attr( Settings::PROVIDER_OPTION ); ?>" id="<?php echo \esc_attr( Settings::PROVIDER_OPTION ); ?>" class="edge-images-provider-select">
+			<?php foreach ( Providers::get_providers() as $slug => $label ) : ?>
+				<option value="<?php echo \esc_attr( $slug ); ?>" <?php selected( $current, $slug ); ?>>
+					<?php echo \esc_html( $label ); ?>
+				</option>
 			<?php endforeach; ?>
-		</div>
-		<div id="edge-images-native-notice" class="notice notice-warning inline" style="<?php echo $current_provider === 'native' ? '' : 'display: none;'; ?>">
-			<p>
-				<?php esc_html_e('* The Native provider processes images on-demand using your server resources. This can impact performance unless you have a caching solution in place (e.g., page cache, object cache, or CDN).', 'edge-images'); ?>
-			</p>
-		</div>
-		<script>
-		jQuery(document).ready(function($) {
-			$('input[name="<?php echo esc_js(self::PROVIDER_OPTION); ?>"]').on('change', function() {
-				$('#edge-images-native-notice').toggle($(this).data('provider') === 'native');
-			});
-		});
-		</script>
-		<?php
-	}
-
-	/**
-	 * Render the Bunny CDN subdomain field.
-	 *
-	 * Outputs the input field for the Bunny CDN subdomain setting.
-	 * Only displayed when Bunny CDN is selected as the provider.
-	 *
-	 * @since 4.1.0
-	 * @param array $args Field arguments.
-	 * @return void
-	 */
-	public static function render_bunny_subdomain_field( array $args ): void {
-
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
-		$subdomain = get_option( self::BUNNY_SUBDOMAIN_OPTION, '' );
-		?>
-		<div class="edge-images-settings-field">
-			<input 
-				type="text" 
-				id="<?php echo esc_attr( self::BUNNY_SUBDOMAIN_OPTION ); ?>"
-				name="<?php echo esc_attr( self::BUNNY_SUBDOMAIN_OPTION ); ?>"
-				value="<?php echo esc_attr( $subdomain ); ?>"
-				class="regular-text"
-				placeholder="your-subdomain"
-			>
-			<p class="description">
-				<?php 
-				printf(
-					/* translators: %s: URL to Bunny CDN documentation */
-					esc_html__( 'Enter your Bunny CDN subdomain (e.g., if your Bunny CDN URL is "https://your-site.b-cdn.net", enter "your-site"). See the %s for more information.', 'edge-images' ),
-					'<a href="https://docs.bunny.net/docs/stream-image-processing" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Bunny CDN documentation', 'edge-images' ) . '</a>'
-				);
-				?>
-			</p>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Render the Imgix subdomain field.
-	 *
-	 * Outputs the input field for the Imgix subdomain setting.
-	 * Only displayed when Imgix is selected as the provider.
-	 *
-	 * @since 4.1.0
-	 * @param array $args Field arguments.
-	 * @return void
-	 */
-	public static function render_imgix_subdomain_field( array $args ): void {
-
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$current_provider = get_option( self::PROVIDER_OPTION, 'none' );
-		$subdomain = get_option( self::IMGIX_SUBDOMAIN_OPTION, '' );
-		?>
-		<div class="edge-images-settings-field">
-			<input 
-				type="text" 
-				id="<?php echo esc_attr( self::IMGIX_SUBDOMAIN_OPTION ); ?>"
-				name="<?php echo esc_attr( self::IMGIX_SUBDOMAIN_OPTION ); ?>"
-				value="<?php echo esc_attr( $subdomain ); ?>"
-				class="regular-text"
-				placeholder="your-subdomain"
-			>
-			<p class="description">
-				<?php 
-				printf(
-					/* translators: %s: URL to Imgix documentation */
-					esc_html__( 'Enter your Imgix subdomain (e.g., if your Imgix URL is "https://your-site.imgix.net", enter "your-site"). See the %s for more information.', 'edge-images' ),
-					'<a href="https://docs.imgix.com/setup/quick-start" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Imgix documentation', 'edge-images' ) . '</a>'
-				);
-				?>
-			</p>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Render the maximum width field.
-	 *
-	 * Outputs the input field for setting the maximum image width.
-	 * This setting affects how images are scaled and transformed.
-	 *
-	 * @since 4.0.0
-	 * @return void
-	 */
-	public static function render_max_width_field(): void {
-
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$max_width = get_option( self::MAX_WIDTH_OPTION, 650 );
-		?>
-		<input type="number" 
-			   name="<?php echo esc_attr( self::MAX_WIDTH_OPTION ); ?>" 
-			   value="<?php echo esc_attr( $max_width ); ?>" 
-			   class="small-text" 
-			   min="1" 
-			   step="1">
+		</select>
 		<p class="description">
-			<?php esc_html_e( 'If your theme does not specify a content width, this sets the maximum width that images will be scaled to. The default value is 650 pixels.', 'edge-images' ); ?>
+			<?php echo \esc_html__( 'Choose “None” to disable rewriting without deactivating the plugin.', 'edge-images' ); ?>
 		</p>
 		<?php
 	}
 
 	/**
-	 * Render the integrations settings section.
+	 * Domain field.
 	 *
-	 * Outputs the settings section for third-party plugin integrations.
-	 * Shows available integrations and their configuration options.
-	 *
-	 * @since 4.0.0
 	 * @return void
 	 */
-	public static function render_integrations_section(): void {
+	public function render_domain_field(): void {
 
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$integrations = Integrations::get_registered_integrations();
-		if ( empty( $integrations ) ) {
-			return;
-		}
-
-		?>
-		<div class="edge-images-integrations">
-			<?php foreach ( $integrations as $id => $integration ) : ?>
-				<div class="integration-card">
-					<div class="integration-header">
-						<?php if ( $integration['active'] ) : ?>
-							<span class="dashicons dashicons-yes-alt" style="color: #46B450;"></span>
-						<?php else : ?>
-							<span class="dashicons dashicons-no-alt" style="color: #DC3232;"></span>
-						<?php endif; ?>
-						<strong><?php echo esc_html( Integrations::get_name( $id ) ); ?></strong>
-					</div>
-
-					<?php 
-					// Check if any of the integration classes have settings to render
-					$has_settings = false;
-					if ($integration['active'] && !empty($integration['classes'])) {
-						foreach ($integration['classes'] as $class) {
-							$full_class = __NAMESPACE__ . '\\' . $class;
-							if (method_exists($full_class, 'render_settings')) {
-								$has_settings = true;
-								?>
-								<div class="integration-settings">
-									<?php $full_class::render_settings(); ?>
-								</div>
-								<?php
-								break; // Only need to render settings once per integration
-							}
-						}
-					}
-					?>
-				</div>
-			<?php endforeach; ?>
-
-			<p class="description">
-				<?php esc_html_e( 'Edge Images automatically integrates with supported plugins when they are active.', 'edge-images' ); ?>
-			</p>
-		</div>
-		<?php
+		printf(
+			'<input type="url" class="regular-text" name="%1$s" id="%1$s" value="%2$s" placeholder="https://example.com" autocomplete="off" />
+			<p class="description">%3$s</p>',
+			\esc_attr( Settings::DOMAIN_OPTION ),
+			\esc_attr( Settings::get_domain() ),
+			\esc_html__( 'Optional. Defaults to the site URL. Used when the provider transforms via a path on your domain (Cloudflare, Accelerated Domains). Leave blank on most production sites.', 'edge-images' )
+		);
 	}
 
 	/**
-	 * Render the features section.
+	 * Bunny subdomain field.
 	 *
-	 * @since      4.5.0
 	 * @return void
 	 */
-	public static function render_features_section(): void {
+	public function render_bunny_field(): void {
 
-		// Bail if user doesn't have sufficient permissions.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$features = Features::get_features();
-		foreach ($features as $id => $feature) {
-			$option_name = $feature['option'] ?? "edge_images_feature_{$id}";
-			$is_disabled = false;
-			$disabled_reason = '';
-
-			// Check if feature has server requirements
-			if (isset($feature['class'])) {
-				$class = $feature['class'];
-				if (method_exists($class, 'is_available')) {
-					$is_disabled = !$class::is_available();
-					if ($is_disabled && method_exists($class, 'get_unavailable_reason')) {
-						$disabled_reason = $class::get_unavailable_reason();
-					}
-				}
-			}
-
-			$wrapper_class = 'edge-images-settings-field';
-			if ($is_disabled) {
-				$wrapper_class .= ' edge-images-feature-disabled';
-			}
-
-			?>
-			<div class="<?php echo esc_attr($wrapper_class); ?>" <?php echo $disabled_reason ? 'data-disabled-reason="' . esc_attr($disabled_reason) . '"' : ''; ?>>
-				<label>
-					<input type="checkbox" 
-						name="<?php echo esc_attr($option_name); ?>" 
-						value="1" 
-						<?php checked(Features::is_enabled($id)); ?>
-						<?php echo $is_disabled ? 'disabled' : ''; ?>
-					>
-					<?php echo esc_html($feature['name']); ?>
-				</label>
-				<?php if (!empty($feature['description'])): ?>
-					<p class="description"><?php echo esc_html($feature['description']); ?></p>
-				<?php endif; ?>
-			</div>
-			<?php
-		}
+		printf(
+			'<input type="text" class="regular-text" name="edge_images_bunny_subdomain" id="edge_images_bunny_subdomain" value="%1$s" placeholder="your-zone" autocomplete="off" />
+			<p class="description">%2$s</p>',
+			\esc_attr( (string) Settings::get_option( 'edge_images_bunny_subdomain', '' ) ),
+			\esc_html__( 'Required for Bunny. Enter the zone subdomain only — not the full URL, and without .b-cdn.net.', 'edge-images' )
+		);
 	}
 
 	/**
-	 * Sanitize a subdomain input.
+	 * Imgix subdomain field.
 	 *
-	 * Cleans and validates subdomain input.
-	 * Returns null if the subdomain is empty or invalid.
-	 *
-	 * @since 4.5.0
-	 * @param string|null $value The subdomain value to sanitize.
-	 * @return string|null Sanitized subdomain value or null if empty/invalid.
+	 * @return void
 	 */
-	public static function sanitize_subdomain( ?string $value ): ?string {
-		
-		// Return null for any "empty" value
-		if ( $value === null || $value === '' || trim( $value ) === '' ) {
-			return null;
-		}
+	public function render_imgix_field(): void {
 
-		$subdomain = trim( sanitize_text_field( $value ) );
-		
-		// Return null if sanitization resulted in an empty string
-		if ( empty( $subdomain ) ) {
-			return null;
-		}
-
-		return preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $subdomain ) ? $subdomain : null;
+		printf(
+			'<input type="text" class="regular-text" name="edge_images_imgix_subdomain" id="edge_images_imgix_subdomain" value="%1$s" placeholder="your-site" autocomplete="off" />
+			<p class="description">%2$s</p>',
+			\esc_attr( (string) Settings::get_option( 'edge_images_imgix_subdomain', '' ) ),
+			\esc_html__( 'Required for Imgix. Enter the source subdomain only — without .imgix.net.', 'edge-images' )
+		);
 	}
 
 	/**
-	 * Render the domain field.
+	 * Imgproxy URL field.
 	 *
-	 * Outputs the input field for setting a custom domain for transformed images.
-	 * Only displayed when the selected provider does not use a hosted subdomain.
-	 *
-	 * @since 5.4.0
-	 * @param array $args Field arguments.
 	 * @return void
 	 */
-	public static function render_domain_field(array $args): void {
+	public function render_imgproxy_field(): void {
 
-		// Bail if user doesn't have sufficient permissions.
-		if (!current_user_can('manage_options')) {
-			return;
-		}
-
-		$current_provider = Settings::get_provider();
-		$provider_class = Providers::get_provider_class($current_provider);
-
-		// Hide field if provider uses a hosted subdomain
-		if ($provider_class::uses_hosted_subdomain()) {
-			return;
-		}
-
-		$domain = Settings::get_domain();
-		?>
-		<div class="edge-images-settings-field">
-			<input 
-				type="text" 
-				id="<?php echo esc_attr(Settings::DOMAIN_OPTION); ?>"
-				name="<?php echo esc_attr(Settings::DOMAIN_OPTION); ?>"
-				value="<?php echo esc_attr($domain); ?>"
-				class="regular-text"
-				placeholder="<?php echo esc_attr(get_site_url()); ?>"
-			>
-			<p class="description">
-				<?php esc_html_e('The domain to use for transformed images. You can usually leave this blank, unless this is a staging/development site, or if you serve your images from a different domain.', 'edge-images'); ?>
-			</p>
-		</div>
-		<?php
+		printf(
+			'<input type="url" class="regular-text" name="edge_images_imgproxy_url" id="edge_images_imgproxy_url" value="%1$s" placeholder="https://imgproxy.example.com" autocomplete="off" />
+			<p class="description">%2$s</p>',
+			\esc_attr( (string) Settings::get_option( 'edge_images_imgproxy_url', '' ) ),
+			\esc_html__( 'Required for Imgproxy. Full base URL of your Imgproxy instance.', 'edge-images' )
+		);
 	}
 
 	/**
-	 * Render Rank Math integration fields.
+	 * Localization checkbox with stronger guidance.
 	 *
-	 * Outputs the settings fields specific to the Rank Math integration.
-	 * Only displayed when Rank Math is active.
-	 *
-	 * @since 5.2.20
 	 * @return void
 	 */
-	public static function render_rank_math_integration_fields(): void {
-		// Bail if user doesn't have sufficient permissions.
-		if (!current_user_can('manage_options')) {
+	public function render_localize_field(): void {
+
+		printf(
+			'<input type="hidden" name="%1$s" value="0" />
+			<label class="edge-images-checkbox">
+				<input type="checkbox" name="%1$s" value="1" %2$s />
+				<span>%3$s</span>
+			</label>
+			<div class="edge-images-callout edge-images-callout--warn">
+				<p><strong>%4$s</strong> %5$s</p>
+				<p>%6$s</p>
+			</div>',
+			\esc_attr( Settings::LOCALIZE_OPTION ),
+			\checked( Settings::is_localization_enabled(), true, false ),
+			\esc_html__( 'Store transformed images locally under Uploads', 'edge-images' ),
+			\esc_html__( 'Off by default.', 'edge-images' ),
+			\esc_html__( 'While files are missing, pages still use edge URLs. A background cron job fetches the 1× / 1.5× / 2× variants and swaps the markup once they exist.', 'edge-images' ),
+			\esc_html__( 'This adds origin storage and fetch traffic. Prefer leaving it off when the edge CDN already caches transformed images well.', 'edge-images' )
+		);
+	}
+
+	/**
+	 * Integration checkbox field.
+	 *
+	 * @param array<string, mixed> $args Field args.
+	 * @return void
+	 */
+	public function render_integration_checkbox( array $args ): void {
+
+		$option = (string) ( $args['option'] ?? '' );
+		$active = ! empty( $args['active'] );
+		if ( '' === $option ) {
 			return;
 		}
 
-		$schema_enabled = get_option(self::RANK_MATH_SCHEMA_OPTION, true);
-		$social_enabled = get_option(self::RANK_MATH_SOCIAL_OPTION, true);
-		$sitemap_enabled = get_option(self::RANK_MATH_SITEMAP_OPTION, true);
-		?>
-		<fieldset>
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="<?php echo esc_attr(self::RANK_MATH_SCHEMA_OPTION); ?>" 
-						value="1" 
-						<?php checked($schema_enabled); ?>
-					>
-					<?php esc_html_e('Enable schema.org image optimization', 'edge-images'); ?>
-				</label>
-			</p>
+		$checked = (bool) Settings::get_option( $option, true );
 
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="<?php echo esc_attr(self::RANK_MATH_SOCIAL_OPTION); ?>" 
-						value="1" 
-						<?php checked($social_enabled); ?>
-					>
-					<?php esc_html_e('Enable social media image optimization', 'edge-images'); ?>
+		if ( ! $active ) {
+			printf(
+				'<label class="edge-images-checkbox is-muted">
+					<input type="checkbox" %1$s disabled="disabled" />
+					<span>%2$s</span>
 				</label>
-			</p>
+				<p class="description">%3$s</p>',
+				\checked( $checked, true, false ),
+				\esc_html__( 'Rewrite through the edge provider', 'edge-images' ),
+				\esc_html__( 'Activate the plugin to enable this integration.', 'edge-images' )
+			);
+			return;
+		}
 
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="<?php echo esc_attr(self::RANK_MATH_SITEMAP_OPTION); ?>" 
-						value="1" 
-						<?php checked($sitemap_enabled); ?>
-					>
-					<?php esc_html_e('Enable XML sitemap image optimization', 'edge-images'); ?>
-				</label>
-			</p>
-
-			<p class="description">
-				<?php esc_html_e('Edge Images can optimize images in Rank Math\'s schema.org output, social media tags, and XML sitemaps. Enable or disable these features as needed.', 'edge-images'); ?>
-			</p>
-		</fieldset>
-		<?php
+		printf(
+			'<input type="hidden" name="%1$s" value="0" />
+			<label class="edge-images-checkbox">
+				<input type="checkbox" name="%1$s" value="1" %2$s />
+				<span>%3$s</span>
+			</label>',
+			\esc_attr( $option ),
+			\checked( $checked, true, false ),
+			\esc_html__( 'Rewrite through the edge provider', 'edge-images' )
+		);
 	}
-} 
+}

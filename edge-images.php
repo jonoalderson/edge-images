@@ -7,15 +7,15 @@
  * @license   GPL-2.0-or-later
  * @link      https://github.com/jonoalderson/edge-images/
  * @since     1.0.0
- * @version   5.5.7
+ * @version   6.0.0
  *
  * @wordpress-plugin
  * Plugin Name:       Edge Images
  * Plugin URI:        https://github.com/jonoalderson/edge-images/
  * Description:       Routes images through edge providers (like Cloudflare or Accelerated Domains) for automatic optimization and transformation. Improves page speed and image loading performance.
- * Version:           5.5.7
- * Requires PHP:      7.4
- * Requires at least: 5.6
+ * Version:           6.0.0
+ * Requires PHP:      8.0
+ * Requires at least: 6.4
  * Tested up to:      6.8
  * Author:            Jono Alderson
  * Author URI:        https://www.jonoalderson.com/
@@ -33,109 +33,68 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'EDGE_IMAGES_VERSION', '5.5.7' );
+define( 'EDGE_IMAGES_VERSION', '6.0.0' );
 define( 'EDGE_IMAGES_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EDGE_IMAGES_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'EDGE_IMAGES_PLUGIN_FILE', __FILE__ );
 define( 'EDGE_IMAGES_ADMIN_PAGE_SLUG', 'edge-images' );
 define( 'EDGE_IMAGES_ADMIN_SCREEN_ID', 'settings_page_' . EDGE_IMAGES_ADMIN_PAGE_SLUG );
 
-// Load autoloader.
 require_once EDGE_IMAGES_PLUGIN_DIR . 'autoload.php';
 
-// Add near the top of the file after plugin header
-register_activation_hook(__FILE__, ['\Edge_Images\Activation', 'activate']);
+\register_activation_hook( __FILE__, [ Activation::class, 'activate' ] );
 
 /**
- * Initialize admin functionality when in the WordPress admin area.
+ * Initialize admin.
  *
- * @since 4.0.0
  * @return void
  */
-if ( is_admin() ) {
-    add_action( 'init', [ Admin_Page::class, 'register' ] );
+if ( \is_admin() ) {
+	\add_action( 'init', [ Admin_Page::class, 'register' ] );
+	\add_action( 'admin_init', [ Settings::class, 'register_settings' ] );
 }
 
 /**
- * Initialize the main plugin functionality.
+ * Initialize front-end transformation.
  *
- * @since 4.0.0
  * @return void
  */
-add_action( 'init', [ Handler::class, 'register' ], 5 );
+\add_action( 'init', [ Transformer::class, 'register' ], 5 );
+\add_action( 'init', [ Localizer::class, 'register' ], 5 );
 
 /**
- * Initialize integrations.
- * We use 'plugins_loaded' to ensure all plugins are available.
+ * Initialize integrations after plugins load.
  *
- * @since 4.0.0
  * @return void
  */
-add_action( 'plugins_loaded', [ Integrations::class, 'register' ], 5 );
-
-/**
- * Initialize feature management.
- *
- * @since 4.0.0
- * @return void
- */
-add_action('init', [Features::class, 'register'], 5);
-
-/**
- * Initialize block management.
- *
- * @since 4.5.0
- * @return void
- */
-add_action('init', [Blocks::class, 'register'], 5);
-
-/**
- * Initialize rewrite functionality.
- *
- * @since 5.4.0
- * @return void
- */
-add_action('init', [Rewrites::class, 'register'], 5);
+\add_action( 'plugins_loaded', [ Integrations::class, 'register' ], 5 );
 
 /**
  * Convert an image URL into an Edge Image URL.
- * 
- * @param string $src The image URL to convert.
- * @param mixed $size The size of the image to convert (a string or array of h/w values).
- * @param array $args Additional arguments for the conversion.
- * .
- * @return string The converted image URL, or the original URL if the conversion fails.
+ *
+ * @param string              $src  The image URL to convert.
+ * @param mixed               $size Size string or [width, height].
+ * @param array<string,mixed> $args Additional arguments.
+ * @return string
  */
-function convert_src(string $src, mixed $size, array $args = []) : string {
+function convert_src( string $src, mixed $size, array $args = [] ): string {
 
-    // If size is a string, get the h/w values from the registered size.
-    if (is_string($size)) {
-        $size_data = \wp_get_registered_image_subsizes();
-        if (isset($size_data[$size])) {
-            $args['w'] = $size_data[$size]['width'];
-            $args['h'] = $size_data[$size]['height'];
-            return Helpers::edge_src($src, $args);
-        } else {
-            // If the size is not registered, use the original URL.
-            return $src;
-        }
-    }
+	$width  = 0;
+	$height = 0;
 
-   // If size is an array, add the width and height to the args.
-   if (is_array($size)) {
-        // If we don't have values for [0] and [1], use the original URL.
-        if (!isset($size[0]) || !isset($size[1])) {
-            return $src;
-        }
+	if ( is_string( $size ) ) {
+		$size_data = \wp_get_registered_image_subsizes();
+		if ( ! isset( $size_data[ $size ] ) ) {
+			return $src;
+		}
+		$width  = (int) $size_data[ $size ]['width'];
+		$height = (int) $size_data[ $size ]['height'];
+	} elseif ( is_array( $size ) && isset( $size[0], $size[1] ) ) {
+		$width  = (int) $size[0];
+		$height = (int) $size[1];
+	} else {
+		return $src;
+	}
 
-        // Add the width and height to the args.
-        $args['w'] = $size[0];
-        $args['h'] = $size[1];
-        
-        // Return the converted URL.
-        return Helpers::edge_src($src, $args);
-   }
-
-   // If size is not a string or array, use the original URL.
-   return $src;
+	return Transformer::url( $src, $width, $height, $args );
 }
