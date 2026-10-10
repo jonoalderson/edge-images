@@ -285,6 +285,11 @@ SVGs and existing AVIF files keep their original URLs. Avatars that are files on
 
 ## Changelog
 
+### 6.0.1
+
+* Tested up to WordPress 7.1.
+* Readme describes the 6.0 behavior in the directory listing again, and the short description fits the 150 character limit.
+
 ### 6.0.0
 
 * BREAKING: Rebuild around markup and URL rewriting. The HTML API rewrites `wp_get_attachment_image`, content, excerpts, widgets, and local avatars. Layout width comes from the requested size, width and height attributes, an inline `width:Npx` on the image or its figure, or the gallery column count. `srcset` is 1x / 1.5x / 2x of that width, clamped so candidates never upscale past the original file.
