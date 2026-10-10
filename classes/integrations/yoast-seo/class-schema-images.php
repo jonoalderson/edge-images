@@ -1,441 +1,147 @@
 <?php
 /**
- * Yoast SEO Schema Images integration functionality.
- * 
- * This class handles the integration of Edge Images with Yoast SEO's schema image functionality.	
- * It provides methods to transform schema image URLs, manage image optimization, and handle schema markup.
+ * Yoast SEO schema image integration.
  *
- * @package    Edge_Images
- * @author     Jono Alderson <https://www.jonoalderson.com/>
- * @license    GPL-2.0-or-later
- * @since      4.5.0
+ * @package Edge_Images
  */
 
 namespace Edge_Images\Integrations\Yoast_SEO;
 
-use Edge_Images\{Integration, Helpers, Integrations, Settings, Features\Cache};
+use Edge_Images\{Integration, Helpers, Integrations, Settings};
 
-
+/**
+ * Rewrites Yoast schema image URLs through the edge provider.
+ */
 class Schema_Images extends Integration {
 
 	/**
-	 * Cache group for schema image processing.
+	 * Add filters.
 	 *
-	 * @since 4.5.0
-	 * @var string
-	 */
-	private const SCHEMA_CACHE_GROUP = 'edge_images_schema';
-
-	/**
-	 * The image width value for schema images.
-	 *
-	 * @since 1.0.0
-	 * @var int
-	 */
-	public const SCHEMA_WIDTH = 1200;
-
-	/**
-	 * The image height value for schema images.
-	 *
-	 * @since 4.0.0
-	 * @var int
-	 */
-	public const SCHEMA_HEIGHT = 675;
-
-	/**
-	 * Add integration-specific filters.
-	 *
-	 * Sets up required filters for Yoast SEO schema integration.
-	 * This method:
-	 * - Hooks into schema filters
-	 * - Manages image transformation
-	 * - Handles schema types
-	 * - Ensures proper integration
-	 *
-	 * @since      4.5.0
-	 * 
 	 * @return void
 	 */
 	protected function add_filters(): void {
 
-		// Bail if we shouldn't be filtering
-		if (!$this->should_filter()) {
+		if ( ! $this->should_filter() ) {
 			return;
 		}
-		
-		add_filter('wpseo_schema_imageobject', [$this, 'transform_schema_image'], 10, 3);
-		add_filter('wpseo_schema_organization', [$this, 'edge_organization_logo'], PHP_INT_MAX - 10);
-		add_filter('wpseo_schema_webpage', [$this, 'edge_thumbnail'], PHP_INT_MAX - 10);
-		add_filter('wpseo_schema_article', [$this, 'edge_thumbnail'], PHP_INT_MAX - 10);
-		add_filter('wpseo_schema_webpage', [$this, 'edge_images'], PHP_INT_MAX - 10);
-		add_filter('wpseo_schema_article', [$this, 'edge_images'], PHP_INT_MAX - 10);
+
+		\add_filter( 'wpseo_schema_imageobject', [ $this, 'transform_schema_image' ], 10, 1 );
+		\add_filter( 'wpseo_schema_organization', [ $this, 'edge_organization_logo' ], PHP_INT_MAX - 10 );
+		\add_filter( 'wpseo_schema_webpage', [ $this, 'edge_images' ], PHP_INT_MAX - 10 );
+		\add_filter( 'wpseo_schema_article', [ $this, 'edge_images' ], PHP_INT_MAX - 10 );
+		\add_filter( 'wpseo_schema_webpage', [ $this, 'edge_thumbnail' ], PHP_INT_MAX - 10 );
+		\add_filter( 'wpseo_schema_article', [ $this, 'edge_thumbnail' ], PHP_INT_MAX - 10 );
 	}
 
 	/**
-	 * Process and transform image properties in schema data.
+	 * Transform a schema ImageObject piece.
 	 *
-	 * Handles multiple image formats in schema:
-	 * - Single image URL as string
-	 * - Array of image URLs
-	 * - Array of reference objects with @id properties
-	 *
-	 * @since 4.5.0
-	 * 
-	 * @param array $data The schema data containing image properties.
-	 * @return array The modified schema data with transformed image URLs.
+	 * @param array<string, mixed> $data Schema data.
+	 * @return array<string, mixed>
 	 */
-	public function edge_images( array $data ): array {
-		// Process 'image' property if it exists.
-		if ( isset( $data['image'] ) ) {
-			// Case 1: Single image URL as string.
-			if ( is_string( $data['image'] ) ) {
-				$processed = $this->process_schema_image( $data['image'] );
-				if ( $processed ) {
-					$data['image'] = $processed['url'];
-				}
-			}
-			// Case 2: Array of values (either URLs or reference objects).
-			elseif ( is_array( $data['image'] ) ) {
-				foreach ( $data['image'] as $key => $image ) {
-					// Case 2a: Direct URL string in array.
-					if ( is_string( $image ) ) {
-						$processed = $this->process_schema_image( $image );
-						if ( $processed ) {
-							$data['image'][ $key ] = $processed['url'];
-						}
-					}
-					// Case 2b: Reference object with @id.
-					elseif ( is_array( $image ) && isset( $image['@id'] ) ) {
-						// Only process if @id looks like a URL (not just a reference ID).
-						if ( filter_var( $image['@id'], FILTER_VALIDATE_URL ) ) {
-							$processed = $this->process_schema_image( $image['@id'] );
-							if ( $processed ) {
-								$data['image'][ $key ]['@id'] = $processed['url'];
-							}
-						}
-					}
-				}
-			}
-		}
+	public function transform_schema_image( array $data ): array {
 
-		// Process 'primaryImageOfPage' property if it exists.
-		if ( isset( $data['primaryImageOfPage'] ) ) {
-			// Case 1: Direct URL string.
-			if ( is_string( $data['primaryImageOfPage'] ) ) {
-				$processed = $this->process_schema_image( $data['primaryImageOfPage'] );
-				if ( $processed ) {
-					$data['primaryImageOfPage'] = $processed['url'];
-				}
-			}
-			// Case 2: Reference object with @id.
-			elseif ( is_array( $data['primaryImageOfPage'] ) && isset( $data['primaryImageOfPage']['@id'] ) ) {
-				// Only process if @id looks like a URL (not just a reference ID).
-				if ( filter_var( $data['primaryImageOfPage']['@id'], FILTER_VALIDATE_URL ) ) {
-					$processed = $this->process_schema_image( $data['primaryImageOfPage']['@id'] );
-					if ( $processed ) {
-						$data['primaryImageOfPage']['@id'] = $processed['url'];
-					}
-				}
-			}
-		}
-
-		return $data;
-	}
-
-	/**
-	 * Edit the thumbnailUrl property of the WebPage to use the edge.
-	 *
-	 * @since 4.1.0
-	 * 
-	 * @param array $data The image schema properties.
-	 * @return array The modified properties.
-	 */
-	public function edge_thumbnail( array $data ): array {
-
-		// Bail if no thumbnail URL
-		if ( ! isset( $data['thumbnailUrl'] ) ) {
+		if ( empty( $data['url'] ) || ! is_string( $data['url'] ) ) {
 			return $data;
 		}
 
-		// Process the image
-		$processed = $this->process_schema_image( $data['thumbnailUrl'] );
-		if ( $processed ) {
-			$data['thumbnailUrl'] = $processed['url'];
-		}
+		$data['url']    = $this->transform_seo_image( $data['url'] );
+		$data['width']  = 1200;
+		$data['height'] = 675;
+		$data['contentUrl'] = $data['url'];
 
 		return $data;
 	}
 
 	/**
-	 * Process an image for schema output.
+	 * Transform organization logo.
 	 *
-	 * @since 4.1.0
-	 * 
-	 * @param string $image_url The original image URL.
-	 * @param array  $custom_args Optional. Custom transformation arguments.
-	 * @return array|false Array of edge URL and dimensions, or false on failure.
-	 */
-	private function process_schema_image( string $image_url, array $custom_args = [] ) {
-		
-		// Check cache first
-		$cache_key = 'schema_' . md5($image_url . serialize($custom_args));
-		$cached_result = wp_cache_get($cache_key, Cache::CACHE_GROUP);
-		if ($cached_result !== false) {
-			return $cached_result;
-		}
-
-		// Get the image ID
-		$image_id = Helpers::get_attachment_id_from_url( $image_url );
-		if ( ! $image_id ) {
-			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
-			return false;
-		}
-
-		// Get the image dimensions
-		$dimensions = Helpers::get_image_dimensions( $image_id );
-		if ( ! $dimensions ) {
-			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
-			return false;
-		}
-
-		// Set default args
-		$args = [
-			'width'   => self::SCHEMA_WIDTH,
-			'height'  => self::SCHEMA_HEIGHT,
-			'fit'     => 'cover',
-		];
-
-		// Merge with custom args
-		$args = array_merge( $args, $custom_args );
-
-		// Get the edge URL
-		$edge_url = Helpers::edge_src( $image_url, $args );
-		if ( ! $edge_url ) {
-			wp_cache_set($cache_key, false, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
-			return false;
-		}
-
-		// Build the result
-		$result = [
-			'url'     => $edge_url,
-			'width'   => $args['width'],
-			'height'  => $args['height'],
-		];
-
-		// Cache the result
-		wp_cache_set($cache_key, $result, Cache::CACHE_GROUP, HOUR_IN_SECONDS);
-
-		return $result;
-	}
-
-	/**
-	 * Alter the Organization's logo property to use the edge.
-	 *
-	 * @since 4.0.0
-	 * 
-	 * @param array $data The image schema properties.
-	 * @return array The modified properties.
+	 * @param array<string, mixed> $data Schema data.
+	 * @return array<string, mixed>
 	 */
 	public function edge_organization_logo( array $data ): array {
 
-		// Get the image ID from Yoast SEO.
-		$image_id = YoastSEO()->meta->for_current_page()->company_logo_id;
-		if ( ! $image_id ) {
-			return $data;
-		}
-
-		$image = wp_get_attachment_image_src( $image_id, 'full' );
-		if ( ! $image ) {
-			return $data;
-		}
-
-		// Get dimensions from the image.
-		$dimensions = Helpers::get_image_dimensions( $image_id );
-		if ( ! $dimensions ) {
-			return $data;
-		}
-
-		$processed = $this->process_schema_image(
-			$image[0],
-			[
-				'fit'    => 'contain',
-				'width'  => min( (int) $dimensions['width'], self::SCHEMA_WIDTH ),
-				'height' => min( (int) $dimensions['height'], self::SCHEMA_HEIGHT ),
-			]
-		);
-
-		if ( $processed ) {
-			$data['logo'] = [
-				'url'         => $processed['url'],
-				'contentUrl'  => $processed['url'],
-				'width'       => $processed['width'],
-				'height'      => $processed['height'],
-				'@type'       => 'ImageObject',
-			];
+		if ( isset( $data['logo']['url'] ) && is_string( $data['logo']['url'] ) ) {
+			$data['logo']['url']    = $this->transform_seo_image( $data['logo']['url'] );
+			$data['logo']['width']  = 1200;
+			$data['logo']['height'] = 675;
 		}
 
 		return $data;
 	}
 
 	/**
-	 * Transform schema image.
+	 * Transform thumbnailUrl.
 	 *
-	 * Processes and transforms schema image data.
-	 * This method:
-	 * - Transforms image URLs
-	 * - Handles image data
-	 * - Manages dimensions
-	 * - Ensures optimization
-	 * - Maintains schema format
-	 * - Supports multiple sizes
-	 *
-	 * @since      4.5.0
-	 * 
-	 * @param  array  $image_data The schema image data.
-	 * @param  object $context    The context object.
-	 * @param  object $graph_piece The graph piece object.
-	 * @return array             Modified schema image data.
+	 * @param array<string, mixed> $data Schema data.
+	 * @return array<string, mixed>
 	 */
-	public function transform_schema_image(array $image_data, $context, $graph_piece): array {
+	public function edge_thumbnail( array $data ): array {
 
-		// Skip if no URL
-		if (!isset($image_data['url'])) {
-			return $image_data;
+		if ( isset( $data['thumbnailUrl'] ) && is_string( $data['thumbnailUrl'] ) ) {
+			$data['thumbnailUrl'] = $this->transform_seo_image( $data['thumbnailUrl'] );
 		}
 
-		// Skip if not a local URL
-		if (!Helpers::is_local_url($image_data['url'])) {
-			return $image_data;
-		}
-
-		// Get dimensions
-		$width = $image_data['width'] ?? null;
-		$height = $image_data['height'] ?? null;
-
-		// Skip if we don't have dimensions
-		if (!$width || !$height) {
-			return $image_data;
-		}
-
-		// Transform the URL
-		$image_data['url'] = Helpers::edge_src($image_data['url'], [
-			'width' => $width,
-			'height' => $height,
-			'fit' => 'cover',
-			'quality' => 85,
-		]);
-
-		$image_data['contentUrl'] = $image_data['url'];
-
-		return $image_data;
+		return $data;
 	}
 
 	/**
-	 * Get default settings for this integration.
+	 * Transform image properties on schema pieces.
 	 *
-	 * Provides default configuration settings for the schema integration.
-	 * This method:
-	 * - Sets feature defaults
-	 * - Configures options
-	 * - Ensures consistency
-	 * - Supports customization
+	 * @param array<string, mixed> $data Schema data.
+	 * @return array<string, mixed>
+	 */
+	public function edge_images( array $data ): array {
+
+		if ( ! isset( $data['image'] ) ) {
+			return $data;
+		}
+
+		if ( is_string( $data['image'] ) ) {
+			$data['image'] = $this->transform_seo_image( $data['image'] );
+			return $data;
+		}
+
+		if ( ! is_array( $data['image'] ) ) {
+			return $data;
+		}
+
+		foreach ( $data['image'] as $key => $image ) {
+			if ( is_string( $image ) ) {
+				$data['image'][ $key ] = $this->transform_seo_image( $image );
+			} elseif ( is_array( $image ) && isset( $image['url'] ) && is_string( $image['url'] ) ) {
+				$data['image'][ $key ]['url']    = $this->transform_seo_image( $image['url'] );
+				$data['image'][ $key ]['width']  = 1200;
+				$data['image'][ $key ]['height'] = 675;
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Default settings.
 	 *
-	 * @since      4.5.0
-	 * 
-	 * @return array<string,mixed> Array of default feature settings.
+	 * @return array<string, mixed>
 	 */
 	public static function get_default_settings(): array {
+
 		return [
 			'edge_images_integration_yoast_schema' => true,
 		];
 	}
 
 	/**
-	 * Check if this integration should filter.
+	 * Whether to filter.
 	 *
-	 * Determines if schema integration should be active.
-	 * This method:
-	 * - Checks feature status
-	 * - Validates settings
-	 * - Ensures requirements
-	 * - Controls processing
-	 *
-	 * @since      4.5.0
-	 * 
-	 * @return bool True if integration should be active, false otherwise.
+	 * @return bool
 	 */
 	protected function should_filter(): bool {
-		
-		// Check if Yoast SEO is installed and active
-		if (!Integrations::is_enabled('yoast-seo')) {
+
+		if ( ! Integrations::is_enabled( 'yoast-seo' ) || ! Helpers::should_transform_images() ) {
 			return false;
 		}
 
-		// Check if image transformation is enabled
-		if (!Helpers::should_transform_images()) {
-			return false;
-		}
-
-		// Check if this specific integration is enabled in settings
-		return Settings::get_option('edge_images_integration_yoast_schema', true);
-	}
-
-	/**
-	 * Render integration settings.
-	 *
-	 * @since 5.3.0
-	 * @return void
-	 */
-	public static function render_settings(): void {
-		// Bail if user doesn't have sufficient permissions.
-		if (!current_user_can('manage_options')) {
-			return;
-		}
-
-		$schema_enabled = Settings::get_option('edge_images_integration_yoast_schema', true);
-		$social_enabled = Settings::get_option('edge_images_integration_yoast_social', true);
-		$sitemap_enabled = Settings::get_option('edge_images_integration_yoast_xml', true);
-		?>
-		<fieldset>
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="edge_images_integration_yoast_schema" 
-						value="1" 
-						<?php checked($schema_enabled); ?>
-					>
-					<?php esc_html_e('Enable schema.org image optimization', 'edge-images'); ?>
-				</label>
-			</p>
-
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="edge_images_integration_yoast_social" 
-						value="1" 
-						<?php checked($social_enabled); ?>
-					>
-					<?php esc_html_e('Enable social media image optimization', 'edge-images'); ?>
-				</label>
-			</p>
-
-			<p>
-				<label>
-					<input type="checkbox" 
-						name="edge_images_integration_yoast_xml" 
-						value="1" 
-						<?php checked($sitemap_enabled); ?>
-					>
-					<?php esc_html_e('Enable XML sitemap image optimization', 'edge-images'); ?>
-				</label>
-			</p>
-
-			<p class="description">
-				<?php esc_html_e('Edge Images can optimize images in Yoast SEO\'s schema.org output, social media tags, and XML sitemaps. Enable or disable these features as needed.', 'edge-images'); ?>
-			</p>
-		</fieldset>
-		<?php
+		return (bool) Settings::get_option( 'edge_images_integration_yoast_schema', true );
 	}
 }
-
-

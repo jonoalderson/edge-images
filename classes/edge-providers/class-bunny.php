@@ -21,7 +21,7 @@
 
 namespace Edge_Images\Edge_Providers;
 
-use Edge_Images\{Edge_Provider, Helpers};
+use Edge_Images\{Edge_Provider, Helpers, Settings};
 
 class Bunny extends Edge_Provider {
 
@@ -52,8 +52,18 @@ class Bunny extends Edge_Provider {
      * @return string The configured subdomain or empty string.
      */
     private static function get_subdomain(): string {
-        return get_option('edge_images_bunny_subdomain', '');
+        return (string) Settings::get_option( 'edge_images_bunny_subdomain', '' );
     }
+
+	/**
+	 * Whether Bunny is configured with a subdomain.
+	 *
+	 * @return bool
+	 */
+	public static function is_configured(): bool {
+
+		return '' !== self::get_subdomain();
+	}
 
     /**
      * Get the edge URL for an image.

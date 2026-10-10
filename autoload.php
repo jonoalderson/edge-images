@@ -12,7 +12,7 @@
  * - Efficient file loading
  *
  * Example class mappings:
- * - Edge_Images\Handler => /classes/class-handler.php
+ * - Edge_Images\Transformer => /classes/class-transformer.php
  * - Edge_Images\Edge_Providers\Cloudflare => /classes/edge-providers/class-cloudflare.php
  *
  * @package    Edge_Images
