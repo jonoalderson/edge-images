@@ -33,6 +33,11 @@ class Settings {
 	public const LOCALIZE_OPTION = 'edge_images_localize';
 
 	/**
+	 * Picture-wrapping option.
+	 */
+	public const PICTURE_OPTION = 'edge_images_picture';
+
+	/**
 	 * Option cache.
 	 *
 	 * @var array<string, mixed>
@@ -72,6 +77,16 @@ class Settings {
 	public static function is_localization_enabled(): bool {
 
 		return (bool) self::get_option( self::LOCALIZE_OPTION, false );
+	}
+
+	/**
+	 * Whether picture wrapping and its stylesheet are enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_picture_enabled(): bool {
+
+		return (bool) self::get_option( self::PICTURE_OPTION, false );
 	}
 
 	/**
@@ -135,6 +150,17 @@ class Settings {
 			[
 				'type'              => 'boolean',
 				'description'       => __( 'Fetch transformed images and store local copies.', 'edge-images' ),
+				'sanitize_callback' => [ self::class, 'sanitize_checkbox' ],
+				'default'           => false,
+			]
+		);
+
+		\register_setting(
+			self::OPTION_GROUP,
+			self::PICTURE_OPTION,
+			[
+				'type'              => 'boolean',
+				'description'       => __( 'Wrap bare images in picture elements and load the layout stylesheet.', 'edge-images' ),
 				'sanitize_callback' => [ self::class, 'sanitize_checkbox' ],
 				'default'           => false,
 			]

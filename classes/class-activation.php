@@ -21,6 +21,7 @@ class Activation {
 		'edge_images_provider'                      => 'none',
 		'edge_images_domain'                        => '',
 		'edge_images_localize'                      => false,
+		'edge_images_picture'                       => false,
 		'edge_images_bunny_subdomain'               => '',
 		'edge_images_imgix_subdomain'               => '',
 		'edge_images_imgproxy_url'                  => '',

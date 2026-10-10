@@ -47,7 +47,8 @@ namespace Edge_Images\Tests {
 	assert_contains( 'cdn-cgi/image/', $out, '2. resized block uses edge URL' );
 	assert_contains( 'w=480', $out, '2b. edge width matches editor 480px' );
 	assert_contains( 'width="480"', $out, '2c. width attr updated to layout' );
-	assert_contains( '<picture class="edge-images-container"', $out, '2d. picture wrap present' );
+	assert_not_contains( '<picture', $out, '2d. picture wrap stays off by default' );
+	assert_not_contains( 'edge-images-figure', $out, '2d2. figure class stays off by default' );
 	assert_contains( 'sizes="auto, (max-width: 480px) 100vw, 480px"', $out, '2e. sizes from layout width' );
 
 	// 3. Gallery block.
@@ -65,7 +66,7 @@ HTML;
 	// 4. Featured / attachment API HTML.
 	$attachment = '<img width="1200" height="800" src="https://example.com/wp-content/uploads/2024/hero-1200x800.jpg" class="attachment-post-thumbnail size-post-thumbnail wp-image-21" alt="" decoding="async" />';
 	$out        = $t->filter_attachment_image( $attachment, 21, [ 1200, 800 ], false, [] );
-	assert_contains( '<picture', $out, '4. featured image picture wrap' );
+	assert_not_contains( '<picture', $out, '4. featured image is not picture-wrapped by default' );
 	assert_contains( 'w=1200', $out, '4b. featured edge width' );
 	assert_contains( '/2024/hero.jpg', $out, '4c. full file in edge path' );
 	assert_contains( 'srcset=', $out, '4d. DPR srcset present' );
@@ -91,6 +92,24 @@ HTML;
 	assert_not_contains( 'cdn-cgi/image/', $out, '6b. second view uses local files' );
 	assert_contains( '/wp-content/uploads/', $out, '6c. local uploads URL' );
 	assert_contains( '-edge.', $out, '6d. localized filename marker' );
+
+	// 7. Picture option: bare images wrap, figures are marked, galleries stay bare.
+	$GLOBALS['edge_images_test_options']['edge_images_localize'] = false;
+	$GLOBALS['edge_images_test_options']['edge_images_picture']  = true;
+	edge_images_test_reset_settings_cache();
+
+	$out = $t->filter_content_images( $block );
+	assert_not_contains( '<picture', $out, '7. resized block figure is not picture-wrapped' );
+	assert_contains( 'edge-images-figure', $out, '7b. resized block figure is marked' );
+	assert_contains( 'width:480px', $out, '7c. resized block keeps its width style' );
+	assert_not_contains( 'content-visibility', $out, '7d. figure has no content-visibility' );
+
+	$out = $t->filter_content_images( $gallery );
+	assert_not_contains( '<picture', $out, '7e. gallery still not picture-wrapped' );
+	assert_not_contains( 'edge-images-figure', $out, '7f. gallery figures are not marked' );
+
+	$out = $t->filter_attachment_image( $attachment, 21, [ 1200, 800 ], false, [] );
+	assert_contains( '<picture class="edge-images-container"', $out, '7g. featured image picture wrap when enabled' );
 
 	finish( 'smoke checklist' );
 }

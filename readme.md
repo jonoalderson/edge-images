@@ -16,7 +16,7 @@ Layout width is decided before any URL is built:
 
 `src`, `srcset`, and `sizes` are then rewritten with the WordPress HTML API. Core `srcset` is replaced. Candidates are 1x, 1.5x, and 2x of the layout width, and they stop at the original file width so nothing is upscaled. When `sizes` is missing, or the layout width came from an inline style, a single image gets `sizes="(max-width: {width}px) 100vw, {width}px"` (prefixed with `auto, ` when the image is lazy-loaded). A multi-column gallery gets `sizes="(max-width: 599px) 50vw, {100/columns}vw"`.
 
-Images from `wp_get_attachment_image`, and content images outside a gallery, are wrapped in `<picture class="edge-images-container">`. Gallery images in post content stay unwrapped so the core gallery layout keeps working.
+Picture wrapping is off until you enable it. While it is off, images keep their original tags and the layout stylesheet is not loaded. While it is on, bare images, including those from `wp_get_attachment_image`, are wrapped in `<picture class="edge-images-container">`. A content image that already sits in a `<figure>` is not wrapped; that figure gets `edge-images-figure` instead, and the containment rules stay on `<picture>` only. Gallery images stay unwrapped either way.
 
 The edge URL is built from the full-size file. Defaults are `fit=cover`, `format=auto`, and quality `85`. SVGs and existing AVIF files keep their original URLs. Local avatars (files on this site) are rewritten at the avatar size with `fit=cover`. They are not picture-wrapped, and they are not localized. Remote avatars such as Gravatar are left alone.
 
@@ -30,12 +30,18 @@ While it is on, the first view of an attachment still uses the edge URL and adds
 
 Local copies use origin storage and an extra fetch. On Cloudflare they might still be worth it: Image Resizing is billed on unique transformations per month, and a stored variant is only requested once instead of counting again each month. Leave this off when another provider already caches the transformed images cheaply.
 
+### Optional picture wrapping
+
+**Wrap bare images in a picture element** is off by default, because the extra element and its stylesheet can change existing layouts.
+
+While it is on, the stylesheet in `assets/css/images.min.css` is loaded. `max-width`, `content-visibility`, and `contain-intrinsic-size` apply only to `picture.edge-images-container`. A figure that already wraps the image gets `edge-images-figure` and only the image display rules, so captions and full-width alignments keep the figure's own box. A linked image with no figure becomes `<a><picture><img></picture></a>`.
+
 ## Features
 
 * Markup rewrite for `wp_get_attachment_image`, content, excerpts, widgets, and local avatars
 * Layout width from the requested size, attributes, block-editor inline styles, or gallery columns
 * DPR `srcset` at 1x, 1.5x, and 2x, clamped to the original file
-* Picture wrapping for images outside galleries
+* Optional picture wrapping, off by default. Existing figures are marked instead of wrapped
 * Providers: Cloudflare, Accelerated Domains, Bunny CDN, Imgix, Imgproxy
 * Yoast SEO and Rank Math social, schema, and sitemap URLs at 1200×675, with a toggle per surface
 * Settings status panel, admin notices, and a Plugins-screen settings link
@@ -78,9 +84,11 @@ add_filter( 'edge_images_domain', fn( $domain ) => $domain );
 
 `edge_images_max_width` and `edge_images_width_multipliers` were removed in 6.0.0.
 
-Transform arguments accepted on an image (short or long name) are `width`/`w`, `height`/`h`, `fit`, `format`/`f`, `quality`/`q`, `gravity`/`g`, and `sharpen`. Pass picture attributes through `wp_get_attachment_image()` as `$attr['picture']`.
+Transform arguments accepted on an image (short or long name) are `width`/`w`, `height`/`h`, `fit`, `format`/`f`, `quality`/`q`, `gravity`/`g`, and `sharpen`. Pass picture attributes through `wp_get_attachment_image()` as `$attr['picture']`. Those attributes are applied only while picture wrapping is enabled.
 
 ## Example output
+
+With picture wrapping enabled, a bare image looks like this:
 
 ```html
 <picture class="edge-images-container" style="--content-visibility: auto; --max-width: 640px; --width: 640px; --height: 400px">
@@ -101,7 +109,8 @@ Image URLs are sent to your chosen edge provider for transformation. The plugin 
 
 ### 6.0.0
 
-* BREAKING: Rebuild around markup and URL rewriting. The HTML API rewrites `wp_get_attachment_image`, content, excerpts, widgets, and local avatars. Layout width comes from the requested size, width and height attributes, an inline `width:Npx` on the image or its figure, or the gallery column count. `srcset` is 1x / 1.5x / 2x of that width, clamped so candidates never upscale past the original file. Images from `wp_get_attachment_image`, and content images outside a gallery, are wrapped in `<picture class="edge-images-container">`.
+* BREAKING: Rebuild around markup and URL rewriting. The HTML API rewrites `wp_get_attachment_image`, content, excerpts, widgets, and local avatars. Layout width comes from the requested size, width and height attributes, an inline `width:Npx` on the image or its figure, or the gallery column count. `srcset` is 1x / 1.5x / 2x of that width, clamped so candidates never upscale past the original file.
+* FEATURE: Picture wrapping is optional and off by default. While it is off, no picture element is added and the layout stylesheet is not loaded. While it is on, bare images are wrapped in `picture.edge-images-container`. An image that already sits in a figure gets the `edge-images-figure` class on that figure instead. Containment CSS stays on picture elements only.
 * BREAKING: Dimension engine, feature registry, native provider, rewrites, HTML and htaccess caches, Relevanssi, Enable Media Replace, and Bricks integrations removed.
 * BREAKING: Requires PHP 8.0 and WordPress 6.4.
 * BREAKING: `edge_images_max_width` and `edge_images_width_multipliers` removed. The width-multiplier `srcset` ladder is gone.

@@ -148,7 +148,7 @@ class Transformer {
 		}
 
 		if ( $width <= 0 || $height <= 0 ) {
-			return $this->wrap_in_picture( $html, $width, $height, $picture_attrs );
+			return $this->maybe_wrap_in_picture( $html, $width, $height, $picture_attrs );
 		}
 
 		$mime = \get_post_mime_type( $attachment_id );
@@ -161,13 +161,13 @@ class Transformer {
 				$html = $processor->get_updated_html();
 			}
 
-			return $this->wrap_in_picture( $html, $width, $height, $picture_attrs );
+			return $this->maybe_wrap_in_picture( $html, $width, $height, $picture_attrs );
 		}
 
 		$properties  = Layout::normalize_properties( $attr );
 		$original_url = \wp_get_attachment_image_url( $attachment_id, 'full' );
 		if ( ! $original_url ) {
-			return $this->wrap_in_picture( $html, $width, $height, $picture_attrs );
+			return $this->maybe_wrap_in_picture( $html, $width, $height, $picture_attrs );
 		}
 
 		$max_width = $this->attachment_max_width( $attachment_id );
@@ -196,7 +196,7 @@ class Transformer {
 			$html = $processor->get_updated_html();
 		}
 
-		return $this->wrap_in_picture( $html, $width, $height, $picture_attrs );
+		return $this->maybe_wrap_in_picture( $html, $width, $height, $picture_attrs );
 	}
 
 	/**
@@ -313,12 +313,18 @@ class Transformer {
 				$this->maybe_set_sizes( $processor, $width, $force_sizes );
 			}
 
-			if ( empty( $gallery ) ) {
+			if ( empty( $gallery ) && Settings::is_picture_enabled() ) {
 				$processor->set_attribute( 'data-edge-wrap', '1' );
 			}
 		}
 
-		return $this->wrap_content_images( $processor->get_updated_html() );
+		$html = $processor->get_updated_html();
+
+		if ( ! Settings::is_picture_enabled() ) {
+			return $html;
+		}
+
+		return $this->wrap_content_images( $this->mark_wrapping_figures( $html ) );
 	}
 
 	/**
@@ -383,6 +389,10 @@ class Transformer {
 	 */
 	public function enqueue_styles(): void {
 
+		if ( ! Settings::is_picture_enabled() ) {
+			return;
+		}
+
 		\wp_enqueue_style(
 			'edge-images',
 			Helpers::STYLES_URL . '/images.min.css',
@@ -438,6 +448,24 @@ class Transformer {
 		}
 
 		$processor->set_attribute( 'sizes', Layout::sizes_for_width( $width, $lazy ) );
+	}
+
+	/**
+	 * Wrap in picture only while the setting is on.
+	 *
+	 * @param string               $html   HTML.
+	 * @param int                  $width  Width.
+	 * @param int                  $height Height.
+	 * @param array<string, mixed> $attrs  Extra picture attrs.
+	 * @return string
+	 */
+	private function maybe_wrap_in_picture( string $html, int $width, int $height, array $attrs = [] ): string {
+
+		if ( ! Settings::is_picture_enabled() ) {
+			return $html;
+		}
+
+		return $this->wrap_in_picture( $html, $width, $height, $attrs );
 	}
 
 	/**
@@ -755,5 +783,212 @@ class Transformer {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Mark a wrapping figure instead of inserting picture.
+	 *
+	 * A qualifying figure is the img parent, or the parent of a single
+	 * wrapping anchor. Gallery figures, figures with more than one image,
+	 * and images already inside picture are left for the picture pass.
+	 *
+	 * @param string $content Content.
+	 * @return string
+	 */
+	private function mark_wrapping_figures( string $content ): string {
+
+		if ( ! preg_match_all( '/<img\b[^>]*\bdata-edge-wrap=[\'"]1[\'"][^>]*>/i', $content, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return $content;
+		}
+
+		$items = $matches[0];
+		for ( $i = count( $items ) - 1; $i >= 0; $i-- ) {
+			$img_html   = $items[ $i ][0];
+			$img_offset = (int) $items[ $i ][1];
+			$figure     = null;
+
+			if ( $this->offset_inside_open_picture( $content, $img_offset ) ) {
+				$clear_wrap = true;
+			} else {
+				$figure     = $this->qualifying_figure( $content, $img_offset );
+				$clear_wrap = null !== $figure;
+			}
+
+			if ( ! $clear_wrap ) {
+				continue;
+			}
+
+			$processor = new \WP_HTML_Tag_Processor( $img_html );
+			if ( ! $processor->next_tag( 'img' ) ) {
+				continue;
+			}
+
+			$width  = (int) $processor->get_attribute( 'width' );
+			$height = (int) $processor->get_attribute( 'height' );
+			$processor->remove_attribute( 'data-edge-wrap' );
+			$clean = $processor->get_updated_html();
+
+			if ( null !== $figure ) {
+				$new_tag = $this->decorate_figure_tag( $figure['tag'], $width, $height );
+				$content = substr_replace( $content, $new_tag, $figure['start'], $figure['length'] );
+				if ( $figure['start'] < $img_offset ) {
+					$img_offset += strlen( $new_tag ) - $figure['length'];
+				}
+			}
+
+			$content = substr_replace( $content, $clean, $img_offset, strlen( $img_html ) );
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Find a figure open tag that directly wraps this image.
+	 *
+	 * @param string $content    Content.
+	 * @param int    $img_offset Byte offset of the img tag.
+	 * @return array{start: int, length: int, tag: string}|null
+	 */
+	private function qualifying_figure( string $content, int $img_offset ): ?array {
+
+		$before      = substr( $content, 0, $img_offset );
+		$trimmed_len = strlen( rtrim( $before ) );
+		if ( $trimmed_len <= 0 ) {
+			return null;
+		}
+
+		$trimmed = substr( $before, 0, $trimmed_len );
+		if ( ! str_ends_with( $trimmed, '>' ) ) {
+			return null;
+		}
+
+		if ( ! preg_match( '/<([a-zA-Z0-9:-]+)\b[^<>]*>$/', $trimmed, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return null;
+		}
+
+		$tag_name      = strtolower( $matches[1][0] );
+		$tag_start     = (int) $matches[0][1];
+		$figure_tag    = '';
+		$figure_start  = 0;
+
+		if ( 'a' === $tag_name ) {
+			$before_anchor = rtrim( substr( $trimmed, 0, $tag_start ) );
+			if ( ! preg_match( '/<figure\b[^<>]*>$/i', $before_anchor, $figure_match, PREG_OFFSET_CAPTURE ) ) {
+				return null;
+			}
+			$figure_tag   = $figure_match[0][0];
+			$figure_start = (int) $figure_match[0][1];
+		} elseif ( 'figure' === $tag_name ) {
+			$figure_tag   = $matches[0][0];
+			$figure_start = $tag_start;
+		} else {
+			return null;
+		}
+
+		if ( preg_match( '/\bwp-block-gallery\b/i', $figure_tag ) || $this->offset_inside_gallery( $content, $img_offset ) ) {
+			return null;
+		}
+
+		$figure_html = $this->slice_figure( $content, $figure_start );
+		if ( substr_count( strtolower( $figure_html ), '<img' ) > 1 ) {
+			return null;
+		}
+
+		return [
+			'start'  => $figure_start,
+			'length' => strlen( $figure_tag ),
+			'tag'    => $figure_tag,
+		];
+	}
+
+	/**
+	 * Slice one figure element, including nested figures.
+	 *
+	 * @param string $content     Content.
+	 * @param int    $open_start  Byte offset of the opening tag.
+	 * @return string
+	 */
+	private function slice_figure( string $content, int $open_start ): string {
+
+		$rest = substr( $content, $open_start );
+		if ( ! preg_match( '/^<figure\b[^>]*>/i', $rest, $open ) ) {
+			return $rest;
+		}
+
+		$offset = strlen( $open[0] );
+		$depth  = 1;
+
+		while ( $depth > 0 && preg_match( '/<\/?figure\b[^>]*>/i', $rest, $match, PREG_OFFSET_CAPTURE, $offset ) ) {
+			$token  = $match[0][0];
+			$offset = (int) $match[0][1] + strlen( $token );
+			if ( 0 === stripos( $token, '</figure' ) ) {
+				--$depth;
+			} else {
+				++$depth;
+			}
+		}
+
+		return substr( $rest, 0, $offset );
+	}
+
+	/**
+	 * Whether an offset sits inside an unclosed picture element.
+	 *
+	 * @param string $content Content.
+	 * @param int    $offset  Byte offset.
+	 * @return bool
+	 */
+	private function offset_inside_open_picture( string $content, int $offset ): bool {
+
+		$before    = substr( $content, 0, $offset );
+		$last_open = strripos( $before, '<picture' );
+		if ( false === $last_open ) {
+			return false;
+		}
+
+		$last_close = strripos( $before, '</picture' );
+
+		return false === $last_close || $last_close < $last_open;
+	}
+
+	/**
+	 * Add the figure class and size variables without replacing width.
+	 *
+	 * @param string $tag    Opening figure tag.
+	 * @param int    $width  Layout width.
+	 * @param int    $height Layout height.
+	 * @return string
+	 */
+	private function decorate_figure_tag( string $tag, int $width, int $height ): string {
+
+		$processor = new \WP_HTML_Tag_Processor( $tag );
+		if ( ! $processor->next_tag( 'figure' ) ) {
+			return $tag;
+		}
+
+		$class = $processor->get_attribute( 'class' );
+		$names = [];
+		if ( is_string( $class ) && '' !== $class ) {
+			$split = preg_split( '/\s+/', trim( $class ) );
+			if ( is_array( $split ) ) {
+				$names = $split;
+			}
+		}
+		if ( ! in_array( 'edge-images-figure', $names, true ) ) {
+			$names[] = 'edge-images-figure';
+		}
+		$processor->set_attribute( 'class', implode( ' ', array_filter( $names ) ) );
+
+		if ( $width > 0 && $height > 0 ) {
+			$style = $processor->get_attribute( 'style' );
+			$style = is_string( $style ) ? trim( $style ) : '';
+			if ( '' !== $style && ! str_ends_with( $style, ';' ) ) {
+				$style .= ';';
+			}
+			$style = trim( $style . ' --width: ' . $width . 'px; --height: ' . $height . 'px' );
+			$processor->set_attribute( 'style', $style );
+		}
+
+		return $processor->get_updated_html();
 	}
 }

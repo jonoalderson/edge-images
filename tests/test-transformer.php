@@ -63,29 +63,29 @@ namespace Edge_Images\Tests {
 		false,
 		[ 'fit' => 'contain', 'q' => 70 ]
 	);
-	assert_contains( '<picture', $out, 'attachment wrapped in picture' );
-	assert_contains( 'edge-images-container', $out, 'picture has container class' );
+	assert_not_contains( '<picture', $out, 'attachment is not picture-wrapped by default' );
+	assert_not_contains( 'edge-images-container', $out, 'attachment has no container class by default' );
 	assert_contains( '/cdn-cgi/image/', $out, 'attachment uses cloudflare edge URL' );
 	assert_contains( 'w=640', $out, 'attachment edge width 640' );
 	assert_contains( 'fit=contain', $out, 'attachment fit from attr' );
 	assert_contains( 'q=70', $out, 'attachment quality from attr' );
 	assert_contains( 'srcset=', $out, 'attachment has srcset' );
 	assert_not_contains( ' fit=', $out, 'fit attribute stripped from img attrs listing' ); // loose
-	assert_contains( '--max-width: 640px', $out, 'picture CSS var max-width' );
+	assert_not_contains( '--max-width:', $out, 'picture CSS vars stay off by default' );
 	assert_contains( '/wp-content/uploads/photo.jpg', $out, 'edge URL targets full file not intermediate' );
 
 	// --- Named size from tag dimensions ---
 	$html = '<img width="300" height="200" src="https://example.com/wp-content/uploads/photo-300x200.jpg" class="attachment-medium size-medium wp-image-12" />';
 	$out  = $transformer->filter_attachment_image( $html, 12, 'medium', false, [] );
 	assert_contains( 'w=300', $out, 'named size uses tag width' );
-	assert_contains( '<picture', $out, 'named size picture wrap' );
+	assert_not_contains( '<picture', $out, 'named size is not picture-wrapped by default' );
 
 	// --- SVG skip transform but keep dimensions + picture ---
 	$html = '<img width="80" height="80" src="https://example.com/wp-content/uploads/icon.svg" class="wp-image-99" />';
 	$out  = $transformer->filter_attachment_image( $html, 99, [ 80, 80 ], false, [] );
 	assert_not_contains( '/cdn-cgi/image/', $out, 'SVG not edge-transformed' );
 	assert_contains( 'width="80"', $out, 'SVG width kept' );
-	assert_contains( '<picture', $out, 'SVG still picture-wrapped' );
+	assert_not_contains( '<picture', $out, 'SVG is not picture-wrapped by default' );
 
 	// --- Block editor style width ---
 	$content = '<figure class="wp-block-image"><img class="wp-image-12" src="https://example.com/wp-content/uploads/photo-1024x768.jpg" width="1024" height="768" style="width:400px;height:auto" loading="lazy" /></figure>';
@@ -94,7 +94,8 @@ namespace Edge_Images\Tests {
 	assert_contains( 'height="300"', $out, 'block style scales height from aspect ratio' );
 	assert_contains( 'w=400', $out, 'block style edge request width 400' );
 	assert_contains( 'sizes="auto, (max-width: 400px) 100vw, 400px"', $out, 'block style lazy sizes from layout width' );
-	assert_contains( '<picture', $out, 'content image picture-wrapped' );
+	assert_not_contains( '<picture', $out, 'content image is not picture-wrapped by default' );
+	assert_not_contains( 'edge-images-figure', $out, 'figure class stays off by default' );
 	assert_contains( '/wp-content/uploads/photo.jpg', $out, 'content uses full attachment URL' );
 
 	// --- Figure style width (older markup) ---
@@ -182,6 +183,63 @@ HTML;
 	Localizer::flush_queue();
 	$queue = get_option( Localizer::QUEUE_OPTION, [] );
 	assert_true( is_array( $queue ) && [] !== $queue, 'localize queues a job' );
+
+	// --- Picture wrapping on ---
+	$GLOBALS['edge_images_test_options']['edge_images_localize'] = false;
+	$GLOBALS['edge_images_test_options']['edge_images_picture']  = true;
+	edge_images_test_reset_settings_cache();
+
+	$html = '<img width="640" height="400" src="https://example.com/wp-content/uploads/photo-640x400.jpg" class="wp-image-12" />';
+	$out  = $transformer->filter_attachment_image( $html, 12, [ 640, 400 ], false, [] );
+	assert_contains( '<picture class="edge-images-container"', $out, 'picture on wraps a bare attachment' );
+	assert_contains( '--content-visibility: auto', $out, 'picture on sets content-visibility' );
+	assert_contains( '--max-width: 640px', $out, 'picture on sets max-width' );
+	assert_contains( '/cdn-cgi/image/', $out, 'picture on still uses an edge URL' );
+
+	$content = '<img class="wp-image-12" src="https://example.com/wp-content/uploads/photo.jpg" width="400" height="300" />';
+	$out     = $transformer->filter_content_images( $content );
+	assert_contains( '<picture', $out, 'picture on wraps a bare content image' );
+	assert_contains( 'edge-images-container', $out, 'bare content image uses the picture class' );
+
+	$content = '<figure class="wp-block-image" style="width:320px"><img class="wp-image-12" src="https://example.com/wp-content/uploads/photo.jpg" width="1024" height="768" /></figure>';
+	$out     = $transformer->filter_content_images( $content );
+	assert_not_contains( '<picture', $out, 'figure image is not picture-wrapped' );
+	assert_contains( 'edge-images-figure', $out, 'figure receives edge-images-figure' );
+	assert_contains( 'width:320px', $out, 'figure keeps its resized width' );
+	assert_contains( '--width: 320px', $out, 'figure receives layout width variable' );
+	assert_contains( '--height: 240px', $out, 'figure receives scaled height variable' );
+	assert_not_contains( 'content-visibility', $out, 'figure does not receive content-visibility' );
+
+	$content = '<figure class="wp-block-image"><a href="https://example.com/wp-content/uploads/photo.jpg"><img class="wp-image-12" src="https://example.com/wp-content/uploads/photo.jpg" width="800" height="600" /></a></figure>';
+	$out     = $transformer->filter_content_images( $content );
+	assert_not_contains( '<picture', $out, 'linked figure image is not picture-wrapped' );
+	assert_contains( 'edge-images-figure', $out, 'linked figure receives the class' );
+	assert_contains( '<a href=', $out, 'link around the image stays' );
+
+	$content = '<figure class="wp-block-image"><img class="wp-image-12" src="https://example.com/wp-content/uploads/photo.jpg" width="640" height="480" /><figcaption>A caption</figcaption></figure>';
+	$out     = $transformer->filter_content_images( $content );
+	assert_contains( 'edge-images-figure', $out, 'captioned figure is marked' );
+	assert_contains( '<figcaption>A caption</figcaption>', $out, 'caption is kept' );
+	assert_not_contains( '<picture', $out, 'captioned figure is not picture-wrapped' );
+	assert_not_contains( 'content-visibility', $out, 'captioned figure does not receive content-visibility' );
+
+	$content = <<<'HTML'
+<figure class="wp-block-gallery has-nested-images columns-3 is-cropped">
+<figure class="wp-block-image size-large"><img class="wp-image-12" src="https://example.com/wp-content/uploads/photo.jpg" width="1024" height="768" alt="" /></figure>
+</figure>
+HTML;
+	$out = $transformer->filter_content_images( $content );
+	assert_not_contains( '<picture', $out, 'gallery stays unwrapped when picture is on' );
+	assert_not_contains( 'edge-images-figure', $out, 'gallery figures are not marked' );
+
+	$content = '<picture><img class="wp-image-12" src="https://example.com/wp-content/uploads/photo.jpg" width="400" height="300" /></picture>';
+	$out     = $transformer->filter_content_images( $content );
+	assert_same( 1, substr_count( strtolower( $out ), '<picture' ), 'existing picture is not wrapped again' );
+
+	$content = '<a href="https://example.com/photo.jpg"><img class="wp-image-12" src="https://example.com/wp-content/uploads/photo.jpg" width="400" height="300" /></a>';
+	$out     = $transformer->filter_content_images( $content );
+	assert_contains( '<picture', $out, 'linked image without a figure is picture-wrapped' );
+	assert_contains( '<a href=', $out, 'link remains around the picture' );
 
 	finish( 'transformer integration' );
 }

@@ -19,6 +19,7 @@ $options = [
 	'edge_images_provider',
 	'edge_images_domain',
 	'edge_images_localize',
+	'edge_images_picture',
 	'edge_images_bunny_subdomain',
 	'edge_images_imgix_subdomain',
 	'edge_images_imgproxy_url',
