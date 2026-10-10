@@ -4,7 +4,7 @@ Tags: images, optimization, cdn, cloudflare, performance
 Tested up to: 7.1
 Requires at least: 6.4
 Requires PHP: 8.0
-Stable tag: 6.0.0
+Stable tag: 6.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -309,6 +309,10 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * [Report issues](https://github.com/jonoalderson/edge-images/issues)
 
 == Changelog ==
+
+= 6.0.1 =
+* Tested up to WordPress 7.1.
+* Readme describes the 6.0 behavior in the directory listing again, and the short description fits the 150 character limit.
 
 = 6.0.0 =
 * BREAKING: Rebuild around markup and URL rewriting. The HTML API rewrites `wp_get_attachment_image`, content, excerpts, widgets, and local avatars. Layout width comes from the requested size, width and height attributes, an inline `width:Npx` on the image or its figure, or the gallery column count. `srcset` is 1x / 1.5x / 2x of that width, clamped so candidates never upscale past the original file.
