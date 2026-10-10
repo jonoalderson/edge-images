@@ -215,11 +215,22 @@ class Admin_Page {
 			EDGE_IMAGES_ADMIN_PAGE_SLUG
 		);
 
+		\add_settings_field(
+			'edge_images_integrations_status',
+			__( 'Detected plugins', 'edge-images' ),
+			[ $this, 'render_integrations_status' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_integrations'
+		);
+
 		$this->register_integration_fields();
 	}
 
 	/**
-	 * Register Yoast / Rank Math toggles for active plugins only.
+	 * Register Yoast / Rank Math toggles.
+	 *
+	 * Inactive plugins still render their rows (greyed out) so detection is visible.
+	 * Their inputs are omitted from the form so saving does not wipe stored options.
 	 *
 	 * @return void
 	 */
@@ -239,9 +250,7 @@ class Admin_Page {
 		];
 
 		foreach ( $groups as $group => $fields ) {
-			if ( ! Integrations::is_enabled( $group ) ) {
-				continue;
-			}
+			$active = Integrations::is_enabled( $group );
 
 			foreach ( $fields as $key => $label ) {
 				$option = 'edge_images_integration_' . $key;
@@ -254,7 +263,9 @@ class Admin_Page {
 					'edge_images_integrations',
 					[
 						'option' => $option,
-						'class'  => 'edge-images-integration-row',
+						'group'  => $group,
+						'active' => $active,
+						'class'  => 'edge-images-integration-row' . ( $active ? ' is-active' : ' is-inactive' ),
 					]
 				);
 			}
@@ -320,15 +331,33 @@ class Admin_Page {
 	 */
 	public function render_integrations_section(): void {
 
-		$yoast     = Integrations::is_enabled( 'yoast-seo' );
-		$rank_math = Integrations::is_enabled( 'rank-math' );
+		echo '<p class="edge-images-section-intro">' . \esc_html__( 'Social, schema, and sitemap images are rewritten at 1200×675 when the matching plugin is active. These always use edge URLs (not localized files).', 'edge-images' ) . '</p>';
+	}
 
-		if ( ! $yoast && ! $rank_math ) {
-			echo '<p class="edge-images-section-intro">' . \esc_html__( 'Install Yoast SEO or Rank Math to rewrite social, schema, and sitemap image URLs at 1200×675.', 'edge-images' ) . '</p>';
-			return;
+	/**
+	 * Detection status for Yoast / Rank Math.
+	 *
+	 * @return void
+	 */
+	public function render_integrations_status(): void {
+
+		$plugins = [
+			'yoast-seo' => __( 'Yoast SEO', 'edge-images' ),
+			'rank-math' => __( 'Rank Math SEO', 'edge-images' ),
+		];
+
+		echo '<ul class="edge-images-detection">';
+		foreach ( $plugins as $id => $label ) {
+			$active = Integrations::is_enabled( $id );
+			printf(
+				'<li class="%1$s"><span class="dashicons %2$s edge-images-detection__mark" aria-hidden="true"></span><span class="edge-images-detection__label">%3$s</span><span class="edge-images-detection__state">%4$s</span></li>',
+				\esc_attr( $active ? 'is-detected' : 'is-missing' ),
+				\esc_attr( $active ? 'dashicons-yes-alt' : 'dashicons-marker' ),
+				\esc_html( $label ),
+				\esc_html( $active ? __( 'Detected — integrated', 'edge-images' ) : __( 'Not detected', 'edge-images' ) )
+			);
 		}
-
-		echo '<p class="edge-images-section-intro">' . \esc_html__( 'These always use edge URLs (not localized files), at 1200×675.', 'edge-images' ) . '</p>';
+		echo '</ul>';
 	}
 
 	/**
@@ -561,7 +590,24 @@ class Admin_Page {
 	public function render_integration_checkbox( array $args ): void {
 
 		$option = (string) ( $args['option'] ?? '' );
+		$active = ! empty( $args['active'] );
 		if ( '' === $option ) {
+			return;
+		}
+
+		$checked = (bool) Settings::get_option( $option, true );
+
+		if ( ! $active ) {
+			printf(
+				'<label class="edge-images-checkbox is-muted">
+					<input type="checkbox" %1$s disabled="disabled" />
+					<span>%2$s</span>
+				</label>
+				<p class="description">%3$s</p>',
+				\checked( $checked, true, false ),
+				\esc_html__( 'Rewrite through the edge provider', 'edge-images' ),
+				\esc_html__( 'Activate the plugin to enable this integration.', 'edge-images' )
+			);
 			return;
 		}
 
@@ -572,7 +618,7 @@ class Admin_Page {
 				<span>%3$s</span>
 			</label>',
 			\esc_attr( $option ),
-			\checked( (bool) Settings::get_option( $option, true ), true, false ),
+			\checked( $checked, true, false ),
 			\esc_html__( 'Rewrite through the edge provider', 'edge-images' )
 		);
 	}

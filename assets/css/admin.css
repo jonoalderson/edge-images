@@ -154,6 +154,68 @@
 	margin-bottom: 0;
 }
 
+/* Integration detection list */
+.edge-images-detection {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	max-width: 28rem;
+}
+
+.edge-images-detection li {
+	display: grid;
+	grid-template-columns: 1.5rem 1fr auto;
+	gap: 0.5rem;
+	align-items: center;
+	margin: 0 0 0.4rem;
+	padding: 0.55rem 0.7rem;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	background: #f6f7f7;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.edge-images-detection li.is-detected {
+	border-color: #c3e6cb;
+	background: #edfaef;
+}
+
+.edge-images-detection__mark {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	text-align: center;
+	color: #8c8f94;
+}
+
+.edge-images-detection li.is-detected .edge-images-detection__mark {
+	color: #00a32a;
+}
+
+.edge-images-detection__label {
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.edge-images-detection__state {
+	color: #50575e;
+}
+
+.edge-images-detection li.is-detected .edge-images-detection__state {
+	color: #007a1f;
+}
+
+.edge-images-settings tr.is-inactive th,
+.edge-images-settings tr.is-inactive td {
+	opacity: 0.72;
+}
+
+.edge-images-checkbox.is-muted {
+	font-weight: 400;
+	color: #646970;
+}
+
 .edge-images-settings .submit {
 	margin-top: 0.5rem;
 	padding-top: 0.5rem;
