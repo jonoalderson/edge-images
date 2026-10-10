@@ -1,7 +1,7 @@
 === Edge Images ===
 Contributors: jonoaldersonwp
 Tags: images, optimization, cdn, cloudflare, performance
-Tested up to: 6.8
+Tested up to: 7.1
 Requires at least: 6.4
 Requires PHP: 8.0
 Stable tag: 6.0.0
