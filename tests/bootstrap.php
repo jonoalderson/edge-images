@@ -34,6 +34,7 @@ $GLOBALS['edge_images_test_options'] = array_merge(
 		'edge_images_provider'         => 'cloudflare',
 		'edge_images_domain'           => 'https://cdn.example.com',
 		'edge_images_localize'         => false,
+		'edge_images_picture'          => false,
 		'edge_images_bunny_subdomain'  => 'myzone',
 		'edge_images_imgix_subdomain'  => 'mysite',
 		'edge_images_imgproxy_url'     => 'https://imgproxy.example.com',

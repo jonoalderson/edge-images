@@ -1,5 +1,6 @@
-// Main container for edge-optimized images
-.edge-images-container {
+// Picture container. Containment and the content-size cap stay on picture
+// only, because those rules shrink full-width alignments and skip captions.
+picture.edge-images-container {
 	display: block;
 	position: relative;
 	max-width: var(--wp--style--global--content-size, var(--max-width, 100%));
@@ -13,25 +14,35 @@
 		max-width: 100%;
 		max-height: 100%;
 		height: auto;
-		border-radius: inherit; // Inherit the border radius from the container
-		
+		border-radius: inherit; // Inherit the border radius from the container.
+
 		// SVGs are a sometimes headache.
 		&[src$=".svg"] {
 			height: 100%;
 			aspect-ratio: auto;
 		}
-		
 	}
-	
+
 	&.contain {
 		img {
 			object-fit: contain;
 		}
 	}
-	
+
 	&.cover {
 		img {
 			object-fit: cover;
 		}
+	}
+}
+
+// Existing figures keep their own box. Do not set max-width or content-visibility here.
+figure.edge-images-figure {
+	> img,
+	> a > img {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		border-radius: inherit;
 	}
 }

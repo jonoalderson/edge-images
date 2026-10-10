@@ -208,6 +208,14 @@ class Admin_Page {
 			'edge_images_delivery'
 		);
 
+		\add_settings_field(
+			Settings::PICTURE_OPTION,
+			__( 'Picture elements', 'edge-images' ),
+			[ $this, 'render_picture_field' ],
+			EDGE_IMAGES_ADMIN_PAGE_SLUG,
+			'edge_images_delivery'
+		);
+
 		\add_settings_section(
 			'edge_images_integrations',
 			__( 'SEO integrations', 'edge-images' ),
@@ -321,7 +329,7 @@ class Admin_Page {
 	 */
 	public function render_delivery_section(): void {
 
-		echo '<p class="edge-images-section-intro">' . \esc_html__( 'By default every page request uses edge URLs. Localization is optional and off until you enable it.', 'edge-images' ) . '</p>';
+		echo '<p class="edge-images-section-intro">' . \esc_html__( 'By default every page request uses edge URLs. Picture wrapping and localization are optional and off until you enable them.', 'edge-images' ) . '</p>';
 	}
 
 	/**
@@ -571,13 +579,43 @@ class Admin_Page {
 			<div class="edge-images-callout edge-images-callout--warn">
 				<p><strong>%4$s</strong> %5$s</p>
 				<p>%6$s</p>
+				<p>%7$s</p>
 			</div>',
 			\esc_attr( Settings::LOCALIZE_OPTION ),
 			\checked( Settings::is_localization_enabled(), true, false ),
 			\esc_html__( 'Store transformed images locally under Uploads', 'edge-images' ),
 			\esc_html__( 'Off by default.', 'edge-images' ),
 			\esc_html__( 'While files are missing, pages still use edge URLs. A background cron job fetches the 1× / 1.5× / 2× variants and swaps the markup once they exist.', 'edge-images' ),
-			\esc_html__( 'This adds origin storage and fetch traffic. Prefer leaving it off when the edge CDN already caches transformed images well.', 'edge-images' )
+			\esc_html__( 'This adds origin storage and fetch traffic. Prefer leaving it off when the edge CDN already caches transformed images well.', 'edge-images' ),
+			\esc_html__( 'On Cloudflare, local copies might reduce cost. Image Resizing is billed on unique transformations per month, so a stored variant is only requested once instead of counting again each month.', 'edge-images' )
+		);
+	}
+
+	/**
+	 * Picture-wrapping checkbox.
+	 *
+	 * Off by default. The layout stylesheet is enqueued only while this is on.
+	 *
+	 * @return void
+	 */
+	public function render_picture_field(): void {
+
+		printf(
+			'<input type="hidden" name="%1$s" value="0" />
+			<label class="edge-images-checkbox">
+				<input type="checkbox" name="%1$s" value="1" %2$s />
+				<span>%3$s</span>
+			</label>
+			<div class="edge-images-callout edge-images-callout--warn">
+				<p><strong>%4$s</strong> %5$s</p>
+				<p>%6$s</p>
+			</div>',
+			\esc_attr( Settings::PICTURE_OPTION ),
+			\checked( Settings::is_picture_enabled(), true, false ),
+			\esc_html__( 'Wrap bare images in a picture element', 'edge-images' ),
+			\esc_html__( 'Off by default.', 'edge-images' ),
+			\esc_html__( 'When on, images that are not already in a figure are wrapped in picture, and the layout stylesheet is loaded. Full-width images, and themes that style a direct link around an image, are the ones most likely to change.', 'edge-images' ),
+			\esc_html__( 'An image that already sits in a figure is not wrapped. That figure gets the edge-images-figure class instead. While this is off, no picture element is added and the stylesheet is not loaded.', 'edge-images' )
 		);
 	}
 

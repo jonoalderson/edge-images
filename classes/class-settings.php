@@ -33,6 +33,18 @@ class Settings {
 	public const LOCALIZE_OPTION = 'edge_images_localize';
 
 	/**
+	 * Picture-wrapping option.
+	 */
+	public const PICTURE_OPTION = 'edge_images_picture';
+
+	/**
+	 * Pre-6.0 picture feature option.
+	 *
+	 * The Features screen stored “Picture Element Wrapping” under this key.
+	 */
+	public const LEGACY_PICTURE_OPTION = 'edge_images_feature_picture_wrap';
+
+	/**
 	 * Option cache.
 	 *
 	 * @var array<string, mixed>
@@ -72,6 +84,52 @@ class Settings {
 	public static function is_localization_enabled(): bool {
 
 		return (bool) self::get_option( self::LOCALIZE_OPTION, false );
+	}
+
+	/**
+	 * Whether picture wrapping and its stylesheet are enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_picture_enabled(): bool {
+
+		return (bool) self::get_option( self::PICTURE_OPTION, false );
+	}
+
+	/**
+	 * Copy the pre-6.0 picture toggle onto the new option once.
+	 *
+	 * Runs when the new option has never been saved. A missing legacy
+	 * option stays off. An explicit new value is left alone.
+	 *
+	 * @return void
+	 */
+	public static function migrate_legacy_picture_option(): void {
+
+		if ( self::option_exists( self::PICTURE_OPTION ) ) {
+			return;
+		}
+
+		$enabled = false;
+		if ( self::option_exists( self::LEGACY_PICTURE_OPTION ) ) {
+			$enabled = self::sanitize_checkbox( \get_option( self::LEGACY_PICTURE_OPTION ) );
+		}
+
+		\update_option( self::PICTURE_OPTION, $enabled );
+		self::$cache[ self::PICTURE_OPTION ] = $enabled;
+	}
+
+	/**
+	 * Whether an option row exists.
+	 *
+	 * A stored false is different from a missing option.
+	 *
+	 * @param string $option Option name.
+	 * @return bool
+	 */
+	private static function option_exists( string $option ): bool {
+
+		return 'edge-images-missing' !== \get_option( $option, 'edge-images-missing' );
 	}
 
 	/**
@@ -135,6 +193,17 @@ class Settings {
 			[
 				'type'              => 'boolean',
 				'description'       => __( 'Fetch transformed images and store local copies.', 'edge-images' ),
+				'sanitize_callback' => [ self::class, 'sanitize_checkbox' ],
+				'default'           => false,
+			]
+		);
+
+		\register_setting(
+			self::OPTION_GROUP,
+			self::PICTURE_OPTION,
+			[
+				'type'              => 'boolean',
+				'description'       => __( 'Wrap bare images in picture elements and load the layout stylesheet.', 'edge-images' ),
 				'sanitize_callback' => [ self::class, 'sanitize_checkbox' ],
 				'default'           => false,
 			]
