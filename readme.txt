@@ -28,7 +28,7 @@ Optional localization is off until you enable it. The first view of an attachmen
 
 Local copies use origin storage and an extra fetch. On Cloudflare they might still be worth it: Image Resizing is billed on unique transformations per month, and a stored variant is only requested once instead of counting again each month. Leave this off when another provider already caches the transformed images cheaply.
 
-**Wrap bare images in a picture element** is off by default, because the extra element and its stylesheet can change existing layouts. While it is on, `max-width`, `content-visibility`, and `contain-intrinsic-size` apply only to `picture.edge-images-container`. A figure that already wraps the image gets `edge-images-figure` and only the image display rules. A linked image with no figure is wrapped inside the link.
+**Wrap bare images in a picture element** is off by default, because the extra element and its stylesheet can change existing layouts. If Picture Element Wrapping was already saved in an earlier version, that choice is kept. While it is on, `max-width`, `content-visibility`, and `contain-intrinsic-size` apply only to `picture.edge-images-container`. A figure that already wraps the image gets `edge-images-figure` and only the image display rules. A linked image with no figure is wrapped inside the link.
 
 ⚠️ **Important**: You need a supported edge provider with image transformation enabled.
 
@@ -131,7 +131,7 @@ Use the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/dat
 
 = 6.0.0 =
 * BREAKING: Rebuild around markup and URL rewriting. The HTML API rewrites `wp_get_attachment_image`, content, excerpts, widgets, and local avatars. Layout width comes from the requested size, width and height attributes, an inline `width:Npx` on the image or its figure, or the gallery column count. `srcset` is 1x / 1.5x / 2x of that width, clamped so candidates never upscale past the original file.
-* FEATURE: Picture wrapping is optional and off by default. While it is off, no picture element is added and the layout stylesheet is not loaded. While it is on, bare images are wrapped in `picture.edge-images-container`. An image that already sits in a figure gets the `edge-images-figure` class on that figure instead. Containment CSS stays on picture elements only.
+* FEATURE: Picture wrapping is optional and off by default. While it is off, no picture element is added and the layout stylesheet is not loaded. While it is on, bare images are wrapped in `picture.edge-images-container`. An image that already sits in a figure gets the `edge-images-figure` class on that figure instead. Containment CSS stays on picture elements only. Upgrades keep a saved Picture Element Wrapping choice.
 * BREAKING: Dimension engine, feature registry, native provider, rewrites, HTML and htaccess caches, Relevanssi, Enable Media Replace, and Bricks integrations removed.
 * BREAKING: Requires PHP 8.0 and WordPress 6.4.
 * BREAKING: `edge_images_max_width` and `edge_images_width_multipliers` removed. The width-multiplier `srcset` ladder is gone.

@@ -40,6 +40,9 @@ class Activation {
 	 */
 	public static function activate(): void {
 
+		// Keep a saved Picture Element Wrapping choice before defaults run.
+		Settings::migrate_legacy_picture_option();
+
 		foreach ( self::$defaults as $option => $default ) {
 			if ( false === \get_option( $option ) ) {
 				\update_option( $option, $default );

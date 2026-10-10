@@ -35,6 +35,7 @@ $options = [
 	'edge_images_max_width',
 	'edge_images_width_multipliers',
 	'edge_images_feature_picture',
+	'edge_images_feature_picture_wrap',
 	'edge_images_feature_cache',
 	'edge_images_feature_htaccess_cache',
 	'edge_images_feature_avatars',

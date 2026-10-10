@@ -44,6 +44,9 @@ require_once EDGE_IMAGES_PLUGIN_DIR . 'autoload.php';
 
 \register_activation_hook( __FILE__, [ Activation::class, 'activate' ] );
 
+// Updates do not re-run activation. Copy a saved picture choice first.
+\add_action( 'plugins_loaded', [ Settings::class, 'migrate_legacy_picture_option' ], 1 );
+
 /**
  * Initialize admin.
  *

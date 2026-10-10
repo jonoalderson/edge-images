@@ -14,7 +14,7 @@ namespace Edge_Images\Tests {
 	require_once __DIR__ . '/bootstrap.php';
 	require_once __DIR__ . '/assertions.php';
 
-	use Edge_Images\{Transformer, Settings, Localizer, Integration};
+	use Edge_Images\{Activation, Transformer, Settings, Localizer, Integration};
 
 	edge_images_test_reset_settings_cache();
 
@@ -240,6 +240,38 @@ HTML;
 	$out     = $transformer->filter_content_images( $content );
 	assert_contains( '<picture', $out, 'linked image without a figure is picture-wrapped' );
 	assert_contains( '<a href=', $out, 'link remains around the picture' );
+
+	// --- Legacy Picture Element Wrapping is kept until the new option is saved ---
+	unset( $GLOBALS['edge_images_test_options']['edge_images_picture'] );
+	$GLOBALS['edge_images_test_options']['edge_images_feature_picture_wrap'] = true;
+	edge_images_test_reset_settings_cache();
+	Settings::migrate_legacy_picture_option();
+	assert_true( Settings::is_picture_enabled(), 'legacy picture wrap true is kept' );
+	assert_true( (bool) get_option( Settings::PICTURE_OPTION ), 'legacy true is stored on the new option' );
+
+	unset( $GLOBALS['edge_images_test_options']['edge_images_picture'] );
+	$GLOBALS['edge_images_test_options']['edge_images_feature_picture_wrap'] = false;
+	edge_images_test_reset_settings_cache();
+	Settings::migrate_legacy_picture_option();
+	assert_same( false, Settings::is_picture_enabled(), 'legacy picture wrap false is kept' );
+
+	unset( $GLOBALS['edge_images_test_options']['edge_images_picture'] );
+	unset( $GLOBALS['edge_images_test_options']['edge_images_feature_picture_wrap'] );
+	edge_images_test_reset_settings_cache();
+	Settings::migrate_legacy_picture_option();
+	assert_same( false, Settings::is_picture_enabled(), 'missing legacy picture wrap stays off' );
+
+	$GLOBALS['edge_images_test_options']['edge_images_picture'] = false;
+	$GLOBALS['edge_images_test_options']['edge_images_feature_picture_wrap'] = true;
+	edge_images_test_reset_settings_cache();
+	Activation::activate();
+	assert_same( false, Settings::is_picture_enabled(), 'a saved new picture option is not replaced' );
+
+	unset( $GLOBALS['edge_images_test_options']['edge_images_picture'] );
+	$GLOBALS['edge_images_test_options']['edge_images_feature_picture_wrap'] = '1';
+	edge_images_test_reset_settings_cache();
+	Activation::activate();
+	assert_true( Settings::is_picture_enabled(), 'activation keeps a saved legacy picture choice' );
 
 	finish( 'transformer integration' );
 }

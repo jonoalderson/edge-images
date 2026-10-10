@@ -38,6 +38,13 @@ class Settings {
 	public const PICTURE_OPTION = 'edge_images_picture';
 
 	/**
+	 * Pre-6.0 picture feature option.
+	 *
+	 * The Features screen stored “Picture Element Wrapping” under this key.
+	 */
+	public const LEGACY_PICTURE_OPTION = 'edge_images_feature_picture_wrap';
+
+	/**
 	 * Option cache.
 	 *
 	 * @var array<string, mixed>
@@ -87,6 +94,42 @@ class Settings {
 	public static function is_picture_enabled(): bool {
 
 		return (bool) self::get_option( self::PICTURE_OPTION, false );
+	}
+
+	/**
+	 * Copy the pre-6.0 picture toggle onto the new option once.
+	 *
+	 * Runs when the new option has never been saved. A missing legacy
+	 * option stays off. An explicit new value is left alone.
+	 *
+	 * @return void
+	 */
+	public static function migrate_legacy_picture_option(): void {
+
+		if ( self::option_exists( self::PICTURE_OPTION ) ) {
+			return;
+		}
+
+		$enabled = false;
+		if ( self::option_exists( self::LEGACY_PICTURE_OPTION ) ) {
+			$enabled = self::sanitize_checkbox( \get_option( self::LEGACY_PICTURE_OPTION ) );
+		}
+
+		\update_option( self::PICTURE_OPTION, $enabled );
+		self::$cache[ self::PICTURE_OPTION ] = $enabled;
+	}
+
+	/**
+	 * Whether an option row exists.
+	 *
+	 * A stored false is different from a missing option.
+	 *
+	 * @param string $option Option name.
+	 * @return bool
+	 */
+	private static function option_exists( string $option ): bool {
+
+		return 'edge-images-missing' !== \get_option( $option, 'edge-images-missing' );
 	}
 
 	/**

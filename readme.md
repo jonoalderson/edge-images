@@ -32,7 +32,7 @@ Local copies use origin storage and an extra fetch. On Cloudflare they might sti
 
 ### Optional picture wrapping
 
-**Wrap bare images in a picture element** is off by default, because the extra element and its stylesheet can change existing layouts.
+**Wrap bare images in a picture element** is off by default, because the extra element and its stylesheet can change existing layouts. If Picture Element Wrapping was already saved in an earlier version, that choice is kept.
 
 While it is on, the stylesheet in `assets/css/images.min.css` is loaded. `max-width`, `content-visibility`, and `contain-intrinsic-size` apply only to `picture.edge-images-container`. A figure that already wraps the image gets `edge-images-figure` and only the image display rules, so captions and full-width alignments keep the figure's own box. A linked image with no figure becomes `<a><picture><img></picture></a>`.
 
@@ -110,7 +110,7 @@ Image URLs are sent to your chosen edge provider for transformation. The plugin 
 ### 6.0.0
 
 * BREAKING: Rebuild around markup and URL rewriting. The HTML API rewrites `wp_get_attachment_image`, content, excerpts, widgets, and local avatars. Layout width comes from the requested size, width and height attributes, an inline `width:Npx` on the image or its figure, or the gallery column count. `srcset` is 1x / 1.5x / 2x of that width, clamped so candidates never upscale past the original file.
-* FEATURE: Picture wrapping is optional and off by default. While it is off, no picture element is added and the layout stylesheet is not loaded. While it is on, bare images are wrapped in `picture.edge-images-container`. An image that already sits in a figure gets the `edge-images-figure` class on that figure instead. Containment CSS stays on picture elements only.
+* FEATURE: Picture wrapping is optional and off by default. While it is off, no picture element is added and the layout stylesheet is not loaded. While it is on, bare images are wrapped in `picture.edge-images-container`. An image that already sits in a figure gets the `edge-images-figure` class on that figure instead. Containment CSS stays on picture elements only. Upgrades keep a saved Picture Element Wrapping choice.
 * BREAKING: Dimension engine, feature registry, native provider, rewrites, HTML and htaccess caches, Relevanssi, Enable Media Replace, and Bricks integrations removed.
 * BREAKING: Requires PHP 8.0 and WordPress 6.4.
 * BREAKING: `edge_images_max_width` and `edge_images_width_multipliers` removed. The width-multiplier `srcset` ladder is gone.
