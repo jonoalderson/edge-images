@@ -8,110 +8,286 @@ Stable tag: 6.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Route WordPress images through an edge provider (Cloudflare, Accelerated Domains, Bunny, Imgix, or Imgproxy) and rewrite markup for responsive delivery.
+Turbocharge your WordPress images by using an edge provider (like Cloudflare or Accelerated Domains) and optimizing your HTML markup.
 
 == Description ==
 
-A request is rewritten only when transformations are allowed: the disable filter is off, the request is on the front end or in the block-editor canvas iframe, and a provider is selected and configured.
+Edge Images uses your edge transformation service (Cloudflare, Accelerated Domains, Bunny CDN, Imgix, or Imgproxy) to optimize the `<img>` markup already in your posts, templates, and media library.
 
-Layout width is decided before any URL is built. Attachment images use the requested size, or the width and height attributes. Content images use an inline `width:Npx` on the image or its figure when that differs from the attribute width, and the height is scaled to keep the aspect ratio. Gallery images use the `columns-N` class: layout width is the image width divided by the column count.
+⚠️ **Important**: You need a supported edge provider with image transformation enabled (Cloudflare Image Resizing, Bunny CDN image processing, Imgix, Imgproxy, or Accelerated Domains). See the Requirements section for details.
 
-`src`, `srcset`, and `sizes` are then rewritten with the WordPress HTML API. Core srcset is replaced. Candidates are 1x, 1.5x, and 2x of the layout width, and they stop at the original file width. When `sizes` is missing, or the layout width came from an inline style, a single image uses `sizes="(max-width: {width}px) 100vw, {width}px"` (prefixed with `auto, ` when the image is lazy-loaded). A multi-column gallery uses `sizes="(max-width: 599px) 50vw, {100/columns}vw"`.
+= 🚀 Why should I use Edge Images? =
 
-Picture wrapping is off until you enable it. While it is off, images keep their original tags and the layout stylesheet is not loaded. While it is on, bare images, including those from `wp_get_attachment_image`, are wrapped in `<picture class="edge-images-container">`. A content image that already sits in a `<figure>` is not wrapped; that figure gets `edge-images-figure` instead, and the containment rules stay on `<picture>` only. Gallery images stay unwrapped either way.
+* **Instant performance boost**: Optimize and serve images in modern formats (WebP or AVIF, when your provider supports `format=auto`) through the CDN you already use
+* **Works with what you have**: Existing images, existing themes, and the block editor. Select a provider and the markup is rewritten for you
+* **No local processing by default**: Transformations happen at the edge. Your server does not resize images, and it stores extra files only if you opt in
+* **Right-sized images**: `srcset` offers 1x, 1.5x, and 2x of the width the layout actually uses, and it never asks for a file larger than the original
+* **Cost effective**: Use the image transformation on your existing edge provider, instead of a separate optimization service or a stack of generated thumbnails
 
-The edge URL is built from the full-size file. Defaults are `fit=cover`, `format=auto`, and quality 85. SVGs and existing AVIF files keep their original URLs. Local avatars are rewritten at the avatar size with `fit=cover`. They are not picture-wrapped, and they are not localized. Remote avatars such as Gravatar are left alone.
+= 🎯 Perfect for =
 
-Yoast SEO and Rank Math social, schema, and sitemap images use the same URL helper at 1200×675 with `fit=cover`. Those URLs stay on the edge even when localization is on.
+* Sites with lots of images that need optimization
+* Performance-focused developers and site owners
+* Anyone using Cloudflare, Accelerated Domains, Bunny CDN, Imgix, or Imgproxy
+* Sites that want modern image formats without a local conversion pipeline
+* Developers tired of managing multiple image sizes
 
-Optional localization is off until you enable it. The first view of an attachment still uses the edge URL and queues a job. A cron task runs about once a minute and fetches up to three jobs, saving the 1x, 1.5x, and 2x files under uploads. The next request serves those local files. Editing or deleting the attachment removes them.
+= 💡 How it works =
 
-Local copies use origin storage and an extra fetch. On Cloudflare they might still be worth it: Image Resizing is billed on unique transformations per month, and a stored variant is only requested once instead of counting again each month. Leave this off when another provider already caches the transformed images cheaply.
+WordPress typically creates multiple copies of each uploaded image in different sizes. That often means:
 
-**Wrap bare images in a picture element** is off by default, because the extra element and its stylesheet can change existing layouts. If Picture Element Wrapping was already saved in an earlier version, that choice is kept. While it is on, `max-width`, `content-visibility`, and `contain-intrinsic-size` apply only to `picture.edge-images-container`. A figure that already wraps the image gets `edge-images-figure` and only the image display rules. A linked image with no figure is wrapped inside the link.
+* Images that are too large or too small for their display size
+* Unnecessary storage usage
+* Missing sizes for the layout you actually shipped
+* No modern format support (WebP/AVIF) unless you built a pipeline for it
 
-⚠️ **Important**: You need a supported edge provider with image transformation enabled.
+Edge Images takes a different route:
 
-= Features =
+1. It rewrites image markup on the front end and in the block-editor canvas: attachments, content, excerpts, widgets, and local avatars
+2. It decides the layout width from the requested size, the width and height attributes, an inline `width:Npx` on the image or its figure, or the gallery column count
+3. It points `src`, `srcset`, and `sizes` at your edge provider, built from the full-size file
+4. The provider transforms the image on demand and caches the result
 
-* Markup rewrite for `wp_get_attachment_image`, content, excerpts, widgets, and local avatars
-* Layout width from the requested size, attributes, block-editor inline styles, or gallery columns
-* DPR `srcset` at 1x, 1.5x, and 2x, clamped to the original file
-* Optional picture wrapping, off by default. Existing figures are marked instead of wrapped
-* Providers: Cloudflare, Accelerated Domains, Bunny CDN, Imgix, Imgproxy
-* Yoast SEO and Rank Math social, schema, and sitemap URLs at 1200×675, with a toggle per surface
-* Settings status panel, admin notices, and a Plugins-screen settings link
-* Optional cron-based local copies of transformed variants
+Picture wrapping and local copies stay off until you turn them on.
 
-= Requirements =
+= ⚡️ Features =
 
-* PHP 8.0+
-* WordPress 6.4+
-* A supported edge provider with image transformation enabled
+**Core features**
 
-= Providers =
+* Automatic WebP/AVIF conversion when your provider honors `format=auto`
+* Layout-aware `srcset` at 1x, 1.5x, and 2x
+* Rewrites `wp_get_attachment_image`, content, excerpts, widgets, and local avatars
+* Optional `<picture>` wrapping, off by default, so existing layouts stay put
+* Original images stay on your server
+* Edge transformation by default, with no extra files until you ask for them
 
-* **Cloudflare** or **Accelerated Domains**: select the provider. Image transformation must be enabled on the zone or service. The transform domain is optional and defaults to the site URL.
-* **Bunny CDN**: zone subdomain only, without `.b-cdn.net`. Image processing must be enabled.
-* **Imgix**: source subdomain only, without `.imgix.net`.
-* **Imgproxy**: full base URL of your Imgproxy instance.
+**Advanced features**
 
-= Getting Started =
+* Transform arguments on an image: width, height, fit, quality, format, gravity, sharpen
+* Cloudflare, Accelerated Domains, Bunny CDN, Imgix, and Imgproxy
+* Developer-friendly filters and a small PHP helper
+* Yoast SEO and Rank Math, with a toggle for social, schema, and sitemap images
+* Block editor support
+* A settings status panel (inactive, needs attention, or active) and a settings link on the Plugins screen
+* Optional local copies of the transformed variants
 
-1. Install and activate the plugin
-2. Go to Settings → Edge Images
-3. Select your provider and fill in the subdomain or base URL when that provider asks for one
-4. Confirm the status panel reads Active
-5. Optionally enable “Store transformed images locally under Uploads”
+= 🔌 Supported providers =
+
+* **Cloudflare** with Image Resizing enabled. Select it and you are done. The transform domain is optional and defaults to the site URL.
+* **Accelerated Domains** with image transformation enabled. Selection is enough.
+* **Bunny CDN** with image processing enabled. Zone subdomain only, without `.b-cdn.net`.
+* **Imgix** with a configured source. Source subdomain only, without `.imgix.net`.
+* **Imgproxy**. The full base URL of your instance.
 
 Choose None to stop rewriting without deactivating the plugin.
 
+= 🛠️ See the difference =
+
+**Your code**
+
+`
+echo wp_get_attachment_image( 123, [ 640, 400 ] );
+`
+
+**What WordPress usually outputs**
+
+`
+<img width="380" height="400"
+     src="/uploads/2024/11/1.jpg"
+     class="attachment-640x400 size-640x400 wp-image-123"
+     srcset="/uploads/2024/11/1.jpg 400w, /uploads/2024/11/1-285x300.jpg 285w"
+     sizes="(max-width: 640px) 100vw, 640px">
+`
+
+Several different files, and none of them is the size the layout needs.
+
+**What Edge Images outputs**
+
+`
+<img width="640" height="400"
+     class="attachment-640x400 size-640x400 wp-image-123"
+     src="/cdn-cgi/image/dpr=1,f=auto,fit=cover,h=400,q=85,w=640/uploads/2024/11/1.jpg"
+     srcset="/cdn-cgi/image/dpr=1,f=auto,fit=cover,h=400,q=85,w=640/uploads/2024/11/1.jpg 640w, /cdn-cgi/image/dpr=1.5,f=auto,fit=cover,h=400,q=85,w=640/uploads/2024/11/1.jpg 960w, /cdn-cgi/image/dpr=2,f=auto,fit=cover,h=400,q=85,w=640/uploads/2024/11/1.jpg 1280w"
+     sizes="(max-width: 640px) 100vw, 640px">
+`
+
+That is the layout width at 1x, 1.5x, and 2x, in a modern format when your provider can negotiate one, served from the edge, from the one original file. Candidates stop at the original file width, so nothing is upscaled. Lazy-loaded images get `auto, ` in front of `sizes` when Edge Images writes that attribute. A multi-column gallery uses `sizes="(max-width: 599px) 50vw, {100/columns}vw"`.
+
+The example above is Cloudflare. Bunny CDN, Imgix, Imgproxy, and Accelerated Domains get the same dimensions with their own URL shape.
+
+**Optional picture wrapping**
+
+Turn on "Wrap bare images in a picture element" and a bare image, including one from `wp_get_attachment_image()`, is wrapped:
+
+`
+<picture class="edge-images-container" style="--content-visibility: auto; --max-width: 640px; --width: 640px; --height: 400px">
+  <img width="640" height="400"
+       src="/cdn-cgi/image/dpr=1,f=auto,fit=cover,h=400,q=85,w=640/uploads/2024/11/1.jpg"
+       srcset="..."
+       sizes="(max-width: 640px) 100vw, 640px">
+</picture>
+`
+
+An image that already sits in a `<figure>` keeps that figure. The figure gets `edge-images-figure`, and `max-width`, `content-visibility`, and `contain-intrinsic-size` stay on `picture.edge-images-container`, so captions and full-width alignments keep the figure's own box. Galleries stay unwrapped. The layout stylesheet loads only while this option is on. If Picture Element Wrapping was already saved in an earlier version, that choice is kept.
+
+**Optional local copies**
+
+"Store transformed images locally under Uploads" is off by default. The first view still uses the edge URL and queues a job. About once a minute, a cron task fetches up to three jobs and saves the 1x, 1.5x, and 2x files under uploads. The next view serves those files. Editing or deleting the attachment removes them. Social, schema, and sitemap images stay on the edge.
+
+On Cloudflare, local copies might reduce cost. Image Resizing is billed on unique transformations per month, so a stored variant is only requested once instead of counting again each month. Leave this off when your provider already caches transformed images cheaply.
+
+= 🎨 Customization =
+
+**Transform parameters**
+
+Control the transformation with attributes on the image, or arguments to the URL helper. Short and long names both work:
+
+* `width` / `w` and `height` / `h`: exact dimensions
+* `fit`: scale-down, contain, cover, crop, or pad. The default is cover
+* `quality` / `q`: compression level. The default is 85
+* `format` / `f`: auto, webp, avif, jpeg, png, or gif
+* `gravity` / `g` and `sharpen`
+
+`
+echo wp_get_attachment_image( 123, [ 640, 400 ], false, [ 'fit' => 'contain', 'quality' => 75 ] );
+`
+
+Picture attributes can be passed as `$attr['picture']`. They apply only while picture wrapping is enabled.
+
+**Filtering**
+
+`
+// Disable all transformations.
+add_filter( 'edge_images_disable', '__return_true' );
+
+// Skip one image.
+add_filter( 'edge_images_disable_transform', function( $disable, $html ) {
+	if ( str_contains( $html, 'example.jpg' ) ) {
+		return true;
+	}
+	return $disable;
+}, 10, 2 );
+
+// Default quality.
+add_filter( 'edge_images_default_quality', function() {
+	return 75;
+} );
+`
+
+`edge_images_provider` and `edge_images_domain` are also available.
+
+`edge_images_max_width` and `edge_images_width_multipliers` were removed in 6.0.0. `srcset` is 1x, 1.5x, and 2x of the layout width.
+
+**From PHP**
+
+`
+Edge_Images\convert_src( $src, $size, $args = [] );
+Edge_Images\Transformer::url( $src, $width, $height, $args = [], $dpr = 1.0 );
+`
+
+`convert_src()` resolves a registered size, or a width and height pair, and returns `Transformer::url()`.
+
+= 🔧 Requirements =
+
+**Essential**
+
+* A supported edge provider with image transformation enabled:
+  * Cloudflare with Image Resizing enabled
+  * Accelerated Domains with image transformation enabled
+  * Bunny CDN with image processing enabled
+  * Imgix with a configured source
+  * Imgproxy with a reachable base URL
+
+**Technical**
+
+* PHP 8.0 or higher
+* WordPress 6.4 or higher
+
+= ✅ Getting started =
+
+1. Install and activate the plugin
+2. Go to Settings → Edge Images
+3. Select your provider. Cloudflare and Accelerated Domains only need that selection. Bunny CDN, Imgix, and Imgproxy also need the subdomain or base URL
+4. Confirm the status panel reads Active
+
+Your images are optimized on the next front-end view. Picture wrapping and local copies are there when you want them.
+
 When Yoast SEO or Rank Math is active, the settings screen lists it as detected and enables the social, schema, and sitemap checkboxes. A missing plugin stays listed and its checkboxes stay inactive.
 
-= Public API =
+= 🤝 Integrations =
 
-* `Edge_Images\convert_src( $src, $size, $args = [] )` resolves a registered size or a width/height pair and returns `Transformer::url()`
-* `Edge_Images\Transformer::url( $src, $width, $height, $args = [], $dpr = 1.0 )`
-* Filters: `edge_images_disable`, `edge_images_disable_transform`, `edge_images_default_quality`, `edge_images_provider`, `edge_images_domain`
-* Removed in 6.0.0: `edge_images_max_width`, `edge_images_width_multipliers`
+**Yoast SEO and Rank Math**
 
-Transform arguments on an image (short or long name): `width`/`w`, `height`/`h`, `fit`, `format`/`f`, `quality`/`q`, `gravity`/`g`, and `sharpen`. Picture attributes can be passed to `wp_get_attachment_image()` as `$attr['picture']`, and are applied only while picture wrapping is enabled.
+When the matching plugin is active and its checkbox is on, social images, schema images, and XML sitemap images are rewritten at 1200×675 with `fit=cover`. Those URLs stay on the edge even when local copies are on.
 
-= Privacy =
+= 🔒 Privacy =
 
-The plugin stores settings in the WordPress options table. With localization enabled it also stores the queue option `edge_images_localize_queue`, writes transformed files under uploads, and stores their paths in attachment meta `_edge_images_sizes`. Uninstall removes the options and the cron hook. Localized files and that attachment meta are left in place.
+Edge Images processes images through your chosen edge provider. Here is what that means.
 
-Image URLs are sent to your chosen edge provider for transformation. The plugin does not collect personal data.
+**Data processing**
+
+* Image URLs are passed to your chosen provider for transformation
+* The plugin does not collect personal data
+* Original images remain on your server. Only public URLs are processed
+* Imgproxy sends those URLs to the instance you configure, which may be your own server
+
+**Edge provider privacy**
+
+* Cloudflare: [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/)
+* Accelerated Domains: [Servebolt's privacy policy](https://servebolt.com/legal/privacy/)
+* Bunny CDN: [Bunny's privacy policy](https://bunny.net/privacy/)
+* Imgix: [Imgix's privacy policy](https://www.imgix.com/privacy)
+
+**Data storage**
+
+* Settings are stored in the WordPress options table
+* With local copies enabled, the plugin also stores the queue option `edge_images_localize_queue`, writes transformed files under uploads, and stores their paths in attachment meta `_edge_images_sizes`
+* Uninstall removes the options and the cron hook. Localized files and that attachment meta are left in place
+* No analytics or tracking is performed
+
+**GDPR**
+
+* The plugin does not collect, store, or process personal data
+* Review your provider's privacy policy and data-processing terms
+* Update your own privacy policy to mention third-party image processing when you use a hosted provider
 
 == Installation ==
 
 1. Upload the plugin files to `/wp-content/plugins/edge-images/`
-2. Activate the plugin through the Plugins screen
-3. Configure your provider under Settings → Edge Images
+2. Activate the plugin through the Plugins screen in WordPress
+3. Go to Settings → Edge Images and select your provider
 
 == Frequently Asked Questions ==
 
-= Which providers are supported? =
+= Which edge providers are supported? =
 
 Cloudflare (Image Resizing), Accelerated Domains, Bunny CDN, Imgix, and Imgproxy.
 
-Cloudflare and Accelerated Domains need only a selection. Bunny, Imgix, and Imgproxy also need the subdomain or base URL on the settings screen. The status panel stays on “Needs attention” until that value is saved.
+Cloudflare and Accelerated Domains need only a selection. Bunny CDN, Imgix, and Imgproxy also need the subdomain or base URL on the settings screen. The status panel stays on "Needs attention" until that value is saved.
 
-= Do I need multiple local image sizes? =
+= Do I need to generate different image sizes? =
 
 No. The edge provider resizes on demand from the full-size file. `srcset` offers 1x, 1.5x, and 2x of the layout width, and it never asks for a width larger than the original file.
 
+= Will this work with my existing images? =
+
+Yes. The plugin rewrites markup for images already in your media library.
+
+= Does this work with the block editor? =
+
+Yes. Markup is rewritten on the front end and in the block-editor canvas.
+
 = Does this wrap images in picture? =
 
-Only after you enable “Wrap bare images in a picture element” under Settings → Edge Images. It is off by default. Bare images are then wrapped, and an image that already sits in a figure gets a class on that figure instead. Galleries are left alone. The layout stylesheet loads only while the option is on.
+Only after you enable "Wrap bare images in a picture element" under Settings → Edge Images. It is off by default. Bare images are then wrapped, and an image that already sits in a figure gets a class on that figure instead. Galleries are left alone. The layout stylesheet loads only while the option is on. A saved Picture Element Wrapping choice from an earlier version is kept.
 
 = What about galleries? =
 
-Gallery images are rewritten with a column-based layout width and `sizes="(max-width: 599px) 50vw, {100/columns}vw"`. They are not wrapped in `<picture>`, so the core gallery layout keeps working.
+Gallery images are rewritten with a column-based layout width and `sizes="(max-width: 599px) 50vw, {100/columns}vw"`. They are left unwrapped, so the core gallery layout keeps working.
 
-= When do local copies appear? =
+= Can I store copies locally? =
 
-Only after you enable “Store transformed images locally under Uploads”. The first page view still uses edge URLs and queues the variants. A cron task running about once a minute fetches them in batches of three. Reload after that job has run and the markup points at the files under uploads. Social, schema, and sitemap images always stay on the edge.
+Only after you enable "Store transformed images locally under Uploads". The first page view still uses edge URLs and queues the variants. A cron task running about once a minute fetches them in batches of three. Reload after that job has run and the markup points at the files under uploads. Social, schema, and sitemap images stay on the edge.
 
 On Cloudflare, local copies might reduce cost. Image Resizing is billed on unique transformations per month, so a stored variant is only requested once instead of counting again each month.
 
@@ -123,9 +299,14 @@ When the matching plugin is active, and its checkbox is on, social, schema, and 
 
 SVGs and existing AVIF files keep their original URLs. Avatars that are files on this site are rewritten. Gravatar and other remote avatars are left alone. Avatars are not wrapped in `<picture>` and are not stored locally.
 
-= How do I report security bugs? =
+= How can I report security bugs? =
 
-Use the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/database/wordpress/plugin/edge-images/vdp).
+You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team help validate, triage, and handle any security vulnerabilities. [Report a security vulnerability.](https://patchstack.com/database/wordpress/plugin/edge-images/vdp)
+
+== Development ==
+
+* [GitHub repository](https://github.com/jonoalderson/edge-images)
+* [Report issues](https://github.com/jonoalderson/edge-images/issues)
 
 == Changelog ==
 
