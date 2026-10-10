@@ -8,7 +8,7 @@ Stable tag: 6.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Route WordPress images through an edge provider (Cloudflare, Accelerated Domains, Bunny, Imgix, or Imgproxy) and rewrite markup for responsive delivery.
+Route WordPress images through Cloudflare, Accelerated Domains, Bunny, Imgix, or Imgproxy, and rewrite markup for responsive delivery.
 
 == Description ==
 
