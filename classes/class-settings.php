@@ -176,7 +176,7 @@ class Settings {
 				'edge_images_integration_' . $key,
 				[
 					'type'              => 'boolean',
-					'sanitize_callback' => 'rest_sanitize_boolean',
+					'sanitize_callback' => [ self::class, 'sanitize_checkbox' ],
 					'default'           => true,
 				]
 			);

@@ -1,68 +1,47 @@
 /**
- * Admin interface functionality for Edge Images plugin.
- *
- * Handles dynamic UI interactions in the plugin's admin interface.
+ * Edge Images settings: show provider-specific fields.
  */
-(function($) {
-    'use strict';
+(function () {
+	'use strict';
 
-    /**
-     * Initialize admin functionality.
-     */
-    function init() {
-        const $providerInputs = $('input[name="edge_images_provider"]');
-        
-        // Initial state
-        toggleProviderFields();
-        handleDisabledFeatures();
-        
-        // On change
-        $providerInputs.on('change', toggleProviderFields);
-    }
+	function selectedProvider(root) {
+		var select = root.querySelector('.edge-images-provider-select');
+		return select ? select.value : 'none';
+	}
 
-    /**
-     * Toggle visibility of provider-specific fields based on selection.
-     */
-    function toggleProviderFields() {
-        const selectedProvider = $('input[name="edge_images_provider"]:checked').val();
-        const hostedSubdomainProviders = ['imgix', 'bunny'];
-        
-        // Hide all provider-specific fields first
-        $('.edge-images-provider-field').hide();
-        
-        // Show fields for selected provider
-        if (selectedProvider) {
-            $(`.edge-images-${selectedProvider}-field`).show();
-        }
+	function syncConditionalFields(root) {
+		var provider = selectedProvider(root);
+		var rows = root.querySelectorAll('tr.edge-images-conditional');
 
-        // Handle domain field visibility
-        const $domainField = $('input[name="edge_images_domain"]').closest('.edge-images-settings-field');
-        if (hostedSubdomainProviders.includes(selectedProvider)) {
-            $domainField.hide();
-        } else {
-            $domainField.show();
-        }
-    }
+		rows.forEach(function (row) {
+			var show = row.classList.contains('edge-images-show-' + provider);
+			if (show) {
+				row.removeAttribute('hidden');
+			} else {
+				row.setAttribute('hidden', 'hidden');
+			}
+		});
+	}
 
-    /**
-     * Handle disabled features in the admin interface.
-     */
-    function handleDisabledFeatures() {
-        $('.edge-images-feature-disabled').each(function() {
-            const $feature = $(this);
-            const $checkbox = $feature.find('input[type="checkbox"]');
-            
-            // Disable the checkbox
-            $checkbox.prop('disabled', true);
-            
-            // If it was checked, uncheck it
-            if ($checkbox.prop('checked')) {
-                $checkbox.prop('checked', false);
-            }
-        });
-    }
+	function init() {
+		var root = document.querySelector('[data-edge-images-admin]');
+		if (!root) {
+			return;
+		}
 
-    // Initialize when document is ready
-    $(document).ready(init);
+		syncConditionalFields(root);
 
-})(jQuery); 
+		var select = root.querySelector('.edge-images-provider-select');
+		if (select) {
+			select.addEventListener('change', function () {
+				syncConditionalFields(root);
+			});
+		}
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+})();

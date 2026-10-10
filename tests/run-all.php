@@ -16,6 +16,7 @@ $suites = [
 	'test-providers-all.php',
 	'test-transformer.php',
 	'test-localizer.php',
+	'test-admin-status.php',
 	'test-smoke.php',
 ];
 
